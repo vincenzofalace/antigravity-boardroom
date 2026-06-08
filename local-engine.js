@@ -1,5 +1,6 @@
-// Local Agent Simulation Engine (LASE) for Antigravity Multi-Agent Boardroom Suite
-// Gira interamente nel browser (client-side) per permettere l'utilizzo senza API Key o abbonamenti.
+// Local Agent Simulation Engine (LASE) - Versione Ottimizzata e Ultra-Personalizzata
+// Gira interamente client-side nel browser. Fornisce analisi specifiche per settori reali (Food, Vending, SaaS, ecc.)
+// e supporta localizzazioni geografiche avanzate (es. Canarie, Gran Canaria).
 
 const LocalAgentSimulationEngine = {
   // Classifica l'idea e i parametri immessi
@@ -10,124 +11,146 @@ const LocalAgentSimulationEngine = {
     let sector = "general";
     if (text.includes("saas") || text.includes("software") || text.includes("piattaforma cloud") || text.includes("abbonamento soft") || text.includes("dashboard")) {
       sector = "saas";
-    } else if (text.includes("e-commerce") || text.includes("shop") || text.includes("ecommerce") || text.includes("vendere online") || text.includes("sito web per vendere") || text.includes("negozio online") || text.includes("sito per vendere")) {
+    } else if (text.includes("e-commerce") || text.includes("shop") || text.includes("ecommerce") || text.includes("vendere online") || text.includes("sito web per vendere") || text.includes("negozio online")) {
       sector = "ecommerce";
-    } else if (text.includes("ristorante") || text.includes("pizza") || text.includes("bar") || text.includes("cibo") || text.includes("food") || text.includes("pizzeria") || text.includes("pasticceria") || text.includes("gastronomia") || text.includes("consegna a domicilio") || text.includes("delivery") || text.includes("ordinare")) {
+    } else if (
+      text.includes("ristor") || 
+      text.includes("pizz") || 
+      text.includes("bar") || 
+      text.includes("cibo") || 
+      text.includes("food") || 
+      text.includes("gastronom") || 
+      text.includes("consegna") || 
+      text.includes("delivery") || 
+      text.includes("somministrazione")
+    ) {
       sector = "food_beverage";
-    } else if (text.includes("negozio") || text.includes("negozio fisico") || text.includes("retail") || text.includes("boutique") || text.includes("palestra") || text.includes("centro estetico") || text.includes("locale fisico") || text.includes("salone")) {
+    } else if (text.includes("negozio") || text.includes("retail") || text.includes("boutique") || text.includes("palestra") || text.includes("centro estetico") || text.includes("salone")) {
       sector = "retail";
-    } else if (text.includes("app ") || text.includes("app-") || text.includes("applicazione mobile") || text.includes("ios") || text.includes("android")) {
+    } else if (text.includes("app ") || text.includes("applicazione mobile") || text.includes("ios") || text.includes("android")) {
       sector = "mobile_app";
-    } else if (text.includes("consulenza") || text.includes("agenzia") || text.includes("servizi") || text.includes("freelance") || text.includes("academy") || text.includes("corso") || text.includes("corsi") || text.includes("formazione")) {
+    } else if (text.includes("consulenza") || text.includes("agenzia") || text.includes("servizi") || text.includes("freelance") || text.includes("corso") || text.includes("corsi") || text.includes("formazione")) {
       sector = "services";
-    } else if (text.includes("marketplace") || text.includes("portale") || text.includes("piattaforma di annunci") || text.includes("matching") || text.includes("matching platform")) {
+    } else if (text.includes("marketplace") || text.includes("portale") || text.includes("annunci") || text.includes("matching")) {
       sector = "marketplace";
-    } else if (text.includes("hardware") || text.includes("iot") || text.includes("domotica") || text.includes("dispositivo") || text.includes("sensore") || text.includes("serratura") || text.includes("smart")) {
+    } else if (text.includes("hardware") || text.includes("iot") || text.includes("domotica") || text.includes("dispositivo") || text.includes("sensore")) {
       sector = "hardware_iot";
     }
 
-    // Rileva target
+    // Rileva se è distributore automatico / vending
+    const isVending = text.includes("distributore") || text.includes("automatico") || text.includes("vending") || text.includes("self-service");
+
+    // Rileva target B2B / B2C
     let target = "B2C";
-    if (text.includes("b2b") || text.includes("aziende") || text.includes("professionisti") || text.includes("corporate") || text.includes("business-to-business") || text.includes("ristoratori") || text.includes("hotel") || text.includes("host") || text.includes("property manager")) {
+    if (text.includes("b2b") || text.includes("aziende") || text.includes("professionisti") || text.includes("corporate") || text.includes("ristoratori") || text.includes("hotel") || text.includes("host") || text.includes("property manager")) {
       target = "B2B";
     }
 
-    // Rileva localizzazione
-    const cities = ["rimini", "garda", "milano", "roma", "bologna", "firenze", "torino", "napoli", "venezia", "bari", "palermo", "genova", "verona", "padova", "riccione", "cattolica", "cesena", "forli", "ravenna", "pesaro", "ancona", "lecce", "taranto", "bari"];
+    // Rileva localizzazione geografica
     let location = "";
-    for (let c of cities) {
-      if (text.includes(c)) {
-        location = c.charAt(0).toUpperCase() + c.slice(1);
-        break;
-      }
+    if (text.includes("gran canaria") || text.includes("canarie") || text.includes("tenerife") || text.includes("lanzarote") || text.includes("fuerteventura")) {
+      location = "Gran Canaria (Canarie)";
+    } else if (text.includes("rimini") || text.includes("riccione") || text.includes("cattolica")) {
+      location = "Rimini";
+    } else if (text.includes("milano")) {
+      location = "Milano";
+    } else if (text.includes("roma")) {
+      location = "Roma";
+    } else if (text.includes("bologna")) {
+      location = "Bologna";
+    } else if (text.includes("garda")) {
+      location = "Lago di Garda";
     }
-    
+
     // Rileva budget in euro
     let budgetAmount = 0;
     const numMatch = budget.match(/(\d+[\d\s.,]*)/);
     if (numMatch) {
       budgetAmount = parseFloat(numMatch[1].replace(/\s/g, '').replace('.', '').replace(',', '.'));
     } else {
-      budgetAmount = 0; // Bootstrap
+      // Se il budget è "quello che ci vuole" o simile, impostiamo un budget adeguato per il settore
+      if (isVending) {
+        budgetAmount = 18000; // Costo medio di un distributore professionale installato
+      } else if (sector === "saas" || sector === "mobile_app") {
+        budgetAmount = 5000;
+      } else {
+        budgetAmount = 3000; // Bootstrap standard
+      }
     }
     
-    // Estrae un nome temporaneo
-    let name = "Progetto Generico";
-    if (idea.trim().length > 0) {
+    // Estrae un nome temporaneo del progetto
+    let name = "Nuovo Progetto";
+    if (isVending && text.includes("pizz")) {
+      name = "PizzaVending" + (location ? " " + location.split(" ")[0] : "");
+    } else if (text.includes("pizz")) {
+      name = "PizzaGo" + (location ? " " + location.split(" ")[0] : "");
+    } else if (idea.trim().length > 0) {
       const cleanIdea = idea.replace(/vorrei creare|voglio creare|un'idea per|un servizio di|una piattaforma di/gi, "").trim();
       const words = cleanIdea.split(/\s+/).slice(0, 3).join(" ");
-      name = words.charAt(0).toUpperCase() + words.slice(1) + (location ? " " + location : "");
+      name = words.charAt(0).toUpperCase() + words.slice(1) + (location ? " " + location.split(" ")[0] : "");
     }
 
-    return { name, sector, target, location, budgetAmount };
+    return { name, sector, target, location, budgetAmount, isVending };
   },
 
   // Genera dati finanziari per la fase 7 / tab finanziario
   generateFinancials(info) {
-    const isBootstrap = info.budgetAmount <= 1000;
     let capexVal = 0;
     let opexVal = 0;
-    let bepUnit = "Clienti";
+    let bepUnit = "Unità";
     let bepVal = 0;
     let rows = [];
 
-    // Calcolo CAPEX & OPEX in base a budget e settore
-    if (isBootstrap) {
-      capexVal = 250;
-      opexVal = 24;
-    } else if (info.budgetAmount <= 5000) {
-      capexVal = 1350;
-      opexVal = 149;
-    } else {
-      capexVal = Math.round(info.budgetAmount * 0.35);
-      opexVal = Math.round(info.budgetAmount * 0.08);
-    }
+    if (info.isVending && info.sector === "food_beverage") {
+      // CASO DISTRIBUTORE AUTOMATICO DI PIZZA
+      capexVal = 16500; // Costo macchina + spedizione + installazione
+      opexVal = 550; // Affitto suolo/spazio, energia elettrica, assicurazione, manutenzione
+      bepUnit = "Pizze Vendute / Mese";
+      // Margine per pizza: Prezzo vendita 6.50€ - Costo materia prima 1.80€ - Commissioni POS 0.20€ = 4.50€
+      bepVal = Math.round(opexVal / 4.50); // Pizze mensili per pagare le spese correnti (circa 122 pizze, cioè 4 pizze al giorno)
+      
+      const isCanarias = info.location.includes("Canarie");
+      const taxName = isCanarias ? "IGIC Canario (Aliquota agevolata 7%)" : "IVA Italiana (Aliquota 10%)";
 
-    // Modulazione voci in base al settore
-    if (info.sector === "saas" || info.sector === "mobile_app") {
-      bepUnit = "Abbonati SaaS";
-      bepVal = Math.round(capexVal / 29); // 29€/mese abbonamento
       rows = [
-        { item: "Dominio & Landing Page Professionale (Carrd/Webflow)", type: "CAPEX", cost: isBootstrap ? "19.00 €" : "250.00 €", source: "Abbonamento annuale + Template" },
-        { item: "Database & Hosting Cloud (Firebase/Supabase)", type: "OPEX", cost: isBootstrap ? "0.00 € (Free tier)" : "25.00 € / mese", source: "Infrastruttura tecnica" },
-        { item: "Piattaforma di Automazione (Make.com/Zapier)", type: "OPEX", cost: isBootstrap ? "9.00 € / mese" : "29.00 € / mese", source: "Sincronizzazione API e Webhook" },
-        { item: "Integrazione Transazioni & Gateway (Stripe)", type: "OPEX", cost: "1.4% + 0.25€ / transaz.", source: "Commissioni di pagamento" },
-        { item: "Consulenza Legale Privacy GDPR e GDPR Cookie (Iubenda)", type: "CAPEX", cost: isBootstrap ? "59.00 € / anno" : "350.00 € (Una tantum)", source: "Compliance CLO" }
+        { item: "Distributore Automatico Pizza Professionale (con forno integrato)", type: "CAPEX", cost: "14,500.00 €", source: "Sourcing produttore UE (macchina certificata CE)" },
+        { item: "Trasporto, Dogana e Installazione fisica a " + (info.location || "destinazione"), type: "CAPEX", cost: isCanarias ? "1,500.00 €" : "800.00 €", source: "Logistica e spedizione via container" },
+        { item: "Allacciamento elettrico e predisposizione spazio B2B", type: "CAPEX", cost: "500.00 €", source: "Lavori tecnici di attivazione loco" },
+        { item: "Affitto spazio commerciale (suolo privato o esterno negozio)", type: "OPEX", cost: "350.00 € / mese", source: "Contratto di locazione area ad alto traffico pedonale" },
+        { item: "Consumo energia elettrica (forno e refrigerazione h24)", type: "OPEX", cost: "120.00 € / mese", source: "Stima consumi medi (3.5 kW in picco)" },
+        { item: "Connettività 4G e Telemetria remota (Nayax/POS cashless)", type: "OPEX", cost: "35.00 € / mese", source: "Abbonamento SIM industriale + Gateway pagamenti" },
+        { item: "Adempimenti amministrativi ed HACCP Spagna/Canarie", type: "CAPEX", cost: "500.00 €", source: "Consulente locale (Asesoria / Registro Sanitario)" }
+      ];
+    } else if (info.sector === "saas" || info.sector === "mobile_app") {
+      capexVal = info.budgetAmount <= 1000 ? 250 : Math.round(info.budgetAmount * 0.35);
+      opexVal = info.budgetAmount <= 1000 ? 24 : Math.round(info.budgetAmount * 0.08);
+      bepUnit = "Abbonati SaaS / Mese";
+      bepVal = Math.round(opexVal / 29);
+      rows = [
+        { item: "Dominio & Landing Page Professionale (Carrd/Webflow)", type: "CAPEX", cost: "250.00 €", source: "Abbonamento annuale + Template" },
+        { item: "Database & Hosting Cloud (Firebase/Supabase)", type: "OPEX", cost: "25.00 € / mese", source: "Infrastruttura tecnica" },
+        { item: "Piattaforma di Automazione (Make.com/Zapier)", type: "OPEX", cost: "29.00 € / mese", source: "Sincronizzazione API e Webhook" },
+        { item: "Consulenza Legale Privacy GDPR e Cookie (Iubenda)", type: "CAPEX", cost: "350.00 € (Una tantum)", source: "Compliance CLO" }
       ];
     } else if (info.sector === "ecommerce") {
-      bepUnit = "Ordini E-commerce";
-      bepVal = Math.round(capexVal / 15); // 15€ margine medio per ordine
+      capexVal = info.budgetAmount <= 1000 ? 300 : Math.round(info.budgetAmount * 0.40);
+      opexVal = info.budgetAmount <= 1000 ? 35 : Math.round(info.budgetAmount * 0.10);
+      bepUnit = "Ordini E-commerce / Mese";
+      bepVal = Math.round(opexVal / 15);
       rows = [
-        { item: "Primo Lotto di Merce / Packaging Personalizzato", type: "CAPEX", cost: isBootstrap ? "150.00 €" : "800.00 €", source: "Sourcing MOQ basso da scatolificio" },
-        { item: "Sito Web E-commerce (Shopify/WooCommerce)", type: "OPEX", cost: isBootstrap ? "1.00 € / primo mese" : "36.00 € / mese", source: "Canone SaaS Shopify" },
-        { item: "Budget Advertising Iniziale (Meta/TikTok Ads)", type: "CAPEX", cost: isBootstrap ? "100.00 €" : "400.00 €", source: "Validazione traffico profilato" },
+        { item: "Primo Lotto di Merce / Packaging Personalizzato", type: "CAPEX", cost: "800.00 €", source: "Sourcing MOQ basso da scatolificio" },
+        { item: "Sito Web E-commerce (Shopify/WooCommerce)", type: "OPEX", cost: "36.00 € / mese", source: "Canone SaaS Shopify" },
+        { item: "Budget Advertising Iniziale (Meta/TikTok Ads)", type: "CAPEX", cost: "400.00 €", source: "Validazione traffico profilato" },
         { item: "Contratto di Spedizioni B2B (Poste/BRT)", type: "OPEX", cost: "6.80 € / pacco", source: "Tariffa logistica agevolata" }
       ];
-    } else if (info.sector === "food_beverage") {
-      bepUnit = "Ordini Food/Consegne";
-      bepVal = Math.round(capexVal / 12); // 12€ margine medio
-      rows = [
-        { item: "Certificazioni Sanitarie e Corso HACCP", type: "CAPEX", cost: "120.00 €", source: "Obbligo legale per somministrazione" },
-        { item: "Packaging Alimentare MOCA ed Igiene", type: "CAPEX", cost: isBootstrap ? "80.00 €" : "300.00 €", source: "Sourcing cartoni e imballaggi idonei" },
-        { item: "Web App per Menu Digitale & Ordini WhatsApp", type: "OPEX", cost: isBootstrap ? "0.00 €" : "19.00 € / mese", source: "Menu.me o similari no-code" },
-        { item: "Logistica Consegne / Rider (Assicurazione)", type: "OPEX", cost: "3.50 € / consegna", source: "Costo variabile a chiamata" }
-      ];
-    } else if (info.sector === "hardware_iot") {
-      bepUnit = "Dispositivi Venduti";
-      bepVal = Math.round(capexVal / 65); // 65€ margine unitario
-      rows = [
-        { item: "Kit Componentistica Elettronica Prototipo", type: "CAPEX", cost: isBootstrap ? "90.00 €" : "400.00 €", source: "Sourcing componenti (AliExpress/Mouser)" },
-        { item: "Integrazione Automazioni ed Hub (Home Assistant)", type: "OPEX", cost: "0.00 € (Open source)", source: "Piattaforma tecnica" },
-        { item: "Assicurazione RC Prodotti per hardware connes.", type: "OPEX", cost: "35.00 € / mese", source: "Preventivo Allianz/Generali" },
-        { item: "Certificazione CE/RoHS (Dossier tecnico)", type: "CAPEX", cost: isBootstrap ? "100.00 € (Auto-cert.)" : "800.00 €", source: "Consulente conformità" }
-      ];
     } else {
-      // General o Servizi
-      bepUnit = "Clienti Attivi";
-      bepVal = Math.round(capexVal / 80); // 80€ margine unitario
+      capexVal = info.budgetAmount <= 1000 ? 250 : Math.round(info.budgetAmount * 0.30);
+      opexVal = info.budgetAmount <= 1000 ? 30 : Math.round(info.budgetAmount * 0.07);
+      bepUnit = "Clienti Attivi / Mese";
+      bepVal = Math.round(opexVal / 80);
       rows = [
-        { item: "Landing Page & Web Presenza (Carrd/WordPress)", type: "CAPEX", cost: isBootstrap ? "19.00 €" : "200.00 €", source: "Software e template" },
-        { item: "Costo Piattaforme Software di Gestione", type: "OPEX", cost: isBootstrap ? "0.00 €" : "20.00 € / mese", source: "CRM / Tool di fatturazione" },
+        { item: "Landing Page & Web Presenza (Carrd/WordPress)", type: "CAPEX", cost: "200.00 €", source: "Software e template" },
+        { item: "Costo Piattaforme Software di Gestione", type: "OPEX", cost: "20.00 € / mese", source: "CRM / Tool di fatturazione" },
         { item: "Branding, Logo ed Asset Visual (Canva Pro)", type: "OPEX", cost: "12.00 € / mese", source: "Asset di marketing" },
         { item: "Apertura P.IVA / Consulente Fiscale (Fiscozen)", type: "OPEX", cost: "35.00 € / mese", source: "Consulenza contabile continuativa" }
       ];
@@ -143,262 +166,139 @@ const LocalAgentSimulationEngine = {
 
   // Genera il report di un agente per una specifica fase
   generateAgentReport(info, phase, agentKey, previousAnswers = {}) {
-    const targetLoc = info.location ? `a ${info.location}` : "sul mercato target";
+    const isCanarias = info.location.includes("Canarie");
+    const targetLoc = info.location ? `a ${info.location}` : "nell'area geografica target";
     const appName = info.name;
     const isB2B = info.target === "B2B";
     const budgetTip = info.budgetAmount <= 1000 ? "puro bootstrap (budget ~0€)" : `un budget iniziale lean di ${info.budgetAmount}€`;
 
-    // Database di risposte tematiche
+    // 1. CASO SPECIALE: DISTRIBUTORE DI PIZZE AUTOMATICO ALLE CANARIE
+    if (info.isVending && info.sector === "food_beverage") {
+      const vendingTemplates = {
+        cmo: {
+          1: `### Analisi del Problema & Competitor
+- **Dolore Rilevato**: Assenza di opzioni di cibo caldo, veloce e di qualità durante le ore notturne o nei punti strategici di passaggio ${targetLoc} (vicino a spiagge, fermate bus o locali). Le pizzerie tradizionali chiudono presto e i ristoranti hanno attese lunghe.
+- **Competitor Principali**: Supermercati aperti 24 ore (che offrono solo cibo freddo o confezionato), pizzerie locali (con orari limitati), e distributori di snack industriali tradizionali. Nessuno offre pizza calda pronta in 3 minuti.
+- **Strategia di Validazione**: Posizionare un piccolo stand informativo temporaneo o condurre un sondaggio sul campo a Las Palmas/Maspalomas intervistando 50 turisti e lavoratori notturni per confermare l'interesse e la disponibilità di spesa (prezzo target 6.00€ - 7.50€).`,
+          2: `### Analisi Target & Profilo Utente
+- **Cliente Target**: Turisti low-budget, giovani frequentatori di locali notturni, tassisti, lavoratori della ristorazione che finiscono il turno tardi e residenti in cerca di uno spuntino rapido.
+- **Stress-Test dell'Idea**: Dalle interviste sul campo emerge che il 90% degli intervistati comprerebbe una pizza calda di notte se fosse pronta in meno di 4 minuti e a meno di 8€.
+- **Posizionamento Differenziante**: Pizza con ingredienti italiani freschi, cotta in forno a pietra integrato h24, erogata in 3 minuti.`,
+          3: `### Strategia Go-To-Market (GTM)
+- **Canali Digitali**: ADS localizzate su Instagram/Facebook rivolte a utenti che si trovano nel raggio di 2 km dal distributore, attive principalmente dalle 22:00 alle 05:00.
+- **Canali Fisici**: Wrapping grafico accattivante della macchina (colori della bandiera italiana per richiamare la qualità) e posizionamento in un'area ad altissima visibilità pedonale (es. vicino al Paseo de las Canteras o alle zone dei pub di Playa del Inglés).`,
+          4: `### Growth Hacking & Outreach Organico
+- **Promo di Lancio**: Codice QR sulla macchina che offre la prima pizza a metà prezzo in cambio del follow sulla pagina Instagram locale.
+- **Referral turistico**: Accordi verbali con portieri di hotel e gestori di case vacanze (Airbnb) per includere il distributore nelle loro guide digitali come punto ristoro h24.`
+        },
+        cfo: {
+          1: `### Modello di Pricing & Monetizzazione
+- **Flusso di Ricavo**: Vendita diretta delle pizze (preparate in loco nel forno a pietra del distributore).
+- **Target Pricing**: 6.50€ per la pizza Margherita, 7.50€ per le pizze farcite (es. Salame piccante, Prosciutto).
+- **Margine Unitario**: Margine lordo del 72%. Costo materie prime + scatola stimato a 1.80€ a pizza. Profitto lordo per pizza: ~4.70€.`,
+          2: `### Analisi di Sensibilità & ROI
+- **ROI per Singolo Punto**: A fronte di 15 pizze vendute al giorno (media bassa per zone turistiche nelle Canarie), si generano 97.50€ di fatturato giornaliero. Margine mensile lordo: ~2.100€.
+- **Punto di Pareggio (OPEX)**: Con sole 4 pizze vendute al giorno (122 pizze/mese) si coprono i costi fissi di affitto spazio ed elettricità. Tutto il resto è utile per ripagare la macchina.`,
+          3: `### Allocazione Budget Iniziale
+- **Fabbisogno Stimato**: 16.500€ per il primo distributore chiavi in mano.
+- **Allocazione**: 85% acquisto e trasporto macchina, 10% installazione e allacciamento, 5% marketing locale per il lancio.`,
+          4: `### Ottimizzazione del Cash Flow
+- Utilizzare contratti di fornitura locali con pagamento a 30 giorni per l'acquisto degli ingredienti, incassando invece i soldi dei clienti istantaneamente tramite contanti o POS sul distributore.`
+        },
+        cto: {
+          1: `### Stack Tecnologico del Distributore
+- **Hardware**: Macchina distributore dotata di camera refrigerata interna (mantiene le pizze a 4°C), braccio meccanico di prelievo, e forno a pietra ad alta velocità (cottura a 300°C).
+- **POS Integrato**: Terminale cashless Nayax compatibile con Apple Pay, Google Pay e carte di credito internazionali.
+- **Software di Telemetria**: Connessione cloud 4G per monitorare in tempo reale le scorte, le vendite e la temperatura interna della camera fredda, inviando alert su telefono se mancano pizze.`
+        },
+        coo: {
+          1: `### Operations & Gestione Rifornimenti
+- **Operations Giornaliere**: Rifornimento delle pizze precotte nella camera fredda della macchina (capacità 60-80 pizze), pulizia del forno, svuotamento cassa contanti e controllo igienico.
+- **HR Lean**: 1 operatore part-time locale a Gran Canaria per la manutenzione e il caricamento quotidiano (richiede circa 1 ora al giorno).`,
+          2: `### Catena del Freddo & SOP
+- Protocollo rigido di tracciamento della temperatura (SOP 1). Le pizze devono essere caricate trasportandole in borse termiche refrigerate professionali per garantire la catena del freddo.`
+        },
+        clo: {
+          1: `### Compliance e Tassazione Canarie (IGIC)
+- **Tassazione Canarie**: Grande vantaggio fiscale. Alle Canarie non si applica l'IVA spagnola (IVA al 10/21%) ma l'**IGIC (Impuesto General Indirecto Canario)**. L'aliquota per la vendita di alimenti tramite distributori è agevolata al **7%** o addirittura esente in alcuni regimi alimentari di base.
+- **Società**: Apertura iniziale come *Autónomo* (ditta individuale spagnola) con tariffa flat agevolata per la previdenza sociale (*tarifa plana* a 80€/mese per il primo anno).
+- **Autorizzazioni Alimentari**: Registrazione presso il registro sanitario locale (*Registro General Sanitario de Alimentos*) e richiesta di SCIA comunale per l'installazione di macchine distributrici in spazio pubblico o privato aperto al pubblico.`
+        },
+        cco: {
+          1: `### Brand & Payoff Creativo
+- **Proposte di Name**: 'Isla Pizza 24h', 'Canaria Pizza Box', 'Sandy Pizza Express'.
+- **Payoff Consigliato**: 'La vera pizza calda e croccante, pronta in 3 minuti, 24 ore su 24 a Gran Canaria.'
+- **Visual Style**: Colori caldi, elementi rustici combinati con icone di tecnologia moderna. Cartellonistica sulla macchina retroilluminata per renderla visibile di notte.`
+        },
+        sourcing: {
+          1: `### Approvvigionamento delle Pizze
+- **Sourcing Pizza**: Invece di produrre pizze industriali, stringere una partnership con un laboratorio di panificazione/pizzeria artigianale locale a Las Palmas. Loro preparano e precociono le basi pizza fresche con ingredienti italiani, e noi le confezioniamo per il distributore. Questo garantisce qualità eccellente e supporta l'economia locale.
+- **Packaging**: Cartoni per pizza speciali adatti al forno del distributore (resistenti alle alte temperature, certificati MOCA).`
+        },
+        sales: {
+          1: `### Messaggio e Copy della Macchina
+- **Copy dello Schermo**: 'Hai fame? Scegli la tua pizza. Cotta su pietra in 3 minuti.'
+- **Promozione Notturna**: 'La notte è ancora lunga. Ricaricati con una vera pizza calda. Paga con carta o telefono.'`
+        }
+      };
+
+      const defaultVendingAgent = {
+        title: window.AGENT_METADATA[agentKey].name,
+        status: "Completato",
+        content: `### Analisi Distributore Pizza (${window.AGENT_METADATA[agentKey].name})
+- **Fase ${phase}**: Strategia specifica per il vending automatico di pizze ${targetLoc}.
+- **Focus**: Ottimizzazione logistica, rispetto delle normative igieniche e massimizzazione del ROI locale.`
+      };
+
+      if (vendingTemplates[agentKey] && vendingTemplates[agentKey][phase]) {
+        return vendingTemplates[agentKey][phase];
+      }
+      return defaultVendingAgent.content;
+    }
+
+    // 2. CASO GENERAL / ALTRI SETTORI (CON REGEX E PAROLE CHIAVE MIGLIORATE)
     const templates = {
       cmo: {
         1: `### Analisi del Problema & Competitor
-- **Dolore Rilevato**: I clienti lamentano inefficienze, perdite di tempo e costi nascosti nel settore legato a questa attività.
-- **Competitor Principali**: Mappati i concorrenti diretti ${info.sector === 'food_beverage' ? 'JustEat, Glovo ed operatori fisici tradizionali' : info.sector === 'saas' ? 'le grandi piattaforme software generiche e fogli di calcolo manuali' : 'i player consolidati del settore'}. Nessuno di essi è focalizzato sull'iper-specializzazione locale o sulla velocità.
-- **Strategia di Validazione**: Costruire una Landing Page iper-semplice in Carrd con form di opt-in per raccogliere email di prospect interessati, spendendo massimo 50€ in annunci targettizzati ${targetLoc}.`,
+- **Dolore Rilevato**: I clienti riscontrano inefficienze, perdite di tempo e costi elevati nel settore di riferimento del progetto.
+- **Competitor Principali**: Player tradizionali non digitalizzati ${info.location ? `attivi a ${info.location}` : 'del mercato nazionale'}.
+- **Strategia di Validazione**: Landing page Carrd + 50€ di pubblicità mirata per raccogliere contatti di potenziali clienti interessati prima di effettuare investimenti significativi.`,
         2: `### Analisi Target & Profilo Utente
-- **Cliente Ideale (Persona)**: ${isB2B ? 'Piccoli proprietari ed imprese che cercano di ottimizzare le operations' : 'Utenti finali sensibili al risparmio di tempo o al beneficio economico diretto'}.
-- **Stress-Test dell'Idea**: Condotte 10 interviste esplorative. L'80% degli intervistati dichiara che risolverebbe volentieri questo problema se la soluzione costasse meno di quanto spende attualmente in inefficienze.
-- **Value Proposition Differenziante**: Offrire la massima semplicità d'uso ed eliminare qualsiasi barriera d'ingresso.`,
+- **Identikit Cliente**: ${isB2B ? 'Aziende e professionisti alla ricerca di ottimizzazione operativa' : 'Consumatori finali attenti al risparmio di tempo o a benefici economici immediati'}.
+- **Stress-Test dell'Idea**: Condotte interviste pilota con riscontro positivo sull'utilità percepita del servizio.`,
         3: `### Strategia Go-To-Market (GTM)
-- **Canali Digitali**: Campagna Meta Ads (Instagram/Facebook) geograficamente limitata ${targetLoc}.
-- **Canali Fisici**: Distribuzione mirata di materiale informativo e networking diretto con i referenti chiave della zona.
-- **Fattore di Conversione**: Offrire un forte incentivo iniziale (es. primo mese gratuito o sconto sul primo utilizzo) per avviare il passaparola.`,
-        4: `### Growth Hacking & Outreach Organico
-- **Scraper Strategico**: Analisi delle recensioni negative dei competitor su Google Maps/App Store per individuare clienti scontenti a cui proporre la nostra alternativa.
-- **Modello di Referral**: Programma 'Porta un amico' che premia con bonus reali sia il segnalatore che il nuovo iscritto.`,
-        5: `### Rischio Reputazionale & Percezione
-- **Mitigazione Barriere**: La sicurezza e la privacy dei dati sono i dubbi principali. Mantenere server europei e dichiarare trasparenza al 100% per rassicurare gli utenti.`,
-        6: `### Roadmap Marketing a 3 Mesi
-- **Mese 1**: Rilascio landing page e test ADS a basso budget (50€).
-- **Mese 2**: Acquisizione dei primi 5 beta tester locali e interviste video.
-- **Mese 3**: Lancio commerciale ufficiale con campagne di email marketing organiche.`,
-        7: `### KPI di Acquisizione
-- **CAC Obiettivo**: Sotto i 10€ per cliente pagante.
-- **LTV Previsto**: Stimato in 150€ su base annua.`,
-        8: `### Sintesi Marketing per Executive Summary
-- Il mercato potenziale ${targetLoc} conta oltre migliaia di potenziali clienti. Conquistare lo 0.5% del mercato locale garantisce la sostenibilità e la scalabilità finanziaria del progetto.`
+- **Lancio**: Focus geografico concentrato inizialmente ${targetLoc}.
+- **Canali**: Social Ads locali ed outreach diretto per intercettare i primi clienti.`
       },
 
       cfo: {
         1: `### Modello di Pricing & Monetizzazione
-- **Flussi di Ricavo**: ${info.sector === 'saas' ? 'Modello SaaS ricorrente a 19€/mese o 29€/mese per account.' : info.sector === 'ecommerce' ? 'Vendita diretta con margine sul prodotto del 50%.' : 'Prezzo medio a transazione/servizio di circa 25€.'}
-- **Logica Economica**: Minimizzare il break-even point iniziale. Con ${info.budgetAmount <= 1000 ? 'pochissimi abbonati o vendite' : 'circa 20-30 vendite al mese'} copriremo tutte le spese fisse.`,
-        2: `### Analisi di Sensibilità & ROI per il Cliente
-- **Impatto sul Cliente**: Il cliente spende mediamente 80€ al mese a causa del problema. La nostra soluzione a 19€/mese fa risparmiare 61€ netti, garantendo un ROI del 320%.`,
-        3: `### Allocazione Economica del Budget Iniziale
-- **Budget Disponibile**: ${info.budgetAmount} €
-- **Allocazione Proposta**: 40% su validazione e marketing Ads, 30% su infrastruttura e prototipazione, 30% tenuti a riserva liquida per contingenze esterne.`,
-        4: `### Analisi del CAC Organico
-- Sfruttando cold outreach ed ottimizzazione SEO locale, stimiamo un Costo di Acquisizione Cliente (CAC) organico vicino a 0€, ad esclusione delle ore dedicate alla vendita diretta.`,
-        5: `### Budget di Compliance e Assicurazione
-- Stima costi fissi annuali: 200€ per gestione legale/cookie policy e circa 300€/anno per una polizza assicurativa RC professional per mitigare ogni rischio operativo.`,
-        6: `### Costi Fissi del Tech Stack
-- Costi ricorrenti minimi: circa 15€-30€ al mese per abbonamenti a strumenti no-code (Make.com, hosting, dominio), mantenendo l'infrastruttura estremamente snella.`,
-        7: `### Proiezioni Finanziarie a 12 Mesi
-- **Ricavi Anno 1**: Stimati a 14.500€ sulla base dell'acquisizione di circa 50-70 clienti attivi.
-- **Utile Netto (ante imposte)**: Circa 11.200€ (Margine netto dell'77% grazie ai bassi costi del software).
-- **Break-Even**: Raggiunto entro il 3° mese di attività.`,
-        8: `### Richiesta Finanziaria per Investitori
-- **Fabbisogno Finanziario**: Richiesta di 15.000€ per accelerare il go-to-market.
-- **Uso dei Fondi**: 70% in campagne marketing localizzate ed acquisizione lead, 30% per lo sviluppo di integrazioni software proprietarie.`
+- **Pricing Proposto**: ${info.sector === 'saas' ? 'Canone mensile ricorrente a partire da 19.00€.' : 'Tariffa media per prestazione o prodotto di circa 35.00€.'}
+- **Margini**: Calcolato un margine operativo iniziale superiore al 65%, ideale per il bootstrap.`,
+        2: `### Stime di Sensibilità
+- **Break-Even Point (mensile)**: Raggiungibile con pochi clienti attivi, coprendo i costi fissi del software e dell'infrastruttura.`,
+        3: `### Budget e Cassa
+- **Budget**: ${info.budgetAmount} €
+- **Destinazione**: Priorità alla validazione commerciale ed all'acquisizione dei primi clienti paganti.`
       },
 
       cto: {
-        1: `### Architettura e Stack Low-Code
-- **Hosting & Web**: Landing page ospitata su Netlify (gratis) o Carrd (19$/anno) per eliminare i costi di hosting iniziali.
-- **Backend**: Firebase o Supabase su tier gratuito per la gestione del database utenti e delle autenticazioni.
-- **Integrazioni**: Make.com per automatizzare l'invio di notifiche via email o SMS senza scrivere codice custom.`,
-        2: `### Specifica Requisiti Tecnici
-- **Database**: Struttura semplice a 3 tabelle (Utenti, Ordini/Servizi, Feedback).
-- **Notifiche**: Invio di SMS transazionali automatici tramite gateway Twilio per informare l'utente sullo stato del servizio.`,
-        3: `### Demo Kit Tecnico
-- Configurazione di una dashboard demo interattiva basata su template statico per mostrare l'interfaccia client-side ai potenziali clienti durante gli incontri fisici.`,
-        4: `### Automazioni di Outreach
-- Script Python locale a costo zero per cercare recensioni pubbliche ed estrarre contatti email/social delle attività commerciali dell'area target.`,
-        5: `### Sicurezza e Crittografia Dati
-- Crittografia end-to-end tramite protocollo HTTPS standard. Password salvate in modo cifrato via hash crittografici. Dati residenti su server europei (compliance GDPR).`,
-        6: `### Architettura Integrata Definitiva
-- Integrazione di Stripe per i pagamenti e collegamento automatico a Fiscozen via API per l'emissione istantanea della fattura al momento del pagamento.`,
-        7: `### Scalabilità Infrastrutturale
-- Il tier gratuito di Firebase supporta fino a 10.000 utenti attivi mensili. Fino al raggiungimento di questa soglia, i costi cloud saranno pari a 0€.`,
-        8: `### TRL (Technology Readiness Level)
-- Livello attuale: TRL 4 (Prototipo validato in laboratorio). Pronto per il passaggio a TRL 5 (Test sul campo in ambiente reale con i primi 5 utenti pilota).`
-      },
-
-      coo: {
-        1: `### Organizzazione Lean del Team
-- **Fondatore**: Gestione commerciale, relazioni esterne, sales ed operations.
-- **Socio Tecnico / Freelance**: Gestione dello sviluppo e configurazione degli strumenti.
-- **Outsourcing**: Delegare le attività a basso valore aggiunto (logistica fisica o installazione) a partner esterni retribuiti a chiamata.`,
-        2: `### Controllo Qualità e SOP (Standard Operating Procedures)
-- Stesura di una check-list di 5 punti per ogni ordine/servizio per garantire che l'esperienza del cliente sia identica ed eccellente in ogni transazione.`,
-        3: `### Gestione Partnership sul Territorio
-- Definizione di accordi operativi con tecnici, corrieri ed installatori locali in provincia di ${info.location || 'residenza'} per coprire il servizio in 24 ore.`,
-        4: `### Ottimizzazione dei Tempi Operativi
-- Automatizzare l'inserimento dei lead e l'onboarding per ridurre il tempo di gestione manuale ad un massimo di 15 minuti per cliente.`,
-        5: `### SLA e Assistenza Clienti
-- Tempo di risposta garantito ai clienti in caso di problematiche critiche: sotto i 45 minuti, gestito tramite un canale WhatsApp dedicato.`,
-        6: `### Struttura HR e Organigramma a 6 Mesi
-- **Mese 1-3**: Struttura a 2 persone (fondatori).
-- **Mese 4-6**: Inserimento di 1 figura commerciale a provvigione ed 1 assistente clienti part-time in outsourcing.`,
-        7: `### Controllo dei Costi Operativi
-- Eliminare gli sprechi fisici: nessun ufficio in affitto (lavoro remoto al 100%) e magazzino gestito con logistica 'just-in-time' per azzerare le giacenze.`,
-        8: `### Scalabilità Organizzativa
-- Strutturazione del manuale operativo aziendale per permettere la replica del modello di business in un'altra città italiana in meno di 2 settimane.`
-      },
-
-      capital: {
-        1: `### Strategia di Fundraising Lean
-- **Fase Iniziale**: Bootstrap puro. L'autofinanziamento tramite i primi clienti è la migliore validazione per qualsiasi investitore.
-- **Bandi Pubblici**: Monitoraggio dei bandi regionali per l'innovazione ed autoimprenditorialità (es. Nuove Imprese a Tasso Zero o Smart&Start).`,
-        2: `### Mappatura Investitori Locali
-- Creazione di una lista di 5 Business Angels locali attivi nel settore turistico, immobiliare o tecnologico in Emilia-Romagna interessati a finanziare startup seed.`,
-        3: `### Investor Pitch Deck Outline
-- Slide 1: Il Problema drammatico.
-- Slide 2: La Soluzione semplice ed economica.
-- Slide 3: Il Mercato locale ed il posizionamento.
-- Slide 4: Trazione (Dati reali raccolti).
-- Slide 5: Il Team di esecuzione.`,
-        4: `### Bandi Nazionali per l'Innovazione
-- Valutazione del bando Invitalia per le imprese a gestione femminile o giovanile, con finanziamenti a tasso zero e fondo perduto fino al 20%.`,
-        5: `### Riduzione del Rischio per Investitori
-- Presentare un dossier legale solido e contratti di partnership firmati per dimostrare che il rischio esecutivo è ridotto al minimo.`,
-        6: `### Timeline di Traguardi Finanziari
-- Raggiungere 1.500€ di MRR (ricavi ricorrenti mensili) entro il sesto mese per presentarsi al tavolo degli investitori con dati inoppugnabili.`,
-        7: `### Valutazione Societaria Pre-Seed
-- Valutazione stimata della startup a 150.000€ per un aumento di capitale di 20.000€ contro la cessione del 13.3% delle quote.`,
-        8: `### Piano di Contatto Investitori
-- Campagna di outreach mirata su LinkedIn indirizzata a investitori angel, proponendo un breve report di 2 pagine con i dati del pilota.`
+        1: `### Stack Tecnologico Consigliato
+- **Frontend**: Landing page statica no-code (Carrd o Webflow) per azzerare i tempi di sviluppo.
+- **Database & Backend**: Firebase o Supabase per la gestione sicura delle registrazioni utenti.
+- **Automazione**: Make.com per coordinare i flussi di notifiche e Stripe per la ricezione istantanea dei pagamenti.`
       },
 
       clo: {
-        1: `### Compliance Legale e GDPR
-- **Trattamento Dati**: Necessità di predisporre una Privacy Policy completa per il trattamento dei dati personali degli utenti (nomi, telefoni, email).
-- **Cookie Policy**: Implementare un banner di consenso conforme alla normativa europea GDPR (servizio Iubenda, costo minimo).`,
-        2: `### Contratto di Servizio (Termini & Condizioni)
-- Redazione di una clausola di limitazione della responsabilità per danni derivanti da interruzioni del servizio o cause di forza maggiore.`,
-        3: `### Scelta della Forma Giuridica
-- Consigliata inizialmente l'apertura di una Ditta Individuale in Regime Forfettario (tassazione al 5% per i primi 5 anni, limite di fatturato 85.000€/anno) per abbattere i costi di gestione contabile.`,
-        4: `### Protezione del Marchio (IP)
-- Ricerca di anteriorità del brand name sul database dell'UIBM (Ufficio Italiano Brevetti e Marchi) e successiva registrazione del marchio a livello nazionale (costo tasse ~150€).`,
-        5: `### Assicurazione RC Professionale
-- Stipula di un contratto di assicurazione per responsabilità civile verso terzi con massimale di 250.000€ per proteggere i fondatori da richieste di risarcimento.`,
-        6: `### Contratto di Partnership e Collaboratori
-- Scrittura del contratto standard per collaboratori esterni ed installatori, definendo chiaramente lo status di prestazione d'opera autonoma per evitare rischi di contenzioso sul lavoro.`,
-        7: `### Adempimenti Fiscali Regime Forfettario
-- Codice ATECO consigliato: 62.01.00 (Produzione software) o 73.11.02 (Conduzione campagne marketing) con coefficiente di redditività al 67% o 78%.`,
-        8: `### Costituzione SRL Innovativa
-- Al superamento dei 50.000€ di fatturato annuo, pianificare la trasformazione in SRL Innovativa per usufruire delle agevolazioni fiscali per investitori ed esenzione dalle tasse di bollo.`
+        1: `### Adempimenti Legali & GDPR
+- **Privacy**: Obbligo di raccogliere i dati degli utenti (GDPR) tramite form sicuri ed informativa registrata.
+- **Struttura Societaria**: Consigliata l'apertura iniziale di una P.IVA forfettaria per minimizzare i costi fissi del commercialista.`
       },
 
       cco: {
-        1: `### Brand Name & Posizionamento Creativo
-- **Proposte di Name**: '${appName.replace(/[^a-zA-Z0-9 ]/g, "")}', '${appName.split(" ")[0]}Go', 'Easy${appName.split(" ")[0]}'.
-- **Payoff Consigliato**: 'La soluzione rapida e conveniente per gestire ${info.sector === 'food_beverage' ? 'i tuoi ordini' : 'il tuo business'} senza pensieri.'
-- **Tono di Voce**: Professionale, affidabile, pragmatico ed estremamente amichevole.`,
-        2: `### Angoli di Comunicazione Efficaci
-- **Angolo Risparmio**: 'Dimezza le spese superflue e paga solo per quello che utilizzi realmente.'
-- **Angolo Tempo**: 'Risparmia ore di gestione manuale ogni settimana grazie alle nostre automazioni.'`,
-        3: `### Visual Identity & Palette Colori
-- Colore Primario: Blu Notte/Indaco per dare fiducia e professionalità.
-- Colore Accento: Verde Smeraldo per richiamare la crescita economica e l'efficienza.
-- Stile: Layout pulito, caratteri moderni (Inter o Outfit) e ampio uso di spazi bianchi.`,
-        4: `### Copy per Landing Page ad Alta Conversione
-- **Titolo**: 'Il controllo del tuo business a portata di click.'
-- **Sottotitolo**: 'Automatizziamo le tue operazioni e riduciamo le spese fisse. Prova il servizio gratis per 14 giorni.'`,
-        5: `### Storytelling per Investitori
-- Focalizzare la narrazione sul contrasto tra il vecchio metodo manuale inefficiente (dolore) e la nostra soluzione digitale istantanea (piacere).`,
-        6: `### Social Media Brand Kit
-- Creazione di 3 template grafici riutilizzabili su Canva per le comunicazioni di lancio su Instagram e LinkedIn.`,
-        7: `### Infografiche Finanziarie
-- Rappresentare graficamente la riduzione della spesa per il cliente finale, rendendo il ROI visivamente immediato ed innegabile.`,
-        8: `### Tagline del Pitch Deck
-- '${appName}: Trasformiamo l'inefficienza in profitto netto ricorrente. Il business plan pronto al lancio.'`
-      },
-
-      cso: {
-        1: `### Flusso di Onboarding del Cliente
-- **Step 1**: Registrazione in 3 campi.
-- **Step 2**: Ricezione di un messaggio automatico di benvenuto su WhatsApp.
-- **Step 3**: Video-tutorial di 90 secondi che illustra l'utilizzo.`,
-        2: `### Prevenzione del Churn (Abbandono)
-- Monitorare l'utilizzo del servizio: se un utente non effettua azioni per 7 giorni, inviare un alert automatico chiedendo se necessita di supporto.`,
-        3: `### NPS (Net Promoter Score) & Raccolta Recensioni
-- Invio di un sondaggio di una sola domanda al termine della prima settimana: 'Da 1 a 10, quanto consiglieresti il servizio ad un collega?'`,
-        4: `### Programma Referral e Incentivi
-- Premiare gli utenti che presentano nuovi clienti con uno sconto del 20% sul canone del mese successivo per ciascun contatto convertito.`,
-        5: `### Gestione Reclami e Procedure di Rimborso
-- Regola aurea: rimborso immediato in caso di disservizio tecnico grave, trasformando un problema in un'opportunità di fidelizzazione (Customer Recovery).`,
-        6: `### Canali di Assistenza Integrati
-- Configurazione di una chat di assistenza integrata direttamente nella pagina tramite widget gratuito (Tawk.to o Smartsupp).`,
-        7: `### Lifetime Value (LTV) Optimization
-- Proporre un abbonamento annuale scontato del 15% per incassare la liquidità in anticipo e bloccare la retention del cliente per 12 mesi.`,
-        8: `### Report NPS Finale
-- I test pilota mostrano un NPS stimato di +48. Gli utenti apprezzano la velocità e il supporto diretto via WhatsApp.`
-      },
-
-      cpo: {
-        1: `### Definizione del Minimum Viable Product (MVP)
-- **Funzionalità Core**: L'MVP si concentrerà esclusivamente sulla risoluzione del problema principale, eliminando qualsiasi fronzolo grafico o opzione avanzata.
-- **Interfaccia**: Una sola pagina con un modulo chiaro e un pulsante d'azione primario.`,
-        2: `### Feedback Utenti per Pivot
-- Il 70% dei primi utenti tester richiede l'integrazione di una notifica immediata su telefono piuttosto che una mail. Adattiamo l'MVP introducendo l'API di WhatsApp.`,
-        3: `### UI/UX della Versione Pilota
-- Design minimalista ottimizzato per l'utilizzo da smartphone. Il caricamento della pagina deve avvenire in meno di 1.5 secondi anche in condizioni di scarsa connettività.`,
-        4: `### Prioritizzazione delle Feature (Matrice MoSCoW)
-- Must Have: Pagamenti Stripe, Notifiche automatiche.
-- Should Have: Storico ordini.
-- Could Have: Multi-account.
-- Won't Have: App nativa iOS/Android per ora.`,
-        5: `### Fail-Safe Product Design
-- Se la rete internet o il database si disconnette, l'applicazione deve salvare i dati dell'utente in locale (localStorage) e inviarli automaticamente non appena la connessione si ripristina.`,
-        6: `### Integrazioni di Terze Parti (No-Code)
-- Mappatura delle API: collegamento con Google Sheets per permettere al fondatore di consultare i dati di vendita senza dover accedere al database tecnico.`,
-        7: `### Ottimizzazione per Mobile (Responsive)
-- Il layout deve adattarsi a schermi piccoli da 5 pollici. Pulsanti grandi almeno 48px per facilitare il click del pollice.`,
-        8: `### Specifiche Tecniche per la Produzione
-- Rilascio del documento di specifiche per il team di sviluppo che prenderà in carico la scrittura del codice custom nel secondo anno.`
-      },
-
-      sourcing: {
-        1: `### Ricerca Fornitori e Minimi d'Ordine (MOQ)
-- **Sourcing**: Ricerca di partner per la stampa e l'approvvigionamento del materiale packaging a basso MOQ (250 pezzi per lotto).
-- **Negoziazione**: Pagamento del 50% all'ordine e 50% alla consegna per ottimizzare il cash flow iniziale.`,
-        2: `### Test dei Materiali e Spedizione Campioni
-- Richiesta di campioni di prova a 3 scatolifici diversi per verificare la resistenza e la resa cromatica della stampa digitale prima del primo ordine ufficiale.`,
-        3: `### Logistica delle Spedizioni Locali
-- Accordo con corriere espresso con tariffa flat per spedizioni nazionali tracciate con consegna in 24/48 ore.`,
-        4: `### Packaging Sostenibile a Basso Costo
-- Utilizzo di scatole in cartone riciclato rigido non patinato. Il look grezzo naturale aumenta la percezione di sostenibilità e riduce i costi di stampa.`,
-        5: `### Certificazioni Conformità Materiali
-- Ottenimento delle schede tecniche di conformità CE e idoneità al contatto per tutti i materiali utilizzati, indispensabile per evitare sanzioni.`,
-        6: `### Contratto Quadro Fornitura
-- Firma di un accordo di fornitura a lungo termine che garantisce uno sconto sul prezzo unitario del 15% al superamento dei primi 1.000 pezzi acquistati cumulativamente.`,
-        7: `### Ottimizzazione Magazzino (Just-in-Time)
-- Consegna dei lotti di merce dal fornitore direttamente al cliente o in un piccolo spazio di stoccaggio temporaneo per azzerare le spese di affitto magazzino.`,
-        8: `### Relazione Sourcing Finale
-- La supply chain è stabile, i fornitori sono locali ed affidabili. Il rischio di rottura di stock è stimato sotto il 2% annuo.`
-      },
-
-      sales: {
-        1: `### Copywriting per Landing Page
-- **Hook Primario**: 'Basta inefficienze. Automatizza il tuo business e risparmia il 30% dei costi.'
-- **Call to Action**: 'Inizia la prova gratuita di 14 giorni' (nessuna carta di credito richiesta).`,
-        2: `### Script di Cold Outreach per LinkedIn/Email
-- 'Ciao [Nome], noto che gestisci [Azienda]. Molte realtà a ${info.location || 'livello locale'} stanno riscontrando forti aumenti dei costi di gestione. Abbiamo sviluppato una soluzione semplice che automatizza il processo e taglia le spese. Ti andrebbe di dare un'occhiata veloce senza impegno?'`,
-        3: `### Struttura del Pitch Deck di Vendita
-- Presentazione in 6 passaggi focalizzata sul dimostrare l'impatto economico positivo immediato (il guadagno supera di 4 volte il costo del servizio).`,
-        4: `### Messaggio WhatsApp di Vendita Diretta
-- 'Ciao [Nome], ti andrebbe di provare la nostra demo per 7 giorni a costo zero? Ci occupiamo di configurare tutto noi in meno di 10 minuti. Fammi sapere se posso attivarti l'account!'`,
-        5: `### Gestione delle Obiezioni Comuni
-- Obiezione: 'Non ho tempo per configurarlo.'
-- Risposta: 'Facciamo tutto noi a costo zero in 10 minuti, tu devi solo attivare l'account.'`,
-        6: `### Listino Prezzi e Offerte di Lancio
-- Offerta Fondatori: 'Solo per i primi 10 clienti della provincia, canone software bloccato a 19€/mese per sempre ed attivazione gratuita.'`,
-        7: `### Email di Follow-up per Lead Freddi
-- 'Ciao [Nome], ho visto che hai visitato la demo ma non hai completato l'attivazione. C'è qualcosa che non ti è chiaro o vuoi fare una chiamata veloce di 5 minuti?'`,
-        8: `### Script dell'Elevator Pitch per Investitori
-- '${appName} è la risposta alle inefficienze operative per ${isB2B ? 'le aziende' : 'i consumatori'} ${targetLoc}. Eliminiamo i costi superflui con la nostra piattaforma, garantendo un risparmio medio di 1.000€ all'anno. Abbiamo già validato la domanda con i primi clienti ed ora cerchiamo un partner per accelerare la diffusione sul territorio.'`
+        1: `### Brand Identity & Payoff
+- **Name Proposto**: '${appName}' o '${appName.split(" ")[0]}Go'.
+- **Slogan**: 'Il modo più semplice e veloce per gestire le tue necessità.'`
       }
     };
 
@@ -408,17 +308,124 @@ const LocalAgentSimulationEngine = {
     }
     
     // Fallback generico se non trova la combinazione esatta
-    const agentName = AGENT_METADATA[agentKey] ? AGENT_METADATA[agentKey].name : agentKey;
+    const agentName = window.AGENT_METADATA[agentKey] ? window.AGENT_METADATA[agentKey].name : agentKey;
     return `### Analisi Operativa (${agentName})
-- **Focalizzazione Fase ${phase}**: Implementazione delle attività legate al settore ${info.sector} per il target ${info.target} ${targetLoc}.
-- **Costi e Ottimizzazione**: Riduzione delle inefficienze in coerenza con la strategia di ${budgetTip}.
-- **Azione Consigliata**: Procedere con i test lean e raccogliere i feedback degli utenti.`;
+- **Focalizzazione Fase ${phase}**: Analisi delle attività per il progetto "${appName}" ${targetLoc}.
+- **Strategia**: Ottimizzazione lean basata su ${budgetTip}.
+- **Suggerimento**: Concentrare le prime ore di lavoro sulla validazione del problema reale degli utenti.`;
   },
 
   // Genera la sintesi dell'Orchestratore per una fase
   generateOrchestratorReport(info, phase, agentBriefs, previousAnswers = {}) {
     const targetLoc = info.location ? `a ${info.location}` : "sul mercato target";
     
+    if (info.isVending && info.sector === "food_beverage") {
+      const vendingOrch = {
+        1: {
+          text: `**FASE 1: VALIDAZIONE & LEAN CANVAS (Distributore Pizze H24 ${info.location || ''}) completata.**
+
+Abbiamo analizzato il tuo progetto di **ristorazione automatica tramite distributore di pizze precotte h24**. 
+Il parere della boardroom è molto positivo: il bisogno di cibo caldo ed economico a tarda notte o in aree turistiche ad alta densità è reale e irrisolto. Procederemo con un approccio mirato ad individuare la location migliore a Gran Canaria ed a testare la risposta dei consumatori prima di acquistare la macchina da 14.500€.
+
+> [!WARNING]
+> **RED FLAG dal CMO**: Il successo del progetto dipende al 90% dal **posizionamento fisico**. Se la macchina si trova in una via secondaria senza passaggio pedonale notturno, il fatturato sarà insufficiente a coprire l'affitto dello spazio. Focus assoluto sulla ricerca dello spazio ideale.`,
+          questions: [
+            "Hai già individuato 2 o 3 punti specifici a Gran Canaria (es. vicino a locali a Playa del Inglés o fermate principali) su cui vorresti negoziare lo spazio?",
+            "Preferisci testare pizze intere tradizionali (formato standard) o formati più piccoli da asporto rapido (tipo tranci)?"
+          ]
+        },
+        2: {
+          text: `**FASE 2: ANALISI TARGET & COMPETITOR completata.**
+
+Il profilo del cliente ideale è confermato: turisti in cerca di cibo economico a tarda notte e lavoratori del settore alberghiero/ristorazione. Nessun competitor locale offre cibo caldo ed espresso h24 alle Canarie.
+
+> [!IMPORTANT]
+> **Nota del CFO**: Il posizionamento alle Canarie ci offre il vantaggio di tasse ridotte (IGIC al 7% invece dell'IVA spagnola al 10/21%), migliorando sensibilmente i margini netti su ogni pizza venduta.`,
+          questions: [
+            "Confermi di voler posizionare il prezzo di vendita della pizza margherita a 6.50€ e delle farcite a 7.50€?",
+            "Vuoi effettuare lo screening dei clienti con interviste dirette di persona o tramite un questionario online sui gruppi social locali di Gran Canaria?"
+          ]
+        },
+        3: {
+          text: `**FASE 3: STRATEGIA IBRIDA & GTM completata.**
+
+La strategia Go-To-Market si concentrerà sull'impatto visivo della macchina e sulla geolocalizzazione digitale per catturare il traffico notturno a Gran Canaria.
+
+> [!NOTE]
+> **Consiglio del CCO**: Il design esterno della macchina deve essere iper-riconoscibile. Utilizzeremo una grafica a tema 'Pizzeria Italiana' illuminata a LED per attirare l'attenzione di notte.`,
+          questions: [
+            "Preferisci finanziare la prima macchina interamente a capitale proprio o richiedere un piccolo leasing/finanziamento aziendale?",
+            "Sei d'accordo nell'attivare una collaborazione con una pizzeria o panificio artigianale locale per la produzione delle basi fresche?"
+          ]
+        },
+        4: {
+          text: `**FASE 4: GROWTH HACK & OUTREACH completata.**
+
+Sfrutteremo il passaparola dei turisti e la geolocalizzazione di Google Maps. Aggiungere il distributore su Google Maps come 'Pizzeria 24 Ore' attirerà migliaia di ricerche organiche gratuite di notte da parte di turisti affamati.
+
+> [!WARNING]
+> **RED FLAG dal CLO**: Attenzione ad evitare recensioni negative all'inizio. Il sistema di cottura della macchina deve essere tarato perfettamente per garantire la croccantezza.`,
+          questions: [
+            "Accetti di inserire un codice QR sul cartone per invitare i clienti a lasciare una recensione su Google Maps in cambio di uno sconto?",
+            "Vuoi promuovere la macchina offrendo la prima pizza gratuita ai tassisti locali per trasformarli in promotori del servizio?"
+          ]
+        },
+        5: {
+          text: `**FASE 5: COMPLIANCE & RISCHI completata.**
+
+Abbiamo definito gli adempimenti legali spagnoli. Opereremo inizialmente come ditta individuale (Autónomo) usufruendo della tariffa piatta previdenziale, e registreremo la macchina presso l'ufficio sanitario di Gran Canaria.
+
+> [!IMPORTANT]
+> **Adempimento Importante**: È obbligatorio che il laboratorio artigianale partner che ci fornisce le basi pizza sia munito di regolare registrazione sanitaria spagnola.`,
+          questions: [
+            "Hai già un commercialista locale (asesoria) in Spagna per l'apertura della ditta o preferisci che ti indichiamo un referente?",
+            "Vuoi includere una polizza RC prodotti per proteggerci da eventuali denunce per intossicazioni alimentari?"
+          ]
+        },
+        6: {
+          text: `**FASE 6: PIANO OPERATIVO & TECH STACK completata.**
+
+Il piano operativo prevede un impegno di circa 1 ora al giorno per il caricamento delle pizze, la pulizia del forno ed il prelievo della cassa. La telemetria 4G ci avviserà in automatico quando le scorte scendono sotto le 15 unità.
+
+> [!TIP]
+> **Consiglio del CTO**: Il terminale Nayax POS integrato gestisce anche le carte di credito dei turisti britannici e tedeschi, riducendo al minimo l'uso del contante.`,
+          questions: [
+            "Accetti di gestire personalmente i rifornimenti iniziali o preferisci assumere un incaricato locale fin dal primo mese?",
+            "Confermi l'uso del software di telemetria remota per controllare le vendite dal tuo smartphone?"
+          ]
+        },
+        7: {
+          text: `**FASE 7: PIANO FINANZIARIO completata.**
+
+Il piano finanziario proietta il break-even a 122 pizze al mese per coprire i costi fissi (affitto spazio, elettricità e connettività). Al di sopra di questa soglia, ogni pizza venduta genera un utile netto di circa 4.50€. Il rientro dell'investimento iniziale per la macchina avverrà in circa 8 mesi con 25 pizze vendute al giorno.
+
+> [!IMPORTANT]
+> **Riepilogo Finanziario**: CAPEX iniziale stimato a ${this.generateFinancials(info).capex}, OPEX mensile a ${this.generateFinancials(info).opex}. Break-even fissato a ${this.generateFinancials(info).bep}.`,
+          questions: [
+            "Accetti queste stime finanziarie? Possiamo procedere all'elaborazione del report finale?",
+            "Preferisci reinvestire gli utili del primo punto per acquistare un secondo distributore al mese 8 o prelevare i profitti?"
+          ]
+        },
+        8: {
+          text: `**FASE 8: EXECUTIVE SUMMARY & PITCH completata.**
+
+Il business plan per **${info.name}** alle Canarie è pronto. Abbiamo unito vantaggi fiscali locali (IGIC al 7%), logistica snella ed un modello finanziario a rientro rapido. Il report finale è pronto per essere esportato in formato Markdown.
+
+> [!TIP]
+> **Consiglio dell'Orchestratore**: Presenta questo report al proprietario dello spazio commerciale prescelto a Gran Canaria per dimostrare la professionalità del progetto e negoziare un affitto basso.`,
+          questions: [
+            "Vuoi scaricare il report completo per importarlo su Notion o Word?",
+            "Desideri che simuliamo un incontro con un partner commerciale per testare le tue risposte?"
+          ]
+        }
+      };
+
+      if (vendingOrch[phase]) {
+        return vendingOrch[phase];
+      }
+    }
+
+    // Fallback standard
     const phaseSummaries = {
       1: {
         text: `**FASE 1: VALIDAZIONE & LEAN CANVAS completata.**
@@ -433,66 +440,6 @@ Utilizzeremo il budget di **${info.budgetAmount <= 1000 ? '0€ (Bootstrap)' : i
           "Hai modo di contattare direttamente almeno 5 potenziali clienti nella tua zona per proporre la demo iniziale?"
         ]
       },
-      2: {
-        text: `**FASE 2: ANALISI TARGET & COMPETITOR completata.**
-
-Il profilo del cliente ideale è stato definito. L'analisi condotta conferma che il target ha una forte motivazione ad adottare la nostra soluzione per risparmiare tempo e denaro. Il posizionamento strategico si concentrerà sulla semplicità estrema e sul ROI immediato del servizio.
-
-> [!IMPORTANT]
-> **RED FLAG dal CLO**: Gestione dei dati sensibili e GDPR. Dobbiamo predisporre una Privacy Policy chiara prima di raccogliere dati degli utenti.`,
-        questions: [
-          "Qual è il prezzo massimo che ritieni i clienti sarebbero disposti a pagare mensilmente per questo servizio?",
-          "Vuoi avviare la validazione con interviste dirette di persona o tramite un sondaggio online inviato via email?"
-        ]
-      },
-      3: {
-        text: `**FASE 3: STRATEGIA IBRIDA & GTM completata.**
-
-La strategia Go-To-Market per il lancio ${targetLoc} integrerà canali organici e annunci digitali geolocalizzati. Il kit demo preparato dal CTO servirà ad illustrare il funzionamento del prodotto e facilitare le vendite dirette nella prima fase.
-
-> [!NOTE]
-> **Consiglio del CFO**: Allocare non più del 40% del budget iniziale per la promozione dei primi 30 giorni. Tenere la liquidità per l'operatività.`,
-        questions: [
-          "Vuoi attivare una partnership con professionisti o influencer locali per farti segnalare nuovi clienti in cambio di una provvigione?",
-          "Quale canale pubblicitario preferisci prioritarizzare inizialmente: Facebook/Instagram o Google Search?"
-        ]
-      },
-      4: {
-        text: `**FASE 4: GROWTH HACK & OUTREACH completata.**
-
-Implementeremo canali organici a costo zero per intercettare i clienti insoddisfatti dei concorrenti, utilizzando scraping mirato e programmi di referral. Questo ci permetterà di abbattere il Costo di Acquisizione Cliente (CAC) iniziale.
-
-> [!WARNING]
-> **RED FLAG dal CLO**: L'invio massivo di messaggi commerciali non richiesti (spam) viola il GDPR. Utilizziamo un approccio di outreach personalizzato su LinkedIn o via email diretta.`,
-        questions: [
-          "Sei d'accordo nell'attivare subito un programma referral che premia gli utenti attuali che portano amici?",
-          "Preferisci gestire l'outreach iniziale scrivendo messaggi di persona o automatizzando i primi contatti con strumenti no-code?"
-        ]
-      },
-      5: {
-        text: `**FASE 5: COMPLIANCE & RISCHI completata.**
-
-Abbiamo definito il perimetro legale e assicurativo del progetto. Per mitigare i rischi e minimizzare i costi, avvieremo l'attività con una Ditta Individuale in regime forfettario ed una polizza RC base per tutelare i fondatori.
-
-> [!IMPORTANT]
-> **Nota del CLO**: Ricordati che l'uso di marchi o nomi simili a concorrenti registrati può portare a diffide legali. Registreremo il marchio nazionale non appena validati i primi clienti.`,
-        questions: [
-          "Hai già un consulente fiscale di fiducia a cui affidare l'apertura della ditta individuale o preferisci affidarti a un servizio online?",
-          "Accetti di inserire una clausola di esclusione di responsabilità nel contratto per tutelare la startup?"
-        ]
-      },
-      6: {
-        text: `**FASE 6: PIANO OPERATIVO & TECH STACK completata.**
-
-Lo stack tecnologico no-code/low-code definitivo è configurato. Permetterà l'automazione dei flussi a costi fissi irrisori (~20€/mese), consentendo ai fondatori di concentrarsi interamente sulle vendite e sul supporto clienti.
-
-> [!TIP]
-> **Consiglio del CTO**: Usare Make.com per connettere Stripe con il database permette di risparmiare mesi di sviluppo e costi di programmazione.`,
-        questions: [
-          "Confermi l'utilizzo di strumenti gratuiti (come Trello o Notion) per la gestione dei task operativi?",
-          "Sei d'accordo nell'eseguire personalmente le prime spedizioni/installazioni per comprendere al meglio i punti deboli del processo?"
-        ]
-      },
       7: {
         text: `**FASE 7: PIANO FINANZIARIO completata.**
 
@@ -501,7 +448,7 @@ Il modello finanziario a 12 mesi mostra un break-even point facilmente raggiungi
 > [!IMPORTANT]
 > **Riepilogo CFO**: CAPEX iniziale stimato a ${this.generateFinancials(info).capex}, OPEX mensile a ${this.generateFinancials(info).opex}. Break-even fissato a ${this.generateFinancials(info).bep}.`,
         questions: [
-          "Accetti queste proiezioni finanziarie? Possiamo procedere all'elaborazione del report finale?",
+          "Accetti queste stime finanziarie? Possiamo procedere all'elaborazione del break-even dettagliato?",
           "Preferisci reinvestire tutti gli utili del primo anno in marketing o iniziare a prelevare un piccolo stipendio per i fondatori al raggiungimento del BEP?"
         ]
       },
@@ -524,8 +471,8 @@ Il business plan per il progetto **${info.name}** è completo ed investor-ready.
     }
 
     return {
-      text: `**FASE ${phase}: Elaborazione completata.**\n\nI report della boardroom sono stati raccolti ed analizzati. Procediamo con il piano in bootstrap.`,
-      questions: ["Procediamo alla fase successiva?"]
+      text: `**FASE ${phase}: ${window.PHASE_TITLES[phase]} completata.**\n\nI sotto-agenti hanno espresso il loro parere per questa tappa operativa. Il report di fase è stato registrato.`,
+      questions: ["Possiamo procedere alla fase successiva?"]
     };
   },
 
@@ -537,43 +484,36 @@ Il business plan per il progetto **${info.name}** è completo ed investor-ready.
     let agentResponse = "";
     let ceoResponse = "";
 
-    if (q.includes("costo") || q.includes("prezzo") || q.includes("soldi") || q.includes("budget") || q.includes("spesa") || q.includes("finanz")) {
-      agentResponse = `### Valutazione dei Costi (${meta.name})
-- Ho analizzato la tua proposta di ottimizzazione finanziaria.
-- Ridurremo le stime di spesa iniziali puntando su strumenti open-source e rimandando le spese non essenziali al secondo anno.
-- Questo ci permetterà di abbassare il CAPEX stimato di circa il 15%, migliorando il flusso di cassa iniziale.`;
-      ceoResponse = `### Decisione CEO (Orchestratore Master)
-- **Ottimo**. Ridurre il costo fisso iniziale è vitale per mantenere l'approccio iper-lean di bootstrap.
-- **Azione**: Autorizzo il CFO a modificare le tabelle del budget. Tagliamo le voci non prioritarie ed andiamo avanti.`;
-    } else if (q.includes("tecnologia") || q.includes("software") || q.includes("codice") || q.includes("app") || q.includes("sito") || q.includes("database")) {
-      agentResponse = `### Valutazione Tecnica (${meta.name})
-- La tua proposta di semplificare lo stack software è corretta.
-- Utilizzare una PWA (Progressive Web App) invece di un'applicazione nativa iOS/Android ci evita i costi di sviluppo doppio e le lungaggini di approvazione degli store Apple/Google.
-- Possiamo lanciare il servizio in metà tempo e con costi di manutenzione pari a zero.`;
-      ceoResponse = `### Decisione CEO (Orchestratore Master)
-- **RED FLAG**: Ricordati che l'esperienza utente su mobile web deve comunque essere impeccabile, altrimenti perderemo clienti al primo intoppo.
-- Però, data la riduzione del time-to-market di almeno 2 mesi, approvo formalmente l'MVP basato su PWA web.`;
-    } else if (q.includes("competitor") || q.includes("concorrenza") || q.includes("justeat") || q.includes("glovo") || q.includes("amazon") || q.includes("mercato")) {
-      agentResponse = `### Analisi di Posizionamento (${meta.name})
-- Confrontandoci con i giganti del settore, il nostro punto di forza deve essere la vicinanza territoriale e l'assistenza personalizzata 1-a-1.
-- Invece di competere sui prezzi di listino, offriremo garanzie di rimborso e tempi di esecuzione certi che i competitor nazionali non possono assicurare.`;
-      ceoResponse = `### Decisione CEO (Orchestratore Master)
-- Corretto. Il posizionamento non deve essere generalista. Dobbiamo essere i leader indiscussi di questa specifica nicchia locale.
-- Procediamo con una comunicazione focalizzata interamente sul nostro differenziatore unico.`;
-    } else if (q.includes("legge") || q.includes("gdpr") || q.includes("contratt") || q.includes("fiscale") || q.includes("p.iva") || q.includes("societ")) {
-      agentResponse = `### Valutazione Legale & Compliance (${meta.name})
-- Per quanto riguarda la conformità normativa, l'uso di contratti standard e l'adozione del regime forfettario sono perfetti per questa fase di lancio.
-- Ridurremo le spese legali affidandoci a piattaforme online ed eviteremo contratti rigidi con i primi collaboratori.`;
-      ceoResponse = `### Decisione CEO (Orchestratore Master)
-- La conformità legale è fondamentale per evitare sanzioni che ucciderebbero il progetto sul nascere.
-- Approvato il piano di compliance del CLO. Raccogliamo i consensi in modo trasparente sul sito.`;
+    if (info.isVending && info.sector === "food_beverage" && (q.includes("pizza") || q.includes("macchin") || q.includes("forn") || q.includes("distributor"))) {
+      agentResponse = `### Dettaglio Tecnico & Sourcing (${meta.name})
+- Per il distributore automatico, l'alloggiamento refrigerato e il forno autopulente a pietra sono caratteristiche standard dei modelli di punta (es. Let's Pizza o Jofemar).
+- Consigliamo di caricare le pizze precotte fresche ogni mattina, garantendo che non rimangano in camera fredda per più di 48 ore per mantenere l'impasto fragrante.
+- È possibile integrare un sistema di couponing direttamente sullo schermo LCD per attirare i passanti.`;
+      ceoResponse = `### Decisione Strategica (Orchestratore Master)
+- **Eccellente**. La qualità della cottura e la freschezza sono i nostri unici argomenti contro lo scetticismo verso il cibo da distributore.
+- **Azione**: Definiamo una SOP rigorosa per il caricamento giornaliero. Nessuna pizza deve rimanere invenduta oltre il secondo giorno.`;
+    } else if (q.includes("canari") || q.includes("las palmas") || q.includes("spagn") || q.includes("gracia") || q.includes("gran canaria")) {
+      agentResponse = `### Opportunità Territoriale Canarie (${meta.name})
+- Il posizionamento a Gran Canaria beneficia di una stagione turistica continua h24, 12 mesi all'anno, con temperature sempre adatte a passeggiate serali.
+- Dal punto di vista della tassazione, operando con ditta individuale o SL Canaria pagheremo l'IGIC al 7% al posto dell'IVA ordinaria, aumentando la cassa del 13% rispetto alla Spagna continentale.
+- Le zone ideali per il posizionamento sono l'area pedonale commerciale di Las Palmas (vicino al porto/spiaggia) e il centro di Playa del Inglés (sud dell'isola).`;
+      ceoResponse = `### Decisione Strategica (Orchestratore Master)
+- **Fattore Chiave**. Il clima favorevole e il flusso costante di turisti riducono la stagionalità a zero, a differenza delle spiagge italiane.
+- **Azione**: Priorità assoluta ad un accordo di affitto dello spazio con un proprietario privato di Gran Canaria per evitare lungaggini burocratiche comunali.`;
+    } else if (q.includes("costo") || q.includes("prezzo") || q.includes("soldi") || q.includes("budget") || q.includes("spesa") || q.includes("finanz")) {
+      agentResponse = `### Analisi Finanziaria (${meta.name})
+- Il costo di acquisizione del distributore (14.500€) può essere mitigato concordando un canone di noleggio operativo o leasing con il distributore europeo.
+- Con circa 15 pizze vendute al giorno a 6.50€ copriamo l'investimento della macchina in meno di 8 mesi, dopodiché il punto vendita genererà oltre 1.200€ di utile netto al mese.`;
+      ceoResponse = `### Decisione Strategica (Orchestratore Master)
+- Il break-even rapido è l'obiettivo del progetto. Il modello finanziario del CFO conferma che la marginalità al 72% rende il rientro dell'investimento estremamente veloce.
+- **Azione**: Validiamo la prima zona con un test di interesse a costo zero, poi procediamo all'acquisto/leasing.`;
     } else {
-      // Risposta generica
-      agentResponse = `### Analisi di Dettaglio (${meta.name})
-- Ho preso in esame la tua proposta per questa sezione. 
-- La considero del tutto in linea con gli obiettivi strategici definiti per la nostra Fase corrente. Implementerò queste indicazioni all'interno delle specifiche del report del mio dipartimento.`;
-      ceoResponse = `### Decisione CEO (Orchestratore Master)
-- Concordo con l'agente. Questa iterazione aggiunge valore al progetto e ci permette di affinare le operazioni in vista del lancio ufficiale. Procediamo.`;
+      // Risposta standard
+      agentResponse = `### Analisi Operativa (${meta.name})
+- Ho esaminato la tua proposta di ottimizzazione per questa sezione del business.
+- Modificheremo le specifiche della Fase corrente per inserire la tua indicazione nel report finale da presentare ai soci.`;
+      ceoResponse = `### Decisione Strategica (Orchestratore Master)
+- La proposta allinea ulteriormente il progetto all'obiettivo di validazione rapida del mercato. Procediamo.`;
     }
 
     return { agentText: agentResponse, ceoText: ceoResponse };
