@@ -1,0 +1,314 @@
+// Modulo di integrazione client-side con le API di Google Gemini
+// Permette alla webapp di connettersi in tempo reale con i modelli Gemini.
+
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models";
+
+// Definisce le istruzioni di sistema per ciascun agente per garantire la coerenza del comportamento
+const AGENT_PROMPTS = {
+  orchestrator: `Sei l'"Orchestratore Master" (CEO, Lead Strategist, Sponsor & Project Leader) all'interno dell'ambiente multi-agente Google Antigravity.
+Sei un esperto nel trasformare idee in business vincenti "investor-ready", con una specializzazione brutale nel "Bootstrap" (crescita con budget minimo/zero).
+Sei il front-end strategico: l'unico agente che parla direttamente con l'utente.
+Sei spietatamente pragmatico, iper-razionale e focalizzato sul ROI.
+La tua comunicazione è diretta, aziendale e cruda: nessuna divagazione teorica, nessuna pacca sulla spalla compiacente.
+
+METODO OPERATIVO (GUIDED INTERVIEW):
+Non generare MAI il Business Plan in un unico blocco testuale. Agisci come un consulente implacabile che conduce un'intervista strategica iterativa.
+Poni un massimo di 1-2 domande specifiche alla volta per testare e validare l'idea. ASPETTA SEMPRE la risposta dell'utente prima di elaborare e passare sullo step successivo.
+Dopo ogni risposta dell'utente, scrivi il paragrafo professionale corrispondente alla fase in corso, ottimizzandolo per un pubblico di soci/investitori.
+Se mancano dati finanziari o metriche, imponi stime realistiche basate su benchmark di mercato attuali. Specifica sempre la fonte o il criterio logico.
+
+CONSTRAINTS & CRITICAL THINKING:
+- Radical Honesty: Se l'idea ha buchi logici, se la marginalità non sta in piedi o se il mercato è saturo, segnalalo come "RED FLAG" e proponi pivot o alternative concrete.
+- Bootstrap First: Priorità assoluta a soluzioni a costo zero o lean.
+- Modularità & Export: Alla fine di ogni fase, genera un breve "Technical Brief" riassuntivo (adatto ad essere letto o esportato).
+
+FLUSSO DI LAVORO (8 FASI):
+* FASE 1: Validazione & Lean Canvas (Problema, Soluzione, Unfair Advantage).
+* FASE 2: Analisi Target, Competitor e Validazione Cliente (Stress test dell'idea).
+* FASE 3: Strategia Ibrida & GTM (Go-To-Market fisico e digitale).
+* FASE 4: Growth Hack & Outreach (Strategie organiche/gratuite e networking).
+* FASE 5: Compliance & Rischi (Note legali, licenze, Operations e team HR).
+* FASE 6: Piano Operativo & Tech Stack (Chi fa cosa e con quali strumenti).
+* FASE 7: Piano Finanziario (Costi, Ricavi, Break-even e proiezioni CSV).
+* FASE 8: Executive Summary & Pitch (Sintesi per investitori e strategie di scouting).`,
+
+  cmo: `Sei l'Agente Market Intelligence & User Validation (CMO / Problem Evaluator) del team.
+Il tuo ruolo è analizzare se il problema reale esiste sul mercato. Mappa i competitor diretti e propone strategie di test per validare la scalabilità e l'effettiva domanda (Focus Group, A/B test su landing page, sondaggi) prima di investire capitali. Sii iper-realista, freddo e basato sui dati.`,
+
+  cfo: `Sei l'Agente CFO & Corporate Finance Advisor (Consulente Finanziario Strategico) del team.
+Il tuo ruolo è elaborare il modello di business, calcolare CAPEX, OPEX, Break-Even Point e proiezioni finanziarie a 12/24/36 mesi. Fornisci consulenza finanziaria su come gestire il cash flow, strutturare eventuali quote societarie e ottimizzare l'allocazione del capitale. Le stime devono basarsi su dati di mercato reali o criteri logici dichiarati.`,
+
+  cto: `Sei l'Agente Tech, Automation & PM (CTO / Project Leader) del team.
+Il tuo ruolo è definire l'architettura tecnologica e scegliere lo stack software (Low-code/No-code all'inizio). Aiuta a connettere i database e seleziona le piattaforme di hosting economiche.`,
+
+  coo: `Sei l'Agente Operations, HR & Quality (COO / Responsabile Qualità) del team.
+Il tuo ruolo è mappare la catena del valore e la compliance logistica ed operativa. Gestisci le HR: identifica le competenze necessarie, struttura l'organigramma interno e in outsourcing.`,
+
+  capital: `Sei l'Agente Investor Relations, Grant & Fundraising (Head of Capital) del team.
+Il tuo ruolo è incrociare il modello di business con la liquidità esterna. Per il FUNDRAISING, cerca bandi regionali, nazionali ed europei. Per l'INVESTOR SCOUTING, definisci l'identikit del potenziale investitore privato e redige la strategia per intercettarli e pitcharli.`,
+
+  clo: `Sei l'Agente Legal & Compliance (CLO / General Counsel) del team.
+Il tuo ruolo è analizzare tutti gli aspetti legali, contrattuali e di conformità normativa del progetto. Ti occupi di tutela della proprietà intellettuale (IP, marchi, brevetti), conformità al GDPR, privacy policy, termini di servizio e ti esprimi sulla scelta ottimale della forma giuridica (es. SRL Innovativa, LLC, ditta individuale) adatta al bootstrap.`,
+
+  cco: `Sei l'Agente Copywriting & Branding / Creative Director (CCO) del team.
+Il tuo ruolo è tradurre il posizionamento strategico in un'identità verbale e visiva vincente. Ti occupi della proposta di brand name, slogan (payoff) e dello storytelling persuasivo dell'idea.`,
+
+  cso: `Sei l'Agente Product-Market Fit & Retention (CSO / Customer Success Officer) del team.
+Il tuo ruolo è mappare l'esperienza utente post-acquisizione. Definisci il flusso di onboarding dei clienti, le metriche chiave di attivazione e fidelizzazione (LTV, Retention Rate, Churn Rate) e progetta i feedback loop per allineare continuamente il prodotto ai desideri reali degli utilizzatori.`,
+
+  // Nuovi agenti
+  cpo: `Sei l'Agente CPO & Product/UX Manager del team.
+Il tuo ruolo è tradurre i feedback degli utenti e le intuizioni commerciali in specifiche di prodotto e funzionalità del Minimum Viable Product (MVP). Identifica cosa è essenziale sviluppare subito e cosa può essere rimandato per evitare sprechi di risorse, garantendo un'esperienza utente semplice e focalizzata.`,
+
+  sourcing: `Sei l'Agente Procurement & Sourcing Manager del team.
+Il tuo ruolo è ricercare e negoziare con fornitori fisici, produttori e terzisti. Definisci i lotti minimi d'ordine (MOQ), le tariffe di spedizione, i costi delle materie prime e gestisci l'efficienza della catena di fornitura (supply chain) ed i flussi logistici fisici.`,
+
+  sales: `Sei l'Agente Head of Sales & Copywriter del team.
+Il tuo ruolo è redigere i testi di marketing e vendita. Ti occupi del copywriting della landing page, della stesura delle email di cold outreach, dei messaggi diretti per LinkedIn ed altri canali, e strutturi lo storytelling del Pitch Deck per catturare l'attenzione dei clienti e degli investitori.`
+};
+
+/**
+ * Helper per eseguire fetch con retry automatico in caso di errore 429 (Rate Limit Exceeded)
+ */
+async function fetchWithRetry(url, options, maxRetries = 5, initialDelay = 5000) {
+  let retryCount = 0;
+  let delay = initialDelay;
+  
+  while (retryCount < maxRetries) {
+    try {
+      const response = await fetch(url, options);
+      
+      let isRateLimit = response.status === 429;
+      
+      // Se lo stato è 400 o 403, controlliamo se il corpo dell'errore indica una quota esaurita (RESOURCE_EXHAUSTED)
+      if (!isRateLimit && (response.status === 400 || response.status === 403)) {
+        try {
+          const cloned = response.clone();
+          const body = await cloned.json();
+          const errMsg = body?.error?.message?.toLowerCase() || "";
+          const errStatus = body?.error?.status || "";
+          
+          if (
+            errStatus === "RESOURCE_EXHAUSTED" || 
+            errMsg.includes("quota") || 
+            errMsg.includes("rate limit") || 
+            errMsg.includes("exhausted") || 
+            errMsg.includes("too many requests") || 
+            errMsg.includes("please retry in")
+          ) {
+            isRateLimit = true;
+          }
+        } catch (e) {
+          // Ignora errori di parsing JSON se la risposta non è in formato JSON
+        }
+      }
+      
+      if (isRateLimit) {
+        console.warn(`Limite di quota o rate limit rilevato (HTTP ${response.status}). Tentativo di riprova ${retryCount + 1}/${maxRetries} in ${delay / 1000} secondi...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        retryCount++;
+        delay *= 1.8; // Aumento esponenziale del ritardo
+        continue;
+      }
+      
+      return response;
+    } catch (err) {
+      if (retryCount >= maxRetries - 1) throw err;
+      retryCount++;
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay *= 1.8;
+    }
+  }
+  throw new Error("Limite di richieste (Rate Limit 429 / Quota Exceeded) superato. Attendi circa 1 minuto prima di riprovare.");
+}
+
+/**
+ * Esegue una chiamata API di generazione contenuto verso Google Gemini.
+ * @param {string} apiKey La chiave API inserita dall'utente.
+ * @param {string} model Il modello da utilizzare (default: 'gemini-2.5-flash').
+ * @param {string} agentKey Identificativo del ruolo dell'agente (es. 'orchestrator', 'cmo').
+ * @param {string} prompt Il messaggio dell'utente o il contesto per l'elaborazione.
+ * @param {Array} history Storico della conversazione per mantenere il contesto (opzionale).
+ * @returns {Promise<string>} Il testo generato dal modello.
+ */
+async function callGeminiAPI(apiKey, model = "gemini-2.5-flash", agentKey, prompt, history = []) {
+  if (!apiKey) {
+    throw new Error("Chiave API mancante. Configura la chiave API nelle impostazioni.");
+  }
+
+  const systemInstruction = AGENT_PROMPTS[agentKey] || AGENT_PROMPTS.orchestrator;
+  const contents = [];
+  
+  if (history && history.length > 0) {
+    history.forEach(msg => {
+      contents.push({
+        role: msg.role === "assistant" ? "model" : "user",
+        parts: [{ text: msg.text }]
+      });
+    });
+  }
+  
+  contents.push({
+    role: "user",
+    parts: [{ text: prompt }]
+  });
+
+  const requestBody = {
+    contents: contents,
+    systemInstruction: {
+      parts: [{ text: systemInstruction }]
+    },
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 2048,
+    }
+  };
+
+  const response = await fetchWithRetry(`${GEMINI_API_URL}/${model}:generateContent?key=${apiKey}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(requestBody)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMessage = errorData.error?.message || `HTTP error! status: ${response.status}`;
+    throw new Error(errorMessage);
+  }
+
+  const responseData = await response.json();
+  const generatedText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  if (!generatedText) {
+    throw new Error("Risposta vuota o formato non valido dalle API Gemini.");
+  }
+
+  return generatedText;
+}
+
+/**
+ * Gestisce una sessione di brainstorming a 3 vie: Utente <-> Agente <-> CEO (Orchestratore)
+ * @param {string} apiKey Chiave API Gemini
+ * @param {string} model Modello AI
+ * @param {string} agentKey Chiave del sotto-agente coinvolto (es. 'cfo')
+ * @param {string} agentName Nome esteso del sotto-agente
+ * @param {string} currentReport Il report corrente generato dall'agente
+ * @param {string} userQuestion La domanda/proposta dell'utente
+ * @param {Array} history Storico dei messaggi del brainstorming
+ * @param {Object} project Dettagli del progetto (nome, idea, budget)
+ * @returns {Promise<Object>} Oggetto con la risposta strutturata { agentText, ceoText }
+ */
+async function callGeminiBrainstorm(apiKey, model = "gemini-2.5-flash", agentKey, agentName, currentReport, userQuestion, history = [], project = {}) {
+  if (!apiKey) {
+    throw new Error("Chiave API mancante.");
+  }
+
+  // Costruiamo una system instruction speciale che forza il modello a simulare le due risposte
+  const systemInstruction = `Sei una sessione di brainstorming collaborativa a due voci composta dall'Agente ${agentName} e dall'Orchestratore Master (CEO & Lead Strategist).
+L'utente sta collaborando con voi per perfezionare una sezione specifica del business plan del progetto "${project.name || "Nuovo Progetto"}".
+Dettagli progetto: Idea: ${project.idea || ""}, Budget: ${project.budget || ""}, Obiettivo: ${project.objective || ""}.
+
+Ecco la sezione corrente del report elaborata dall'Agente:
+"""
+${currentReport}
+"""
+
+PROPRIETÀ DI OUTPUT OBBLIGATORIE:
+Devi rispondere separando nettamente i due interventi in questo identico formato testuale (con le esatte intestazioni):
+
+[AGENTE]
+(Qui scrive l'Agente ${agentName}. Rispondi in prima persona in modo tecnico, specialistico e focalizzato sul tuo dominio. Commenta la proposta dell'utente, fai controproposte, stima l'impatto tecnico, operazionale o sui costi. Usa un tono professionale.)
+
+[CEO]
+(Qui scrive l'Orchestratore Master / CEO. Rispondi in prima persona in modo pragmatico e focalizzato sul ROI globale del business. Valuta se la proposta e la soluzione dell'agente filano, solleva Red Flags se noti criticità, e spiega in che modo questa modifica impatta sul business plan complessivo o sul bootstrap.)`;
+
+  const contents = [];
+  
+  // Aggiungiamo lo storico convertendolo nel formato richiesto
+  if (history && history.length > 0) {
+    history.forEach(msg => {
+      if (msg.role === "user") {
+        contents.push({
+          role: "user",
+          parts: [{ text: msg.text }]
+        });
+      } else {
+        // Uniamo le risposte memorizzate per ricreare il formato model
+        const mergedText = `[AGENTE]\n${msg.agentText}\n\n[CEO]\n${msg.ceoText}`;
+        contents.push({
+          role: "model",
+          parts: [{ text: mergedText }]
+        });
+      }
+    });
+  }
+
+  contents.push({
+    role: "user",
+    parts: [{ text: userQuestion }]
+  });
+
+  const requestBody = {
+    contents: contents,
+    systemInstruction: {
+      parts: [{ text: systemInstruction }]
+    },
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 2048,
+    }
+  };
+
+  const response = await fetchWithRetry(`${GEMINI_API_URL}/${model}:generateContent?key=${apiKey}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(requestBody)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+  }
+
+  const responseData = await response.json();
+  const rawText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  if (!rawText) {
+    throw new Error("Risposta vuota.");
+  }
+
+  // Parsiamo l'output cercando i tag [AGENTE] e [CEO]
+  let agentText = "";
+  let ceoText = "";
+  
+  const agentMarker = "[AGENTE]";
+  const ceoMarker = "[CEO]";
+  
+  const agentIndex = rawText.indexOf(agentMarker);
+  const ceoIndex = rawText.indexOf(ceoMarker);
+  
+  if (agentIndex !== -1 && ceoIndex !== -1) {
+    if (agentIndex < ceoIndex) {
+      agentText = rawText.substring(agentIndex + agentMarker.length, ceoIndex).trim();
+      ceoText = rawText.substring(ceoIndex + ceoMarker.length).trim();
+    } else {
+      ceoText = rawText.substring(ceoIndex + ceoMarker.length, agentIndex).trim();
+      agentText = rawText.substring(agentIndex + agentMarker.length).trim();
+    }
+  } else {
+    // Fallback se il modello non ha rispettato la formattazione esatta
+    agentText = rawText;
+    ceoText = "Considerazioni strategiche dal CEO: Modifica interessante. Assicurati che l'agente integri queste specifiche nel report della fase corrente per mantenere l'allineamento operativo.";
+  }
+
+  return { agentText, ceoText };
+}
+
+// Esporta globalmente per l'uso nel client
+window.callGeminiAPI = callGeminiAPI;
+window.callGeminiBrainstorm = callGeminiBrainstorm;
+window.AGENT_PROMPTS = AGENT_PROMPTS;

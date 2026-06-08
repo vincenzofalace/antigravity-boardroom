@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antigravity Multi-Agent Boardroom Suite</title>
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      </svg>
+      <div>
+        <h1>ANTIGRAVITY</h1>
+        <span>Multi-Agent Boardroom</span>
+      </div>
+    </div>
+    
+    <div class="header-controls">
+      <!-- Status Badge -->
+      <div id="status-badge" class="status-badge">
+        <span class="status-dot"></span>
+        <span id="status-text">Demo / Simulatore</span>
+      </div>
+
+      <!-- Gestione Progetti Dropdown -->
+      <div class="project-selector-container">
+        <button id="btn-projects-menu" class="btn btn-secondary" title="Mostra storico progetti salvati">
+          📁 I Miei Progetti
+        </button>
+        <div id="projects-dropdown-menu" class="projects-dropdown-menu glass-panel">
+          <div class="dropdown-header">Progetti Salvati</div>
+          <div id="projects-list-container" class="projects-list-container">
+            <!-- Elenco progetti inserito da app.js -->
+          </div>
+          <div class="dropdown-actions" style="display: flex; flex-direction: column; gap: 6px;">
+            <button id="btn-new-project-dropdown" class="btn btn-primary">＋ Nuovo Progetto</button>
+            <button id="btn-export-project" class="btn btn-secondary" style="font-size: 11px;" title="Scarica il file del progetto attivo">📤 Esporta Progetto (.json)</button>
+            <button id="btn-import-project" class="btn btn-secondary" style="font-size: 11px;" title="Carica un progetto da un file .json salvato">📥 Importa Progetto (.json)</button>
+            <input type="file" id="import-project-file" style="display: none;" accept=".json">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Action Buttons -->
+      <button id="btn-settings" class="btn btn-secondary" title="Configura API Key e Agenti">
+        ⚙️ Impostazioni
+      </button>
+      <button id="btn-reset" class="btn btn-secondary" style="border-color: rgba(239, 68, 68, 0.2);" title="Resetta il progetto corrente">
+        🗑️ Reset
+      </button>
+      <button id="btn-export" class="btn btn-primary" title="Scarica il report in Markdown">
+        📥 Esporta Report
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-container">
+    
+    <!-- Left Column: Chat with Orchestrator -->
+    <section class="chat-panel glass-panel">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <h2>Orchestratore Master</h2>
+          <p>CEO, Lead Strategist & Sponsor</p>
+        </div>
+        
+        <!-- Phase Indicator -->
+        <div class="phase-indicator">
+          <span class="phase-number" id="phase-number">0</span>
+          <span class="phase-title" id="phase-title">Avvio</span>
+        </div>
+      </div>
+      
+      <!-- Messages Area -->
+      <div class="chat-messages" id="chat-messages">
+        <!-- I messaggi verranno inseriti dinamicamente da app.js -->
+      </div>
+      
+      <!-- Input and Chips Area -->
+      <div class="chat-input-area">
+        <div class="quick-chips" id="quick-chips">
+          <!-- Chips inseriti dinamicamente -->
+        </div>
+        
+        <div class="input-container">
+          <textarea id="chat-input" placeholder="Scrivi la tua risposta o idea di business qui..." rows="1"></textarea>
+          <button id="btn-send" class="btn-send" title="Invia messaggio">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Right Column: Boardroom and Workspace -->
+    <section class="workspace-panel glass-panel">
+      <!-- Tabs Selector -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="boardroom">👥 Boardroom</button>
+        <button class="tab-btn" data-tab="canvas">📋 Lean Canvas</button>
+        <button class="tab-btn" data-tab="financials">📊 Finanziario</button>
+        <button class="tab-btn" data-tab="report">📄 Report Completo</button>
+      </div>
+      
+      <!-- Tabs Content -->
+      <div class="tab-content">
+        
+        <!-- Tab 1: Boardroom View (Agents Grid & Specific Analysis) -->
+        <div class="tab-pane active" id="boardroom">
+          <div class="boardroom-view">
+            <div class="boardroom-header">
+              <h3>Il Team di Sotto-Agenti in Background</h3>
+            </div>
+            
+            <!-- Grid of active agents -->
+            <div class="agents-grid" id="agents-grid">
+              <!-- Generato dinamicamente da app.js -->
+            </div>
+            
+            <!-- Detailed Agent Output Pane -->
+            <div class="agent-details-modal" id="agent-details-modal">
+              <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">
+                Seleziona un sotto-agente sovrastante per visualizzare il suo report dettagliato per la fase corrente.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Tab 2: Lean Canvas View -->
+        <div class="tab-pane" id="canvas">
+          <div class="canvas-grid" id="lean-canvas-grid">
+            <div class="canvas-box canvas-problem">
+              <h4>1. Problema</h4>
+              <div class="canvas-box-content" id="box-problem">In attesa di elaborazione...</div>
+            </div>
+            <div class="canvas-box canvas-solution">
+              <h4>4. Soluzione (CPO)</h4>
+              <div class="canvas-box-content" id="box-solution">In attesa di elaborazione...</div>
+            </div>
+            <div class="canvas-box canvas-key-metrics">
+              <h4>8. Metriche Chiave (CSO)</h4>
+              <div class="canvas-box-content" id="box-metrics">In attesa di elaborazione...</div>
+            </div>
+            <div class="canvas-box canvas-uvp">
+              <h4>3. Unique Value Prop (CCO)</h4>
+              <div class="canvas-box-content" id="box-uvp">In attesa di elaborazione...</div>
+            </div>
+            <div class="canvas-box canvas-unfair-advantage">
+              <h4>9. Unfair Advantage</h4>
+              <div class="canvas-box-content" id="box-unfair">In attesa di elaborazione...</div>
+            </div>
+            <div class="canvas-box canvas-channels">
+              <h4>5. Canali & Sales Script</h4>
+              <div class="canvas-box-content" id="box-channels">In attesa di elaborazione...</div>
+            </div>
+            <div class="canvas-box canvas-customer-segments">
+              <h4>2. Segmenti Clienti</h4>
+              <div class="canvas-box-content" id="box-segments">In attesa di elaborazione...</div>
+            </div>
+          </div>
+          
+          <div class="canvas-bottom">
+            <div class="canvas-box canvas-cost-structure">
+              <h4>7. Struttura dei Costi (Sourcing)</h4>
+              <div class="canvas-box-content" id="box-costs">In attesa di elaborazione...</div>
+            </div>
+            <div class="canvas-box canvas-revenue-streams">
+              <h4>6. Flussi di Ricavo (CFO)</h4>
+              <div class="canvas-box-content" id="box-revenue">In attesa di elaborazione...</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Tab 3: CFO Financial Spreadsheet View -->
+        <div class="tab-pane" id="financials">
+          <div class="financial-container">
+            <div class="financial-header">
+              <h3>Modello Finanziario & Allocazione Capitale</h3>
+              <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Elaborato in tempo reale dall'Agente CFO sulla base dei benchmark e delle stime reali.</p>
+            </div>
+            
+            <!-- High-level stats -->
+            <div class="financial-cards" id="financial-cards">
+              <div class="fin-card">
+                <h4>CAPEX Iniziale</h4>
+                <div class="value" id="fin-capex">-</div>
+              </div>
+              <div class="fin-card">
+                <h4>OPEX / Mese</h4>
+                <div class="value" id="fin-opex">-</div>
+              </div>
+              <div class="fin-card">
+                <h4>Soglia Break-Even</h4>
+                <div class="value" id="fin-break-even">-</div>
+              </div>
+            </div>
+            
+            <!-- CFO Spreadsheet detail -->
+            <div class="table-wrapper">
+              <table class="financial-table">
+                <thead>
+                  <tr>
+                    <th>Elemento / Voce di Spesa</th>
+                    <th>Tipo</th>
+                    <th>Costo Stimato</th>
+                    <th>Fonte / Criterio Logico</th>
+                  </tr>
+                </thead>
+                <tbody id="financial-table-body">
+                  <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-muted)">Avanza con il Guided Interview per generare il modello finanziario.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Tab 4: Compiled Complete Report View -->
+        <div class="tab-pane" id="report">
+          <div class="report-view">
+            <div class="report-markdown" id="report-content">
+              <!-- Riempito dinamicamente da app.js -->
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </section>
+    
+  </main>
+
+  <!-- Settings Modal (Config) -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal glass-panel">
+      <div class="modal-header">
+        <h3>Impostazioni Boardroom</h3>
+        <button id="btn-close-settings" class="btn-close">&times;</button>
+      </div>
+      
+      <div class="config-container">
+        <!-- API Key Input -->
+        <div class="config-group">
+          <label for="api-key-input">Chiave API Google Gemini</label>
+          <input type="text" id="api-key-input" placeholder="AIzaSy..." autocomplete="off">
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+            Lascia vuoto per utilizzare la <strong>Modalità Demo/Simulazione</strong> offline. La chiave viene salvata localmente nel browser.
+          </p>
+        </div>
+        
+        <!-- Model Selection -->
+        <div class="config-group">
+          <label for="model-select">Modello AI da utilizzare</label>
+          <select id="model-select">
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Default)</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+            <option value="custom">Altro modello (specifica sotto)...</option>
+          </select>
+        </div>
+        
+        <!-- Custom Model Input Group -->
+        <div class="config-group" id="custom-model-group" style="display: none;">
+          <label for="custom-model-input">Codice Modello Personalizzato (es. gemini-3.5-flash)</label>
+          <input type="text" id="custom-model-input" placeholder="gemini-3.5-flash">
+        </div>
+        
+        <!-- Request Delay Configuration -->
+        <div class="config-group">
+          <label for="delay-select">Intervallo tra chiamate degli agenti</label>
+          <select id="delay-select">
+            <option value="1500">1.5 secondi (Chiave a pagamento / Nessun limite)</option>
+            <option value="4500" selected>4.5 secondi (Free Tier Standard - 15 RPM)</option>
+            <option value="12500">12.5 secondi (Free Tier Limitato - 5 RPM)</option>
+          </select>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+            Se alcuni agenti mostrano "Errore", imposta su "12.5 secondi" per evitare i blocchi di quota (RPM) di Google.
+          </p>
+        </div>
+        
+        <!-- Agents Checklist -->
+        <div class="config-group">
+          <label>Agenti Attivi nella Boardroom</label>
+          <div class="config-checkbox-group">
+            <p style="font-size: 11px; color: var(--primary); font-weight: 600; margin-bottom: 4px;">TEAM CORE (ORIGINALE):</p>
+            <label class="checkbox-label">
+              <input type="checkbox" class="agent-checkbox" data-agent="cmo" checked>
+              📊 CMO & Market Intelligence (Marketing)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" class="agent-checkbox" data-agent="cfo" checked>
+              💵 CFO & Financial Advisor (Finanza)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" class="agent-checkbox" data-agent="cto" checked>
+              💻 CTO & Technical Architect (Tecnologia)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" class="agent-checkbox" data-agent="coo" checked>
+              ⚙️ COO & Operations Manager (Operations)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" class="agent-checkbox" data-agent="capital" checked>
+              📈 Head of Capital (Fundraising & Bandi)
+            </label>
+            
+            <hr style="border-color: var(--glass-border); margin: 8px 0;">
+            <p style="font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 4px;">AGENTI DI COPERTURA AGGIUNTI:</p>
+            
+            <label class="checkbox-label">
+              <input type="checkbox" class="agent-checkbox" data-agent="clo" checked>
+              ⚖️ CLO & Legal General Counsel (Legge, IP, GDPR)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" class="agent-checkbox" data-agent="cco" checked>
+              🎨 CCO & Creative Director (Naming, Storytelling)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" class="agent-checkbox" data-agent="cso" checked>
+              🤝 CSO & Customer Success (Retention, PMF)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" class="agent-checkbox" data-agent="cpo" checked>
+              📦 CPO & Product Manager (MVP & Specifiche)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" class="agent-checkbox" data-agent="sourcing" checked>
+              🚛 Sourcing & Procurement (Fornitori, MOQ)
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" class="agent-checkbox" data-agent="sales" checked>
+              🗣️ Head of Sales & Copywriter (Copy, Outreach)
+            </label>
+          </div>
+        </div>
+        
+        <button id="btn-save-config" class="btn btn-primary" style="margin-top: 10px; width: 100%;">
+          Salva Configurazione
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading scripts -->
+  <script src="mock-data.js"></script>
+  <script src="gemini-api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
