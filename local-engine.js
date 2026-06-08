@@ -242,10 +242,11 @@ const LocalAgentSimulationEngine = {
         }
       };
 
+      const agentMeta = (window.AGENT_METADATA && window.AGENT_METADATA[agentKey]) || { name: agentKey, icon: "👤" };
       const defaultVendingAgent = {
-        title: window.AGENT_METADATA[agentKey].name,
+        title: agentMeta.name,
         status: "Completato",
-        content: `### Analisi Distributore Pizza (${window.AGENT_METADATA[agentKey].name})
+        content: `### Analisi Distributore Pizza (${agentMeta.name})
 - **Fase ${phase}**: Strategia specifica per il vending automatico di pizze ${targetLoc}.
 - **Focus**: Ottimizzazione logistica, rispetto delle normative igieniche e massimizzazione del ROI locale.`
       };
@@ -308,7 +309,8 @@ const LocalAgentSimulationEngine = {
     }
     
     // Fallback generico se non trova la combinazione esatta
-    const agentName = window.AGENT_METADATA[agentKey] ? window.AGENT_METADATA[agentKey].name : agentKey;
+    const agentMeta = (window.AGENT_METADATA && window.AGENT_METADATA[agentKey]) || { name: agentKey, icon: "👤" };
+    const agentName = agentMeta.name;
     return `### Analisi Operativa (${agentName})
 - **Focalizzazione Fase ${phase}**: Analisi delle attività per il progetto "${appName}" ${targetLoc}.
 - **Strategia**: Ottimizzazione lean basata su ${budgetTip}.
@@ -470,15 +472,16 @@ Il business plan per il progetto **${info.name}** è completo ed investor-ready.
       return phaseSummaries[phase];
     }
 
+    const phaseTitle = (window.PHASE_TITLES && window.PHASE_TITLES[phase]) || `Fase ${phase}`;
     return {
-      text: `**FASE ${phase}: ${window.PHASE_TITLES[phase]} completata.**\n\nI sotto-agenti hanno espresso il loro parere per questa tappa operativa. Il report di fase è stato registrato.`,
+      text: `**FASE ${phase}: ${phaseTitle} completata.**\n\nI sotto-agenti hanno espresso il loro parere per questa tappa operativa. Il report di fase è stato registrato.`,
       questions: ["Possiamo procedere alla fase successiva?"]
     };
   },
 
   // Gestisce la sessione di brainstorming locale
   handleBrainstorm(info, agentKey, currentReport, userQuestion, history = []) {
-    const meta = window.AGENT_METADATA[agentKey] || { name: agentKey, icon: "👤" };
+    const meta = (window.AGENT_METADATA && window.AGENT_METADATA[agentKey]) || { name: agentKey, icon: "👤" };
     const q = userQuestion.toLowerCase();
     
     let agentResponse = "";
