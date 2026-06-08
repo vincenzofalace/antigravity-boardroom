@@ -5,6 +5,7 @@ let state = {
   apiKey: "",
   model: "gemini-2.5-flash",
   demoMode: true,
+  processingEngine: "local", // "local" (in-browser) o "gemini" (API Google)
   currentPhase: 0, // 0 = Avvio, 1-8 = Fasi operative
   activeTab: "boardroom",
   activeAgentDetails: "cmo", // Agente selezionato nella boardroom per i dettagli
@@ -42,6 +43,8 @@ const DOM = {
   agentDetailsModal: document.getElementById("agent-details-modal"),
   
   // Campi Configurazione
+  selectEngine: document.getElementById("engine-select"),
+  geminiConfigGroup: document.getElementById("gemini-config-group"),
   inputApiKey: document.getElementById("api-key-input"),
   selectModel: document.getElementById("model-select"),
   selectDelay: document.getElementById("delay-select"),
@@ -120,21 +123,43 @@ function init() {
 
 // Carica configurazione dal localStorage
 function loadConfigFromStorage() {
+  const savedEngine = localStorage.getItem("antigravity_processing_engine");
   const savedKey = localStorage.getItem("antigravity_api_key");
   const savedModel = localStorage.getItem("antigravity_model");
   const savedAgents = localStorage.getItem("antigravity_enabled_agents");
   const savedDelay = localStorage.getItem("antigravity_request_delay");
   
+  if (savedEngine) {
+    state.processingEngine = savedEngine;
+  } else {
+    state.processingEngine = "local"; // Default
+  }
+  if (DOM.selectEngine) DOM.selectEngine.value = state.processingEngine;
+  
+  if (DOM.geminiConfigGroup) {
+    DOM.geminiConfigGroup.style.display = state.processingEngine === "gemini" ? "flex" : "none";
+  }
+
   if (savedKey) {
     state.apiKey = savedKey;
-    state.demoMode = false;
     if (DOM.inputApiKey) DOM.inputApiKey.value = savedKey;
+  }
+
+  // Update status badge
+  if (state.processingEngine === "local") {
+    state.demoMode = false;
     DOM.statusBadge.classList.add("live");
-    DOM.statusText.textContent = "Live (Gemini API)";
+    DOM.statusText.textContent = "In-Browser (Gratis)";
   } else {
-    state.demoMode = true;
-    DOM.statusBadge.classList.remove("live");
-    DOM.statusText.textContent = "Demo / Simulatore";
+    if (state.apiKey) {
+      state.demoMode = false;
+      DOM.statusBadge.classList.add("live");
+      DOM.statusText.textContent = "Live (Gemini API)";
+    } else {
+      state.demoMode = true;
+      DOM.statusBadge.classList.remove("live");
+      DOM.statusText.textContent = "Demo / Simulatore";
+    }
   }
   
   if (savedModel) {
@@ -212,6 +237,15 @@ function setupEventListeners() {
     }
   });
 
+  // Selettore del motore cambio visualizzazione
+  if (DOM.selectEngine) {
+    DOM.selectEngine.addEventListener("change", () => {
+      if (DOM.geminiConfigGroup) {
+        DOM.geminiConfigGroup.style.display = DOM.selectEngine.value === "gemini" ? "flex" : "none";
+      }
+    });
+  }
+
   // Modello personalizzato toggle
   if (DOM.selectModel) {
     DOM.selectModel.addEventListener("change", () => {
@@ -228,6 +262,7 @@ function setupEventListeners() {
 
   // Salvataggio Configurazione
   DOM.btnSaveConfig.addEventListener("click", () => {
+    const engine = DOM.selectEngine.value;
     const key = DOM.inputApiKey.value.trim();
     let model = DOM.selectModel.value;
     if (model === "custom") {
@@ -239,18 +274,32 @@ function setupEventListeners() {
       }
     }
     
+    localStorage.setItem("antigravity_processing_engine", engine);
+    state.processingEngine = engine;
+
     if (key) {
       localStorage.setItem("antigravity_api_key", key);
       state.apiKey = key;
-      state.demoMode = false;
-      DOM.statusBadge.classList.add("live");
-      DOM.statusText.textContent = "Live (Gemini API)";
     } else {
       localStorage.removeItem("antigravity_api_key");
       state.apiKey = "";
-      state.demoMode = true;
-      DOM.statusBadge.classList.remove("live");
-      DOM.statusText.textContent = "Demo / Simulatore";
+    }
+    
+    // Update badge state
+    if (engine === "local") {
+      state.demoMode = false;
+      DOM.statusBadge.classList.add("live");
+      DOM.statusText.textContent = "In-Browser (Gratis)";
+    } else {
+      if (state.apiKey) {
+        state.demoMode = false;
+        DOM.statusBadge.classList.add("live");
+        DOM.statusText.textContent = "Live (Gemini API)";
+      } else {
+        state.demoMode = true;
+        DOM.statusBadge.classList.remove("live");
+        DOM.statusText.textContent = "Demo / Simulatore";
+      }
     }
     
     localStorage.setItem("antigravity_model", model);
@@ -782,8 +831,9 @@ async function processPhaseTransition(userFeedback = "") {
   renderBoardroomGrid();
   
   try {
-    if (state.demoMode || state.project.type !== "custom") {
-      const demoKey = state.project.type === "custom" ? "gardatech" : state.project.type;
+    if (state.project.type !== "custom") {
+      // MODALITÀ SIMULAZIONE / DEMO CON PROGETTI PRE-IMPOSTATI
+      const demoKey = state.project.type;
       const demoData = window.mockProjects[demoKey];
       
       if (demoData && demoData.phases[state.currentPhase]) {
@@ -823,10 +873,48 @@ async function processPhaseTransition(userFeedback = "") {
       } else {
         removeTypingIndicator();
         appendOrchestratorMessage(`**FASE ${state.currentPhase}: ${PHASE_TITLES[state.currentPhase]}**
-(Nessun dato simulato aggiuntivo per questo scenario. Inserisci la tua API Key in configurazione per utilizzare il motore AI live).`);
+(Nessun dato simulato aggiuntivo per questo scenario).`);
+      }
+    } else if (state.processingEngine === "local") {
+      // MODALITÀ LOCALE IN-BROWSER PER PROGETTI PERSONALIZZATI
+      appendSystemMessage(`Analisi in-browser dei sotto-agenti per la Fase ${state.currentPhase}...`);
+      
+      const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+      state.project.name = info.name; // Sincronizza il nome
+      
+      if (!state.contributions[state.currentPhase]) {
+        state.contributions[state.currentPhase] = {};
+      }
+      
+      for (let agentKey of state.enabledAgents) {
+        setAgentStatus(agentKey, "running");
+        await delay(200); // Ritardo simulato visivo per feedback ottimale
+        
+        const report = window.LocalAgentSimulationEngine.generateAgentReport(info, state.currentPhase, agentKey, state.answers);
+        state.contributions[state.currentPhase][agentKey] = report;
+        setAgentStatus(agentKey, "done");
+      }
+      
+      await delay(300);
+      removeTypingIndicator();
+      
+      const orchReport = window.LocalAgentSimulationEngine.generateOrchestratorReport(info, state.currentPhase, {}, state.answers);
+      state.orchestratorOutputs[state.currentPhase] = {
+        text: orchReport.text,
+        questions: orchReport.questions
+      };
+      
+      appendOrchestratorMessage(orchReport.text);
+      
+      if (orchReport.questions && orchReport.questions.length > 0) {
+        const chips = orchReport.questions.map((q, idx) => ({
+          text: `Opzione ${idx+1}`,
+          action: () => setQuickInput(`Riguardo la tua domanda: \n"${q}"\n\nLa mia risposta è: `)
+        }));
+        renderQuickChips(chips);
       }
     } else {
-      // MODALITÀ LIVE (CHIAMATA AI REALE)
+      // MODALITÀ LIVE (CHIAMATA AI REALE CON API KEY)
       appendSystemMessage(`Contatto dei sotto-agenti per la Fase ${state.currentPhase} in corso...`);
       
       if (!state.contributions[state.currentPhase]) {
@@ -1137,8 +1225,8 @@ async function handleBrainstormSubmit(agentKey, message) {
     let agentResponse = "";
     let ceoResponse = "";
     
-    if (state.demoMode || state.project.type !== "custom") {
-      // MODALITÀ SIMULAZIONE / DEMO
+    if (state.project.type !== "custom") {
+      // MODALITÀ SIMULAZIONE / DEMO CON PROGETTI PRE-IMPOSTATI
       await delay(1000);
       
       const meta = AGENT_METADATA[agentKey];
@@ -1156,8 +1244,18 @@ async function handleBrainstormSubmit(agentKey, message) {
         agentResponse = `### Analisi Dettagliata (${meta.name})\n- Ho esaminato la tua proposta di ottimizzazione per questa sezione.\n- La modifica suggerita è coerente con la nostra pianificazione per la Fase ${state.currentPhase} e verrà integrata nelle specifiche operative.`;
         ceoResponse = `### Analisi CEO (Orchestratore Master)\n- Concordo con le considerazioni dell'agente. Questa iterazione incrementa il valore della nostra Value Proposition riducendo i rischi operativi.`;
       }
+    } else if (state.processingEngine === "local") {
+      // MODALITÀ LOCALE IN-BROWSER
+      await delay(700);
+      
+      const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+      const currentReport = state.contributions[state.currentPhase]?.[agentKey] || "";
+      const response = window.LocalAgentSimulationEngine.handleBrainstorm(info, agentKey, currentReport, message, state.brainstormHistories[agentKey].slice(0, -1));
+      
+      agentResponse = response.agentText;
+      ceoResponse = response.ceoText;
     } else {
-      // MODALITÀ LIVE (CHIAMATA AI REALE)
+      // MODALITÀ LIVE (CHIAMATA AI REALE CON API KEY)
       const currentReport = state.contributions[state.currentPhase]?.[agentKey] || "Nessun report generato.";
       const response = await window.callGeminiBrainstorm(
         state.apiKey,
@@ -1266,7 +1364,25 @@ function updateFinancialsUI() {
   if (state.currentPhase >= 7 || state.project.type !== "custom") {
     const demoKey = state.project.type === "custom" ? "gardatech" : state.project.type;
     
-    if (demoKey === "gardatech") {
+    if (state.project.type === "custom" && state.processingEngine === "local") {
+      const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+      const fin = window.LocalAgentSimulationEngine.generateFinancials(info);
+      
+      document.getElementById("fin-capex").textContent = fin.capex;
+      document.getElementById("fin-opex").textContent = fin.opex;
+      document.getElementById("fin-break-even").textContent = fin.bep;
+      
+      fin.rows.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${r.item}</strong></td>
+          <td><span class="chip" style="background: ${r.type === "CAPEX" ? "rgba(99,102,241,0.1); color:#6366f1" : "rgba(16,185,129,0.1); color:#10b981"}">${r.type}</span></td>
+          <td><span style="font-family: monospace; font-weight: bold">${r.cost}</span></td>
+          <td style="color: var(--text-muted)">${r.source}</td>
+        `;
+        DOM.financialTableBody.appendChild(tr);
+      });
+    } else if (demoKey === "gardatech") {
       document.getElementById("fin-capex").textContent = "1.950 €";
       document.getElementById("fin-opex").textContent = "175 € / mese";
       document.getElementById("fin-break-even").textContent = "12 Appartamenti";

@@ -249,47 +249,62 @@
       </div>
       
       <div class="config-container">
-        <!-- API Key Input -->
+        <!-- Engine Selection -->
         <div class="config-group">
-          <label for="api-key-input">Chiave API Google Gemini</label>
-          <input type="text" id="api-key-input" placeholder="AIzaSy..." autocomplete="off">
-          <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-            Lascia vuoto per utilizzare la <strong>Modalità Demo/Simulazione</strong> offline. La chiave viene salvata localmente nel browser.
-          </p>
-        </div>
-        
-        <!-- Model Selection -->
-        <div class="config-group">
-          <label for="model-select">Modello AI da utilizzare</label>
-          <select id="model-select">
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Default)</option>
-            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-            <option value="custom">Altro modello (specifica sotto)...</option>
-          </select>
-        </div>
-        
-        <!-- Custom Model Input Group -->
-        <div class="config-group" id="custom-model-group" style="display: none;">
-          <label for="custom-model-input">Codice Modello Personalizzato (es. gemini-3.5-flash)</label>
-          <input type="text" id="custom-model-input" placeholder="gemini-3.5-flash">
-        </div>
-        
-        <!-- Request Delay Configuration -->
-        <div class="config-group">
-          <label for="delay-select">Intervallo tra chiamate degli agenti</label>
-          <select id="delay-select">
-            <option value="1500">1.5 secondi (Chiave a pagamento / Nessun limite)</option>
-            <option value="4500" selected>4.5 secondi (Free Tier Standard - 15 RPM)</option>
-            <option value="12500">12.5 secondi (Free Tier Limitato - 5 RPM)</option>
+          <label for="engine-select">Motore di Elaborazione</label>
+          <select id="engine-select">
+            <option value="local">In-Browser Client-Side (100% Gratis, No-API, Consigliato)</option>
+            <option value="gemini">Google Gemini API (Richiede Chiave API)</option>
           </select>
           <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-            Se alcuni agenti mostrano "Errore", imposta su "12.5 secondi" per evitare i blocchi di quota (RPM) di Google.
+            Il motore <strong>In-Browser</strong> esegue le analisi all'istante direttamente sul tuo dispositivo (PC o telefono) senza costi o limiti di quota.
           </p>
+        </div>
+
+        <!-- Gemini API Group (Visible only when Gemini selected) -->
+        <div id="gemini-config-group" style="display: none; flex-direction: column; gap: 12px;">
+          <!-- API Key Input -->
+          <div class="config-group">
+            <label for="api-key-input">Chiave API Google Gemini</label>
+            <input type="text" id="api-key-input" placeholder="AIzaSy..." autocomplete="off">
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+              La chiave viene salvata localmente sul dispositivo. Puoi ottenerla gratis su Google AI Studio.
+            </p>
+          </div>
+          
+          <!-- Model Selection -->
+          <div class="config-group">
+            <label for="model-select">Modello AI da utilizzare</label>
+            <select id="model-select">
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Default)</option>
+              <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+              <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+              <option value="custom">Altro modello (specifica sotto)...</option>
+            </select>
+          </div>
+          
+          <!-- Custom Model Input Group -->
+          <div class="config-group" id="custom-model-group" style="display: none;">
+            <label for="custom-model-input">Codice Modello Personalizzato (es. gemini-3.5-flash)</label>
+            <input type="text" id="custom-model-input" placeholder="gemini-3.5-flash">
+          </div>
+          
+          <!-- Request Delay Configuration -->
+          <div class="config-group">
+            <label for="delay-select">Intervallo tra chiamate degli agenti</label>
+            <select id="delay-select">
+              <option value="1500">1.5 secondi (Chiave a pagamento / Nessun limite)</option>
+              <option value="4500" selected>4.5 secondi (Free Tier Standard - 15 RPM)</option>
+              <option value="12500">12.5 secondi (Free Tier Limitato - 5 RPM)</option>
+            </select>
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+              Se gli agenti mostrano errori di quota, imposta su 12.5 secondi.
+            </p>
+          </div>
         </div>
         
         <!-- Agents Checklist -->
-        <div class="config-group">
+        <div class="config-group" style="margin-top: 6px;">
           <label>Agenti Attivi nella Boardroom</label>
           <div class="config-checkbox-group">
             <p style="font-size: 11px; color: var(--primary); font-weight: 600; margin-bottom: 4px;">TEAM CORE (ORIGINALE):</p>
@@ -353,6 +368,7 @@
 
   <!-- Loading scripts -->
   <script src="mock-data.js"></script>
+  <script src="local-engine.js"></script>
   <script src="gemini-api.js"></script>
   <script src="app.js"></script>
 </body>
