@@ -104,6 +104,10 @@ const PHASE_TITLES = {
   8: "Executive Summary & Pitch"
 };
 
+// Esporta globalmente per l'uso in moduli esterni
+window.AGENT_METADATA = AGENT_METADATA;
+window.PHASE_TITLES = PHASE_TITLES;
+
 // Funzione di avvio
 function init() {
   loadConfigFromStorage();
