@@ -22,7 +22,8 @@ let state = {
   orchestratorOutputs: {}, // Struttura: { phase: { text: "", questions: [] } }
   answers: {},
   brainstormHistories: {}, // Struttura: { agentKey: [ { role: 'user'|'assistant', text: string, agentText: string, ceoText: string } ] }
-  requestDelay: 4500 // Tempo di attesa tra agenti in ms (default: 4.5s)
+  requestDelay: 4500, // Tempo di attesa tra agenti in ms (default: 4.5s)
+  isProcessing: false // Lock per evitare esecuzioni concorrenti
 };
 
 // Elementi DOM principali
@@ -560,6 +561,10 @@ function resetProject() {
   state.project.type = "custom";
   state.project.name = "Nuovo Progetto " + new Date().toLocaleDateString('it-IT');
   
+  state.isProcessing = false;
+  if (DOM.chatInput) DOM.chatInput.disabled = false;
+  if (DOM.btnSend) DOM.btnSend.disabled = false;
+  
   DOM.chatMessages.innerHTML = "";
   renderBoardroomGrid();
   startAppFlow();
@@ -724,8 +729,13 @@ function scrollChatToBottom() {
 
 // Gestione invio messaggio dell'utente
 function handleUserMessageSubmit() {
+  if (state.isProcessing) return;
   const text = DOM.chatInput.value.trim();
   if (!text) return;
+  
+  state.isProcessing = true;
+  if (DOM.chatInput) DOM.chatInput.disabled = true;
+  if (DOM.btnSend) DOM.btnSend.disabled = true;
   
   DOM.chatInput.value = "";
   appendUserMessage(text);
@@ -758,6 +768,9 @@ function handleUserMessageSubmit() {
         removeTypingIndicator();
         appendOrchestratorMessage(`**Il processo strategico è completo.**
 Il report consolidato è ora disponibile nella scheda **Report Completo**. Puoi esportarlo in formato Markdown o stamparlo direttamente in PDF.`);
+        state.isProcessing = false;
+        if (DOM.chatInput) DOM.chatInput.disabled = false;
+        if (DOM.btnSend) DOM.btnSend.disabled = false;
       }, 1000);
     }
   }
@@ -894,10 +907,13 @@ Concludi ponendo un massimo di 1-2 domande specifiche e focalizzate per consenti
     removeTypingIndicator();
     console.error("Errore generale transizione:", error);
     appendSystemMessage(`Errore di esecuzione: ${error.message}`);
+  } finally {
+    state.isProcessing = false;
+    if (DOM.chatInput) DOM.chatInput.disabled = false;
+    if (DOM.btnSend) DOM.btnSend.disabled = false;
+    updateWorkspaceViews();
+    saveCurrentProjectToStorage();
   }
-  
-  updateWorkspaceViews();
-  saveCurrentProjectToStorage();
 }
 
 // Aggiorna l'indicatore delle fasi in alto

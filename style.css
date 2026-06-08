@@ -1212,3 +1212,10 @@ header {
     grid-template-columns: 1fr;
   }
 }
+
+/* Stili per elementi disabilitati (Blocco Concorrenza) */
+button:disabled, textarea:disabled, select:disabled, input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
