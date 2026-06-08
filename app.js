@@ -1365,10 +1365,10 @@ function updateLeanCanvasUI() {
 function updateFinancialsUI() {
   DOM.financialTableBody.innerHTML = "";
   
-  if (state.currentPhase >= 7 || state.project.type !== "custom") {
+  if (state.currentPhase >= 1 || state.project.type !== "custom") {
     const demoKey = state.project.type === "custom" ? "gardatech" : state.project.type;
     
-    if (state.project.type === "custom" && state.processingEngine === "local") {
+    if (state.project.type === "custom") {
       const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
       const fin = window.LocalAgentSimulationEngine.generateFinancials(info);
       
@@ -1438,7 +1438,7 @@ function updateFinancialsUI() {
     document.getElementById("fin-capex").textContent = "-";
     document.getElementById("fin-opex").textContent = "-";
     document.getElementById("fin-break-even").textContent = "-";
-    DOM.financialTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted)">Il piano finanziario dettagliato sarà visibile a partire dalla FASE 7.</td></tr>`;
+    DOM.financialTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted)">Il piano finanziario dettagliato sarà visibile a partire dalla FASE 1.</td></tr>`;
   }
 }
 
