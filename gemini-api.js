@@ -78,10 +78,10 @@ async function fetchWithRetry(url, options, maxRetries = 5, initialDelay = 5000)
     try {
       const response = await fetch(url, options);
       
-      let isRateLimit = response.status === 429;
+      let isTemporaryError = response.status === 429 || response.status === 503 || response.status === 500;
       
-      // Se lo stato è 400 o 403, controlliamo se il corpo dell'errore indica una quota esaurita (RESOURCE_EXHAUSTED)
-      if (!isRateLimit && (response.status === 400 || response.status === 403)) {
+      // Se lo stato è 400 o 403, controlliamo se il corpo dell'errore indica una quota esaurita (RESOURCE_EXHAUSTED) o sovraccarico
+      if (!isTemporaryError && (response.status === 400 || response.status === 403)) {
         try {
           const cloned = response.clone();
           const body = await cloned.json();
@@ -94,17 +94,21 @@ async function fetchWithRetry(url, options, maxRetries = 5, initialDelay = 5000)
             errMsg.includes("rate limit") || 
             errMsg.includes("exhausted") || 
             errMsg.includes("too many requests") || 
-            errMsg.includes("please retry in")
+            errMsg.includes("please retry in") ||
+            errMsg.includes("high demand") ||
+            errMsg.includes("spikes") ||
+            errMsg.includes("temporary") ||
+            errMsg.includes("try again later")
           ) {
-            isRateLimit = true;
+            isTemporaryError = true;
           }
         } catch (e) {
           // Ignora errori di parsing JSON se la risposta non è in formato JSON
         }
       }
       
-      if (isRateLimit) {
-        console.warn(`Limite di quota o rate limit rilevato (HTTP ${response.status}). Tentativo di riprova ${retryCount + 1}/${maxRetries} in ${delay / 1000} secondi...`);
+      if (isTemporaryError) {
+        console.warn(`Errore temporaneo o limite di quota rilevato (HTTP ${response.status}). Tentativo di riprova ${retryCount + 1}/${maxRetries} in ${delay / 1000} secondi...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         retryCount++;
         delay *= 1.8; // Aumento esponenziale del ritardo
@@ -119,7 +123,7 @@ async function fetchWithRetry(url, options, maxRetries = 5, initialDelay = 5000)
       delay *= 1.8;
     }
   }
-  throw new Error("Limite di richieste (Rate Limit 429 / Quota Exceeded) superato. Attendi circa 1 minuto prima di riprovare.");
+  throw new Error("Limite di richieste o sovraccarico del server superato. Attendi circa 1 minuto prima di riprovare.");
 }
 
 /**
