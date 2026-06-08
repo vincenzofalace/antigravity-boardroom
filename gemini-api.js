@@ -73,18 +73,24 @@ Il tuo ruolo è redigere i testi di marketing e vendita. Ti occupi del copywriti
 async function fetchWithRetry(url, options, maxRetries = 5, initialDelay = 5000) {
   let retryCount = 0;
   let delay = initialDelay;
+  let lastErrorMsg = "";
   
   while (retryCount < maxRetries) {
     try {
       const response = await fetch(url, options);
       
       let isTemporaryError = response.status === 429 || response.status === 503 || response.status === 500;
+      let responseBodyText = "";
+      
+      try {
+        const cloned = response.clone();
+        responseBodyText = await cloned.text();
+      } catch (e) {}
       
       // Se lo stato è 400 o 403, controlliamo se il corpo dell'errore indica una quota esaurita (RESOURCE_EXHAUSTED) o sovraccarico
       if (!isTemporaryError && (response.status === 400 || response.status === 403)) {
         try {
-          const cloned = response.clone();
-          const body = await cloned.json();
+          const body = JSON.parse(responseBodyText);
           const errMsg = body?.error?.message?.toLowerCase() || "";
           const errStatus = body?.error?.status || "";
           
@@ -103,11 +109,12 @@ async function fetchWithRetry(url, options, maxRetries = 5, initialDelay = 5000)
             isTemporaryError = true;
           }
         } catch (e) {
-          // Ignora errori di parsing JSON se la risposta non è in formato JSON
+          // Ignora
         }
       }
       
       if (isTemporaryError) {
+        lastErrorMsg = `HTTP ${response.status}: ${responseBodyText || "Nessun corpo di risposta"}`;
         console.warn(`Errore temporaneo o limite di quota rilevato (HTTP ${response.status}). Tentativo di riprova ${retryCount + 1}/${maxRetries} in ${delay / 1000} secondi...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         retryCount++;
@@ -117,13 +124,14 @@ async function fetchWithRetry(url, options, maxRetries = 5, initialDelay = 5000)
       
       return response;
     } catch (err) {
+      lastErrorMsg = err.message;
       if (retryCount >= maxRetries - 1) throw err;
       retryCount++;
       await new Promise(resolve => setTimeout(resolve, delay));
       delay *= 1.8;
     }
   }
-  throw new Error("Limite di richieste o sovraccarico del server superato. Attendi circa 1 minuto prima di riprovare.");
+  throw new Error(`Limite di richieste o sovraccarico superato dopo ${maxRetries} tentativi. Ultimo errore: ${lastErrorMsg}`);
 }
 
 /**
