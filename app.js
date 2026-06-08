@@ -851,7 +851,11 @@ Fornisci il tuo report specifico di competenza per questa fase. Scrivi in modo e
           setAgentStatus(agentKey, "done");
         } catch (err) {
           console.error(`Errore agente ${agentKey}:`, err);
-          state.contributions[state.currentPhase][agentKey] = `### Errore di Generazione\nImpossibile ottenere risposta dalle API Gemini: ${err.message}`;
+          let extraTip = "";
+          if (state.model && state.model.includes("pro")) {
+            extraTip = "\n\n> [!TIP]\n> **Suggerimento di Quota**: Stai utilizzando un modello **Pro** (Gemini 2.5 Pro o 1.5 Pro). Nel piano gratuito di Google, questi modelli hanno una quota molto restrittiva di sole **50 richieste al giorno** (circa 4 analisi della boardroom). Se hai superato il limite, passa a **Gemini 2.5 Flash** nelle Impostazioni per avere una quota giornaliera molto più alta.";
+          }
+          state.contributions[state.currentPhase][agentKey] = `### Errore di Generazione\nImpossibile ottenere risposta dalle API Gemini: ${err.message}${extraTip}`;
           setAgentStatus(agentKey, "error");
           
           // Autoscalamento del ritardo in caso di errore di quota
@@ -941,6 +945,11 @@ function setAgentStatus(agentKey, status) {
   } else {
     badge.className = "agent-status";
     badge.innerHTML = `Attesa`;
+  }
+  
+  // Aggiorna in tempo reale il pannello dei dettagli se l'agente aggiornato è quello attualmente selezionato
+  if (state.activeAgentDetails === agentKey) {
+    renderAgentDetails(agentKey);
   }
 }
 
