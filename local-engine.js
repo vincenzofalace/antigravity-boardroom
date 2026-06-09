@@ -184,15 +184,272 @@ const LocalAgentSimulationEngine = {
     const agentName = agentMeta.name;
     const agentRole = agentMeta.role;
 
-    // 1. Definiamo le obiezioni generali per agente
-    let objections = [];
+    // Dettaglio settore per testi dinamici
+    const isPizzaVending = info.isVending && info.sector === "food_beverage";
+
+    // 1. DATABASE DI ANALISI SPECIFICHE PER IL CASO PIZZA VENDING (11 Agenti x 8 Fasi)
+    const pizzaVendingAnalyses = {
+      cmo: {
+        1: `- **Rilevazione del Problema**: Assenza totale di ristorazione calda H24 espressa nelle ore notturne nelle aree turistiche e di transito di Gran Canaria.
+- **Validazione sul campo**: Eseguiremo un panel di interviste fisiche a 50 potenziali acquirenti a Playa del Inglés e Las Canteras, testando l'interesse all'acquisto ad un prezzo di 7.00€.
+- **Soglia di Rischio**: Se l'interesse espresso per la pizza da distributore è inferiore al 60%, l'offerta andrà ristrutturata prima del setup.`,
+        2: `- **Profilazione Target**: Definizione del profilo acquirente principale: turisti notturni (01:00 - 05:00), lavoratori del settore Horeca e tassisti di turno.
+- **Mappa Competitor**: Bar e distributori automatici tradizionali di snack (offrono solo merendine fredde o bibite) e pizzerie tradizionali (chiuse dopo mezzanotte).`,
+        3: `- **Lancio e Visibilità**: Wrapping grafico completo ad alto impatto (tema pietra e fiamme a LED animate sullo schermo) per renderci visibili a 50 metri di distanza di notte.
+- **Local SEO & Maps**: Registrazione della macchina come 'Pizzeria 24 ore' su Google Maps e Apple Maps per intercettare le ricerche di turisti affamati nelle vicinanze.`,
+        4: `- **QR Code Sconti**: Inserimento di un QR Code sul cartone della pizza: offriamo uno sconto del 20% sulla pizza successiva in cambio di una recensione immediata su Google Maps con foto.
+- **Outreach Host**: Distribuzione di codici promozionali digitali a gestori di case vacanze e host Airbnb nel raggio di 500m per i clienti che arrivano di notte.`,
+        5: `- **Superamento Scetticismo**: Campagne social incentrate sulla trasparenza della preparazione delle basi e sulla freschezza degli ingredienti italiani.
+- **Marketing di Fiducia**: Insegne e pannelli che certificano l'uso di basi artigianali cotte in 3 minuti su forno a pietra.`,
+        6: `- **Ottimizzazione Display**: Uso dello schermo LCD della macchina per trasmettere video della preparazione artigianale durante i 180 secondi di cottura.
+- **Campagne Fasce Orarie**: Promozione di prezzi agevolati nella fascia pomeridiana (16:00 - 19:00) per studenti.`,
+        7: `- **Calcolo CAC**: Stima del costo di acquisizione cliente (CAC) a meno di 0.40€, grazie alla fortissima visibilità organica del punto vendita fisico.
+- **Social Ads Geofenced**: Campagne Instagram attive solo nel raggio di 1 km dalla macchina tra le 23:00 e le 04:00.`,
+        8: `- **Piano Marketing Consolidato**: Focus totale su Local SEO, passaparola digitale, QR code promozionale ed estetica ad alta visibilità notturna.`
+      },
+      cfo: {
+        1: `- **Pricing Iniziale**: Impostazione prezzo Margherita a 6.50€, pizze farcite (Diavola, Prosciutto) a 7.50€, con uno scontrino medio stimato a 7.00€.
+- **Costo del Venduto (COGS)**: Base pizza precotta artigianale + ingredienti + cartone termico certificato = 2.00€ a pizza.
+- **Margine Lordo**: Margine unitario stimato al 71% (~4.85€ di profitto lordo per transazione).`,
+        2: `- **Analisi di Sensibilità**:
+  - Scenario Conservativo (10 pizze/giorno): Rientro investimento in 22 mesi.
+  - Scenario Realistico (18 pizze/giorno): Utile netto ~1.250€/mese, rientro in 15 mesi.
+  - Scenario Ottimistico (30 pizze/giorno): Utile netto ~2.700€/mese, rientro in 8 mesi.`,
+        3: `- **Struttura CAPEX**: Fabbisogno iniziale stimato a €36.500 (macchina professionale nuova €32.000, logistica e dogana Canarie €2.500, allacciamento elettrico e SCIA €1.200, HACCP €800).`,
+        4: `- **Flusso di Cassa Promozionale**: Calcolo del costo degli sconti QR (20%) e delle pizze omaggio per i tassisti per verificare l'impatto sul margine lordo.`,
+        5: `- **Spese Amministrative e Tasse**: Inquadramento come Autónomo Spagna con quota agevolata flat rate a 80€/mese per il primo anno.
+- **Costo Assicurativo**: Polizza RC Danni e vandalismo stimata in 45€/mese.`,
+        6: `- **Dettaglio OPEX Fissi**: Affitto spazio commerciale privato (450€/mese), energia elettrica forno/frigo (180€/mese), telemetria Nayax (35€/mese), commercialista locale (80€/mese). Totale OPEX: 890€/mese.`,
+        7: `- **Break-Even Point (BEP)**: Fissato a 184 pizze al mese (circa 6 pizze al giorno). Superato il BEP, ogni pizza aggiuntiva genera 4.85€ di utile netto.`,
+        8: `- **Modello Finanziario Finale**: Prospetto a 12 mesi completato, dimostrando un ROI elevato ed un ammortamento rapido se la location rispetta il target realistico.`
+      },
+      cto: {
+        1: `- **Valutazione Macchinari**: Selezione di un distributore automatico professionale conforme CE con forno pietra integrato (temperatura 300°C) e cella refrigerata interna (mantenimento a 4°C).`,
+        2: `- **Hardware POS Cashless**: Integrazione del terminale Nayax Onyx, abilitato per carte di credito internazionali, pagamenti contactless NFC, Apple Pay e Google Pay.`,
+        3: `- **Configurazione Telemetria**: Setup di Nayax Core via SIM 4G per ricevere dati di vendita, scorte e temperature in tempo reale direttamente sul telefono.`,
+        4: `- **Automazione Alert**: Integrazione webhook via Make.com per inviare notifiche urgenti su Telegram in caso di blackout o temperatura frigo superiore a 5°C.`,
+        5: `- **Sicurezza Fisica**: Scocca in acciaio rinforzato, serrature a doppia mappa e vetro temperato antisfondamento con classificazione di sicurezza IK10.`,
+        6: `- **Allacciamento Elettrico**: Predisposizione linea trifase dedicata con potenza contrattuale minima di 5 kW per coprire i picchi del forno a pietra.`,
+        7: `- **Opex Tecnologico**: Canone Nayax telemetria (12€/mese), canone SIM industriale (15€/mese) e POS gateway commissioni (3.5% a transazione).`,
+        8: `- **Infrastruttura Hardware/Software**: Stack pronto e verificato, telemetria attiva con alert di sicurezza e sistema di pagamento cashless collaudato.`
+      },
+      coo: {
+        1: `- **SOP di Rifornimento**: Caricamento manuale delle pizze pianificato ogni mattina alle 09:00 (capienza massima 60-80 pizze). Svuotamento cassetti e pulizia forno.`,
+        2: `- **Gestione della Rotazione (FIFO)**: I lotti di pizze inseriti per primi devono essere erogati per primi. Ritiro obbligatorio delle pizze invendute entro 48 ore.`,
+        3: `- **Logistica Spazio**: Identificazione di suoli privati esterni ad alto traffico pedonale per evitare i lunghissimi tempi burocratici del suolo pubblico comunale.`,
+        4: `- **Procedura Guasti**: Intervento tecnico in loco programmato entro 2 ore dalla ricezione dell'alert di blocco meccanico della telemetria.`,
+        5: `- **Sanificazione HACCP**: Pulizia igienica giornaliera del vano di erogazione e controllo microbiologico delle superfici a contatto con la pizza.`,
+        6: `- **Standardizzazione Operativa**: Creazione di una checklist operativa dettagliata per consentire in futuro la delega della manutenzione a personale terzo.`,
+        7: `- **Gestione Scarti**: Stima iniziale di un tasso di scarto del 10% (pizze caricate e non vendute entro 48h) da ridurre al 5% ottimizzando la rotazione.`,
+        8: `- **Operations Manual**: SOP e checklist di sanificazione scritte ed approvate, logistica delle scorte consolidata.`
+      },
+      clo: {
+        1: `- **Inquadramento Societario**: Apertura ditta individuale come Autónomo in Spagna. Consente un avvio rapido in 24 ore e la gestione fiscale semplificata.`,
+        2: `- **Contratti di Locazione B2B**: Redazione di una scrittura privata di affitto suolo con il proprietario del locale commerciale ospitante (es. bar, parcheggio).`,
+        3: `- **Registrazione Sanitaria**: Richiesta di iscrizione obbligatoria del distributore presso il Registro General Sanitario de Alimentos dell'arcipelago canario.`,
+        4: `- **Compliance GDPR**: Crittografia dei dati di pagamento gestiti interamente dai terminaliNayax (PCI-DSS compliant). Nessun dato sensibile memorizzato localmente.`,
+        5: `- **Certificazione Macchina**: Verifica delle certificazioni CE e MOCA (materiali a contatto con alimenti) per il forno e i piattelli erogatori della macchina.`,
+        6: `- **SCIA Comunale**: Presentazione della SCIA (Comunicación Previa de Actività) per distributori automatici presso il municipio locale a Gran Canaria.`,
+        7: `- **Fiscalità Canarie (IGIC)**: Vantaggio fiscale locale: applicazione dell'IGIC al 7% sulle vendite (invece dell'IVA al 10% applicata in Spagna continentale).`,
+        8: `- **Dossier Compliance**: Raccolta di HACCP, SCIA comunale, certificato CE/MOCA e iscrizione al Registro Sanitario completata.`
+      },
+      cco: {
+        1: `- **Brand Identity**: Scelta del nome 'Isla Pizza 24h' o 'Canary Pizza Box' per legare il servizio alla tipologia di prodotto ed alla località geografica.`,
+        2: `- **Posizionamento Visivo**: Sviluppo di una palette basata sul rosso pomodoro e grigio antracite per allontanare la percezione di pizza congelata industriale.`,
+        3: `- **Wrapping Estetico**: Wrapping completo in vinile resistente a raggi UV e salsedine, raffigurante un classico forno a legna italiano per stimolare l'appetito.`,
+        4: `- **UX del Touchscreen**: Interfaccia utente basata su grandi icone fotografiche delle pizze. Processo di acquisto ridotto a soli 3 tap sullo schermo.`,
+        5: `- **Audio/Video di Cottura**: Video di 180 secondi che illustra la stesura artigianale dell'impasto da riprodurre sullo schermo durante l'attesa del cliente.`,
+        6: `- **Packaging Design**: Scatola termica in cartone microonda con fori di sfiato speciali per evitare la condensa e preservare la fragranza.`,
+        7: `- **Payoff di Impatto**: 'Cotta su pietra, calda, subito.' stampato in evidenza sul frontale della macchina e sui cartoni.`,
+        8: `- **Brand Guidelines**: Asset grafici definiti per wrapping, scatole, menu dello schermo touch e promozioni social.`
+      },
+      cso: {
+        1: `- **Blind Taste Test**: Organizzazione di una sessione di assaggio al buio con 20 consumatori locali per validare la ricetta delle basi pizza precotte.`,
+        2: `- **Canale Reclami WhatsApp**: Numero di WhatsApp Business stampato in grande sulla macchina per inviare foto o segnalare problemi.`,
+        3: `- **Refund Policy**: Rimborso automatico immediato entro 5 minuti via Bizum o PayPal in caso di mancata erogazione o prodotto non conforme.`,
+        4: `- **Programma Fedeltà**: Configurazione tessera fedeltà digitale: 'Ogni 9 pizze acquistate, la decima è in omaggio', registrandosi via QR Code.`,
+        5: `- **Gestione Recensioni**: Presidio quotidiano della scheda Google Maps per rispondere a recensioni negative e valorizzare quelle positive.`,
+        6: `- **Fidelizzazione Notturna**: Promozioni mirate ed invio di coupon il venerdì sera per tassisti e lavoratori dei locali notturni.`,
+        7: `- **FAQ Allergie**: Menu dedicato sullo schermo che elenca in 3 lingue (spagnolo, inglese, tedesco) tutti gli allergeni presenti.`,
+        8: `- **Customer Care Blueprint**: Canale WhatsApp attivo, policy di rimborso Bizum testata e FAQ multilingue caricate sullo schermo.`
+      },
+      cpo: {
+        1: `- **Menu MVP Core**: Limitazione dell'offerta iniziale a 3 gusti classici ad altissima rotazione: Margherita, Diavola e Prosciutto & Funghi.`,
+        2: `- **Standardizzazione Geometrica**: Diametro fisso di 26 cm e spessore uniforme per garantire che la piastra di inserimento nel forno non si inceppi.`,
+        3: `- **Calibrazione Forno**: Temperatura forno a pietra a 300°C stabili e tempo di cottura ottimizzato a 140 secondi + 40 secondi di movimentazione.`,
+        4: `- **Catena del Freddo**: Cella refrigerata a 4°C per preservare la freschezza degli ingredienti ed evitare la fermentazione acida del pomodoro.`,
+        5: `- **Ingredienti Speciali**: Mozzarella a basso rilascio di umidità per prevenire pozze d'acqua sulla pizza durante la cottura rapida.`,
+        6: `- **Test di Fragranza**: Validazione della consistenza dell'impasto dopo 24 e 48 ore di sosta in cella refrigerata (idratazione consigliata al 65%).`,
+        7: `- **Menu Fase 2**: Studio di un'opzione vegetariana ed un'opzione celiaca in busta sigillata protettiva per evitare contaminazione crociata nel forno.`,
+        8: `- **Product Specifications**: Ricetta, ingredienti, tempi di cottura e limiti termici della cella refrigerata definiti e bloccati.`
+      },
+      sourcing: {
+        1: `- **Fornitore Basi Pizza**: Accordo con un panificio artigianale locale di Las Palmas per la produzione di basi stese a mano precotte.`,
+        2: `- **Fornitore Cartoni MOCA**: Contratto con uno scatolificio spagnolo per la fornitura di cartoni microonda idonei ad alte temperature.`,
+        3: `- **Importazione Macchina**: Logistica mare via container da Cadice a Las Palmas. Liquidazione doganale DUA applicando l'esenzione IVA e liquidazione IGIC.`,
+        4: `- **MOQ Cartoni**: Primo ordine di 1.500 scatole pizza per abbattere il costo unitario a 0.22€ ed ammortizzare le spese di clichè di stampa.`,
+        5: `- **Sourcing Ingredienti**: Acquisto all'ingrosso di mozzarella e pomodoro da distributori alimentari locali per mantenere il COGS sotto i 2.00€.`,
+        6: `- **Accordo Volume Basi**: Sconto del 15% sulle basi pizza artigianali concordato al raggiungimento di 500 vendite mensili stabili.`,
+        7: `- **Stock Ricambi**: Acquisto del pacchetto ricambi base dal produttore della macchina (sensori termici, cinghie del forno, resistenze).`,
+        8: `- **Supply Chain Set**: Fornitore basi artigianali contrattualizzato, logistica container approvata e stock packaging pronto a magazzino.`
+      },
+      sales: {
+        1: `- **Scouting Spazi Privati**: Contatti preliminari con gestori di minimarket H24, stazioni di servizio e parcheggi per posizionare la macchina sul loro suolo.`,
+        2: `- **Contratto di Locazione**: Proposta di affitto fisso di 450€/mese o variabile (10% sul fatturato con minimo di 300€) per allineare gli interessi.`,
+        3: `- **POS Gateway Nayax**: Attivazione dell'account commerciante conNayax per ricevere gli accrediti giornalieri delle vendite sul conto aziendale.`,
+        4: `- **Upselling Notturno**: Messaggio promozionale di cross-selling sul display: 'Aggiungi una bibita a soli 1.50€' (per distributore abbinato).`,
+        5: `- **Pitch Espansione**: Negoziazione con catene di hotel low-cost a Gran Canaria per posizionare macchine nei loro cortili o ingressi.`,
+        6: `- **Analisi Fasce Orarie**: Monitoraggio vendite per identificare gli orari a massima conversione per pianificare promozioni notturne.`,
+        7: `- **POS Gateway Fees**: Trattativa per commissione di transazione POS Nayax inferiore al 3.2% per transazioni di piccolo importo.`,
+        8: `- **Commercial Pipeline**: Contratto di locazione privato firmato, terminale Nayax attivo e configurato per incassi automatici.`
+      },
+      capital: {
+        1: `- **Struttura Investimento**: Finanziamento dell'investimento iniziale di €36.500 interamente tramite capitale proprio per evitare interessi bancari.`,
+        2: `- **Contributo Autónomo Canarie**: Richiesta di sussidio a fondo perduto per l'avvio di nuove imprese da parte di lavoratori autonomi (fino a 5.500€).`,
+        3: `- **Pianificazione Reinvestimento**: Destinazione del 100% degli utili generati dal primo punto ad un fondo cassa per finanziare la seconda macchina al mese 10.`,
+        4: `- **Pitch Deck Vending**: Creazione di un documento di presentazione del business basato su metriche reali di marginalità e ROI per investitori.`,
+        5: `- **Scouting Finanziamenti Enisa**: Monitoraggio del bando Enisa Jóvenes Emprendedores per finanziamenti agevolati senza garanzie reali.`,
+        6: `- **Contatti Business Angel**: Presentazione del modello di business a club di investitori privati nelle isole Canarie per espansione flotta.`,
+        7: `- **Pianificazione Societaria**: Strutturazione di una SL (Società a Responsabilità Limitata) al raggiungimento delle 3 macchine attive.`,
+        8: `- **Capital Plan**: Budget coperto da capitale proprio, piano sussidi locali avviato e roadmap finanziaria per flotta di 5 macchine definita.`
+      }
+    };
+
+    // 2. DATABASE DI ANALISI SPECIFICHE PER IL CASO GENERAL / ALTRI SETTORI (11 Agenti x 8 Fasi)
+    const generalAnalyses = {
+      cmo: {
+        1: `- **Validazione del Problema**: Rilevazione del dolore di mercato per ${sect.product} ${targetLoc}. Creazione di una landing page pilota per misurare l'interesse reale prima di avviare lo sviluppo.`,
+        2: `- **Studio del Target**: Analisi demografica e comportamentale dei potenziali clienti. Identificazione dei canali social e motori di ricerca più frequentati dal target.`,
+        3: `- **Strategia GTM**: Lancio di campagne di micro-advertising su ${sect.marketing} rivolte ad un pubblico segmentato per misurare il tasso di click e iscrizione.`,
+        4: `- **Growth Strategy**: Strutturazione di un loop di passaparola organico e referral program per ridurre a zero il costo di acquisizione iniziale.`,
+        5: `- **Brand Trust**: Posizionamento basato sulla trasparenza dei dati e recensioni pubbliche per superare la diffidenza iniziale del mercato.`,
+        6: `- **KPI di Acquisizione**: Monitoraggio del conversion rate sulla landing page e calcolo preliminare del costo per lead (CPL).`,
+        7: `- **Modello di Budgeting**: Allocazione della spesa pubblicitaria ottimizzata per mantenere il CAC al di sotto del valore di vita del cliente (LTV).`,
+        8: `- **Executive Summary Marketing**: Sintesi delle metriche di validazione raccolte e pianificazione del lancio commerciale definitivo.`
+      },
+      cfo: {
+        1: `- **Modello Finanziario MVP**: Strutturazione di un piano di cassa per supportare l'MVP in bootstrap, riducendo i costi fissi al minimo assoluto.`,
+        2: `- **Modello di Pricing**: Definizione delle tariffe basate su ${sect.revenue} per massimizzare la cassa immediata ed evitare crediti insoluti.`,
+        3: `- **Analisi di Break-Even**: Calcolo del numero di ${sect.client} attivi necessari a coprire i costi dei software e setup iniziale.`,
+        4: `- **Allocazione Budget**: Distribuzione del capitale circolante tra sviluppo minimo e test di marketing, favorendo l'acquisizione clienti.`,
+        5: `- **Costi di Gestione Societaria**: Stima della quota previdenziale e consulenza contabile per ditta individuale.`,
+        6: `- **Previsioni di Cassa**: Monitoraggio del cash flow mensile e pianificazione del punto di pareggio operativo nei primi 6 mesi.`,
+        7: `- **Spreadsheet a 12 Mesi**: Creazione del modello finanziario dettagliato con CAPEX, OPEX e bep (popolato nel tab dedicato).`,
+        8: `- **Financial Executive Summary**: Analisi del ROI prospettico e tempo di payback dell'investimento iniziale.`
+      },
+      cto: {
+        1: `- **Stack Serverless**: Scelta dell'infrastruttura serverless su ${sect.tech} per azzerare i costi fissi in fase di validazione.`,
+        2: `- **Integrazione Gateway**: Configurazione di Stripe o PayPal per consentire la transazione immediata e tracciamento vendite.`,
+        3: `- **Automazione Automatica**: Collegamento API tra Landing Page, CRM e Database tramite Make.com per automatizzare l'onboarding.`,
+        4: `- **Alerting e Monitoring**: Configurazione di log automatici per monitorare l'uptime del servizio ed evitare interruzioni.`,
+        5: `- **GDPR e Sicurezza**: Crittografia dei database, certificati SSL e rispetto delle normative europee sui dati personali.`,
+        6: `- **Sviluppo Incremental**: Rilascio di aggiornamenti settimanali basati sulle metriche d'uso reali degli utenti attivi.`,
+        7: `- **Tech Budget**: Ottimizzazione dei piani software (hosting, database, automazioni) per rimanere sotto i 50€/mese.`,
+        8: `- **Tech Stack Consolidato**: Architettura software pronta per sostenere fino a 5.000 utenti registrati.`
+      },
+      coo: {
+        1: `- **Flusso Operativo Lean**: Allocazione di circa 2 ore al giorno da parte del fondatore per la gestione ordinaria e validazione.`,
+        2: `- **Gestione delle Richieste**: Standardizzazione del processo di onboarding dei clienti per azzerare il tempo manuale richiesto.`,
+        3: `- **Sourcing Software**: Selezione di strumenti No-Code stabili con contratti flessibili mensili.`,
+        4: `- **Gestione Emergenze**: Definizione di SOP chiare in caso di bug bloccanti o disservizi dei fornitori esterni.`,
+        5: `- **Compliance Operativa**: Creazione di checklist per la gestione della privacy e tracciamento contabile quotidiano.`,
+        6: `- **Standardizzazione Procedure**: Manuali operativi scritti per consentire la delega a futuri assistenti virtuali.`,
+        7: `- **Incidenza Costo Lavoro**: Monitoraggio dell'efficienza oraria per massimizzare la produttività personale.`,
+        8: `- **Operations Complete**: Flussi di lavoro strutturati e pronti per essere scalati.`
+      },
+      clo: {
+        1: `- **Inquadramento Fiscale**: Scelta del regime fiscale più conveniente (forfettario o agevolato) per ridurre le tasse iniziali.`,
+        2: `- **Protezione IP**: Registrazione del dominio web e verifica preliminare del marchio sui registri pubblici.`,
+        3: `- **GDPR Compliance**: Generazione di Privacy Policy e Cookie Policy conformi tramite generatori certificati.`,
+        4: `- **Termini di Servizio**: Redazione delle condizioni contrattuali con limitazioni di responsabilità per l'erogazione del servizio.`,
+        5: `- **Compliance Amministrativa**: Registrazione della ditta ed allineamento sulle scadenze fiscali.`,
+        6: `- **Contrattualistica Fornitori**: Stesura di contratti di fornitura o collaborazione leggeri privi di vincoli temporali.`,
+        7: `- **Pianificazione Fiscale**: Calcolo dell'impatto fiscale sulle vendite e dei vantaggi regionali.`,
+        8: `- **Dossier Legale Pronto**: Tutti gli adempimenti, privacy e inquadramento societario pronti per l'operatività.`
+      },
+      cco: {
+        1: `- **Identità Visiva**: Palette colori moderna ed elegante abbinata ad un naming accattivante e payoff chiaro.`,
+        2: `- **Branding emozionale**: Posizionamento del brand incentrato sul risparmio di tempo e sulla semplicità.`,
+        3: `- **Design Landing Page**: Layout grafico focalizzato sulla conversione e sulla chiarezza visiva.`,
+        4: `- **Visual Asset**: Progettazione delle grafiche promozionali per i social e le inserzioni web.`,
+        5: `- **UX Design**: Ottimizzazione del form di registrazione per ridurre la frizione all'iscrizione.`,
+        6: `- **Packaging o Digital Style**: Linee guida grafiche per le email di benvenuto e notifiche utente.`,
+        7: `- **Copywriting Conversion**: Messaggi promozionali diretti ai bisogni primari del cliente target.`,
+        8: `- **Brand Book**: Identità visiva completa e linee guida per le future campagne.`
+      },
+      cso: {
+        1: `- **Panel Utenti Pilota**: Intervista a 10 utenti target per verificare l'esperienza d'uso dell'MVP.`,
+        2: `- **Setup Canale Supporto**: Attivazione di una mail di supporto o chat automatizzata sul sito.`,
+        3: `- **Politica di Soddisfazione**: Strutturazione di rimborsi veloci in caso di disservizio o bug.`,
+        4: `- **Retention Strategy**: Programma di fidelizzazione digitale o sconti ricorrenti per incrementare il valore nel tempo.`,
+        5: `- **Sezione FAQ**: Creazione di risposte pronte per i dubbi più frequenti degli utenti.`,
+        6: `- **KPI Customer Success**: Monitoraggio del tasso di abbandono (churn rate) e soddisfazione.`,
+        7: `- **Fidelizzazione Clienti**: Campagne di newsletter o WhatsApp marketing per mantenere gli utenti attivi.`,
+        8: `- **Manuale Supporto**: Standard e risposte preimpostate per la gestione clienti.`
+      },
+      cpo: {
+        1: `- **MVP Scope**: Identificazione dell'unica funzionalità core indispensabile, eliminando ogni feature secondaria.`,
+        2: `- **Roadmap di Prodotto**: Rilascio di aggiornamenti incrementali basati sul comportamento degli utenti reali.`,
+        3: `- **Test di Usabilità**: Monitoraggio delle sessioni utente per eliminare i colli di bottiglia del servizio.`,
+        4: `- **Quality Control**: Test interni continui ed eliminazione dei bug prima della promozione pubblica.`,
+        5: `- **Scarto e Discard Rule**: Blocco automatico di account o transazioni sospette per prevenire frodi.`,
+        6: `- **Feature Set**: Consolidamento del set di funzionalità dell'MVP.`,
+        7: `- **Roadmap Fase 2**: Progettazione delle funzionalità future da rilasciare dopo la validazione.`,
+        8: `- **Specifiche MVP**: Requisiti tecnici e funzionali pronti per essere implementati.`
+      },
+      sourcing: {
+        1: `- **MOQ e Fornitori**: Selezione di fornitori SaaS o terzisti con contratti snelli privi di costi iniziali d'ingresso.`,
+        2: `- **Logistica e Consegne**: Ottimizzazione dei tempi di attivazione dei servizi esterni.`,
+        3: `- **Fornitori di Backup**: Identificazione di partner software alternativi in caso di disservizio del primario.`,
+        4: `- **Negoziazione Tariffe**: Trattativa per sconti volume sui servizi cloud o materiali di consumo.`,
+        5: `- **Approvvigionamento**: Setup degli account di fatturazione e pagamenti per i software terzi.`,
+        6: `- **Ottimizzazione Forniture**: Riduzione dei costi unitari delle licenze software all'aumentare degli utenti.`,
+        7: `- **Logistica Doganale**: Se applicabile, conformità e sdoganamento di campioni o lotti fisici.`,
+        8: `- **Supply Chain Pronto**: Contratti e accordi con tutti i fornitori tecnologici e logistici.`
+      },
+      sales: {
+        1: `- **Funnel di Conversione**: Strutturazione dei passaggi d'acquisto sulla landing page (da visitatore a cliente).`,
+        2: `- **Pitch Commerciale**: Copy di vendita focalizzato sui benefici reali (es. risparmio di costi/tempo).`,
+        3: `- **Offerte Speciali**: Sconti di lancio per i primi 50 iscritti per accelerare la raccolta dati.`,
+        4: `- **Integrazione POS/Stripe**: Flussi di pagamento istantanei abilitati ed automatizzati.`,
+        5: `- **Partnership B2B**: Scouting di aziende partner interessate ad offrire il servizio ai loro dipendenti.`,
+        6: `- **Sales Operations**: Tracciamento delle vendite in tempo reale e allineamento con la fatturazione.`,
+        7: `- **Ottimizzazione Prezzi**: A/B test sui prezzi di vendita per trovare il punto di massimo profitto.`,
+        8: `- **Processo Vendite**: Funnel di conversione oliato e pronto per la scalabilità.`
+      },
+      capital: {
+        1: `- **Bootstrap Strategy**: Finanziamento dell'MVP interamente tramite fondi propri per mantenere il 100% del controllo.`,
+        2: `- **Bandi per Startup**: Ricerca di bandi pubblici o finanziamenti agevolati regionali per l'innovazione.`,
+        3: `- **Preparazione Pitch Deck**: Strutturazione delle slide del progetto con metriche e piani di crescita.`,
+        4: `- **Scouting Investitori**: Identificazione di business angel locali specializzati nel settore di riferimento.`,
+        5: `- **Pianificazione Finanziaria**: Calcolo delle milestone necessarie per attrarre finanziamenti esterni.`,
+        6: `- **Reinvestimento Cassa**: Destinazione del 100% dei primi ricavi alla crescita per evitare debito.`,
+        7: `- **Aumento Capitale**: Strutturazione del piano di quote societarie per futuri co-fondatori o partner.`,
+        8: `- **Investor Deck**: Pitch deck completato e pronto per essere presentato a partner e banche.`
+      }
+    };
+
+    // Estrazione dinamica del testo per l'agente e la fase corrente
     let phaseAnalysis = "";
+    if (isPizzaVending) {
+      if (pizzaVendingAnalyses[agentKey] && pizzaVendingAnalyses[agentKey][phase]) {
+        phaseAnalysis = pizzaVendingAnalyses[agentKey][phase];
+      } else {
+        phaseAnalysis = `- **Analisi Fase ${phase}**: Focus dipartimentale per la gestione logistica ed operativa del distributore automatico a Gran Canaria.`;
+      }
+    } else {
+      if (generalAnalyses[agentKey] && generalAnalyses[agentKey][phase]) {
+        phaseAnalysis = generalAnalyses[agentKey][phase];
+      } else {
+        phaseAnalysis = `- **Analisi Fase ${phase}**: Pianificazione lean dei flussi dipartimentali per mitigare i costi operativi e validare l'MVP.`;
+      }
+    }
+
+    // Costruiamo le obiezioni (Sincerità)
+    let objections = [];
     let verdict = "APPROVATO CON RISERVA";
     let verdictReason = "";
 
-    // Dettaglio settore per testi dinamici
-    const isPizzaVending = info.isVending && info.sector === "food_beverage";
-    
     // Obiezioni specifiche per agente
     if (agentKey === "cmo") {
       objections = [
@@ -282,81 +539,6 @@ const LocalAgentSimulationEngine = {
         "**Barriere di Ingresso**: Concorrenza di catene fast-food consolidate con orari estesi."
       ];
       verdictReason = "Avviare un test pilota per misurare la risposta del mercato reale.";
-    }
-
-    // Genera l'analisi specifica in base alla fase e al settore
-    if (isPizzaVending) {
-      switch (phase) {
-        case 1:
-          phaseAnalysis = `- **Rilevazione del Problema**: A ${info.location || "Gran Canaria"} manca un'offerta di ristorazione calda H24 rapida e di qualità. Le pizzerie tradizionali chiudono a mezzanotte, lasciando scoperti turisti notturni e lavoratori Horeca.
-- **Validazione Iniziale**: Prima di spendere 32.000€ per la macchina, condurremo interviste sul posto a 50 passanti nelle aree selezionate, mostrando foto del prodotto e testando la disponibilità a pagare 7.00€ per una pizza calda in 3 minuti.
-- **Soglia di Rischio**: Se meno del 60% degli intervistati si dichiara interessato, l'idea va modificata o abbandonata.`;
-          break;
-        case 2:
-          phaseAnalysis = `- **Segmentazione Target**: Identificati 3 segmenti principali: turisti di ritorno dai locali (ore 01:00 - 05:00), lavoratori del settore turistico/ristorazione che finiscono il turno tardi, residenti locali per uno spuntino veloce diurno.
-- **Mappa dei Competitor**: Supermercati aperti fino a tardi (offrono solo cibo freddo industriale), pizzerie d'asporto (lente e chiuse di notte), distributori classici di snack e biete (basso valore nutrizionale). Nessuno offre pizza calda su pietra.`;
-          break;
-        case 3:
-          phaseAnalysis = `- **Strategia di Lancio (GTM)**: Wrapping esterno della macchina con colori caldi (rosso/grigio pietra) ed elementi visivi tridimensionali. Installazione di un'insegna a bandiera LED retroilluminata H24 per rendersi visibili a distanza.
-- **Local SEO**: Posizionamento della macchina registrato su Google Maps, Apple Maps e TripAdvisor come 'Pizza Express 24h', ottimizzando le parole chiave per le ricerche turistiche locali notturne.`;
-          break;
-        case 4:
-          phaseAnalysis = `- **Passaparola Digitale (Growth)**: QR Code stampato sul cartone della pizza che rimanda alla scheda Google Maps: lasciando una recensione con foto, l'utente riceve via WhatsApp un codice promozionale con il 20% di sconto sul prossimo acquisto.
-- **Partnership Locali**: Fornitura di brochure o slide digitali per i gestori di case vacanza e Airbnb nel raggio di 500 metri, promuovendo il servizio pizza H24 per i loro ospiti che arrivano con voli notturni.`;
-          break;
-        case 5:
-          phaseAnalysis = `- **Burocrazia Spagnola**: Presentazione della SCIA (*Comunicación Previa de Actividad*) presso il municipio di riferimento. Iscrizione obbligatoria al Registro Sanitario dell'arcipelago.
-- **Compliance Alimentare**: Certificazione HACCP del laboratorio esterno che fornisce le basi pizza precotte fresche. La macchina deve possedere certificato CE e certificazione MOCA per il forno a pietra interno.`;
-          break;
-        case 6:
-          phaseAnalysis = `- **Flusso Operativo Giornaliero**: Rifornimento programmato ogni mattina alle 09:00 (caricamento di circa 40-50 pizze). Pulizia della camera di cottura, svuotamento cassetto briciole ed igienizzazione del touchscreen.
-- **Telemetria**: Utilizzo del portale Nayax per monitorare in tempo reale le scorte, le transazioni e la temperatura interna della cella frigo, con alert automatici via SMS in caso di anomalie di corrente.`;
-          break;
-        case 7:
-          phaseAnalysis = `- **Punto di Pareggio (Break-Even)**: Con un CAPEX iniziale di 36.500€ (macchina, trasporto, SCIA) e OPEX fissi di 890€/mese (affitto suolo, corrente, Autónomo, telemetria), la soglia di pareggio è fissata a **184 pizze al mese** (circa 6 pizze al giorno ad un prezzo medio di 7.00€).
-- **Rientro Investimento (ROI)**: Con una media di 15 pizze vendute al giorno, l'utile netto mensile stimato è di 1.250€, portando al rientro dell'investimento iniziale in circa 15 mesi.`;
-          break;
-        case 8:
-          phaseAnalysis = `- **Sintesi Executive**: Il progetto presenta un'elevata marginalità operativa unitaria (~70%) e risponde ad un bisogno reale. Tuttavia, il successo è subordinato al reperimento della location ideale ad altissimo traffico pedonale e all'efficienza logistica giornaliera.
-- **Raccomandazione**: Procedere al posizionamento pilota solo dopo aver firmato un contratto d'affitto suolo privato ed ottenuto la conformità sanitaria.`;
-          break;
-      }
-    } else {
-      // Analisi generale per altri settori
-      switch (phase) {
-        case 1:
-          phaseAnalysis = `- **Rilevazione dell'Opportunità**: Il progetto mira a digitalizzare o ottimizzare l'offerta nel settore **${info.sector.toUpperCase()}** ${targetLoc}.
-- **Validazione Lean**: Creazione di una semplice landing page per raccogliere indirizzi email e manifestazioni di interesse prima di avviare lo sviluppo del servizio o l'acquisto di stock.`;
-          break;
-        case 2:
-          phaseAnalysis = `- **Definizione Target**: Focus su un segmento di clienti insoddisfatti delle soluzioni attuali per motivi di costo, lentezza o complessità d'uso.
-- **Competitor**: Analisi dei leader di mercato tradizionali e identificazione della nostra nicchia di posizionamento differenziante.`;
-          break;
-        case 3:
-          phaseAnalysis = `- **Canali di Acquisizione**: Utilizzo di canali digitali diretti (Ads geolocalizzate, SEO di nicchia o outreach diretto B2B) per minimizzare la spesa iniziale.
-- **Value Proposition**: Messaggio chiaro centrato sulla risoluzione del problema principale con attrito zero.`;
-          break;
-        case 4:
-          phaseAnalysis = `- **Growth Strategy**: Implementazione di un programma di referral ('porta un amico') per ridurre il costo di acquisizione cliente (CAC).
-- **Outreach**: Contatto diretto con i primi 20 influencer o figure chiave del settore per ottenere recensioni e credibilità iniziale.`;
-          break;
-        case 5:
-          phaseAnalysis = `- **Aspetti Legali**: Apertura di P.IVA agevolata (es. regime forfettario), adempimento GDPR per la raccolta dati degli utenti e stesura dei termini di servizio.
-- **Rischi di Compliance**: Verifica di eventuali licenze o permessi specifici richiesti dal settore operativo.`;
-          break;
-        case 6:
-          phaseAnalysis = `- **Infrastruttura No-Code/Low-Code**: Utilizzo di strumenti web pronti (Carrd, Shopify, Notion, Make) per avviare l'attività senza costi fissi di sviluppo software custom.
-- **Operazioni**: Definizione delle routine quotidiane per la gestione delle richieste clienti e fatturazione automatica.`;
-          break;
-        case 7:
-          phaseAnalysis = `- **Struttura dei Costi**: CAPEX ridotto al minimo grazie allo stack software no-code. OPEX composto da hosting, piccoli budget pubblicitari e consulenza fiscale.
-- **Margine e BEP**: Margine lordo atteso elevato (>60%), con break-even point raggiungibile con pochissimi clienti attivi paganti al mese.`;
-          break;
-        case 8:
-          phaseAnalysis = `- **Sintesi Operativa**: Progetto fattibile in tempi rapidi con investimenti contenuti. Focus primario sul marketing di validazione nei primi 30 giorni.
-- **Prossimi Passi**: Lanciare la landing page pilota e avviare le prime campagne pubblicitarie di test.`;
-          break;
-      }
     }
 
     // Costruiamo il report finale
