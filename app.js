@@ -935,7 +935,12 @@ L'obiettivo: ${state.project.objective}
 
 L'utente ha fornito questo feedback nell'ultimo step: "${userFeedback}"
 
-Fornisci il tuo report specifico di competenza per questa fase. Scrivi in modo estremamente schematico, professionale ed investor-ready. Usa titoli e bullet-point. Massimizza l'efficacia pragmatica ed evidenzia i costi.`;
+Fornisci il tuo report specifico di competenza per questa fase. Scrivi in modo estremamente schematico, professionale ed investor-ready. Usa titoli e bullet-point. Massimizza l'efficacia pragmatica ed evidenzia i costi.
+
+REGOLE FONDAMENTALI DI CONDUZIONE (BOARDROOM RULES):
+1. SINCERITÀ E OBIEZIONI: Sii critico, onesto e trova tutte le obiezioni pratiche al progetto (se il mercato non è favorevole, se ci sono rischi operativi, ostacoli legali, o se non è fattibile). Inserisci sempre una sezione 'Critiche & Obiezioni' nel tuo report.
+2. ZONA GEOGRAFICA MANCANTE: Se l'utente non ha specificato una località geografica precisa nel progetto, evidenzialo chiaramente come un errore critico e proponi le migliori zone geografiche alternative adatte a questo business (se rilevante, proponi zone chiave di Gran Canaria come Playa del Inglés o Las Palmas, altrimenti zone generiche ideali).
+3. VETO FINANZIARIO / PIVOT BOOTSTRAP: Se il budget indicato è zero/minimo (bootstrap) e l'idea richiede investimenti significativi (es. macchinari vending, hardware, spazi fisici), poni un VETO dicendo chiaramente che il progetto è irrealizzabile con quelle risorse e proponi soluzioni alternative concrete (es. noleggio operativo/leasing, usati rigenerati, joint venture, o pivot verso idee digitali a costo zero).`;
         
         try {
           const response = await window.callGeminiAPI(state.apiKey, state.model, agentKey, agentPrompt);
@@ -981,8 +986,9 @@ Informazioni generali:
 Ecco i report appena generati dai tuoi sotto-agenti nella Boardroom:
 ${boardroomBrief}
 
-Sulla base di questi report, scrivi il paragrafo del Business Plan/Piano Operativo per questa FASE. Sii critico (segnala RED FLAGS se presenti), iper-realista e orientato al ROI.
-Concludi ponendo un massimo di 1-2 domande specifiche e focalizzate per consentire all'utente di definire i dettagli per la successiva FASE ${state.currentPhase + 1}.`;
+Sulla base di questi report, scrivi il paragrafo del Business Plan/Piano Operativo per questa FASE. Sii estremamente sincero, critico ed iper-realista (evidenzia tutte le obiezioni dei sotto-agenti, segnala RED FLAGS, colli di bottiglia o l'eventuale VETO di fattibilità finanziaria se il budget è nullo per attività ad alto CAPEX).
+Se l'utente non ha indicato la zona geografica e gli agenti hanno evidenziato la mancanza, riassumi le opzioni delle zone geografiche consigliate e sollecita l'utente a sceglierne una.
+Concludi ponendo un massimo di 1-2 domande specifiche e focalizzate (es. per scegliere tra i pivot proposti o le zone consigliate) per consentire all'utente di definire i dettagli per la successiva FASE ${state.currentPhase + 1}.`;
 
       try {
         const orchestratorResponse = await window.callGeminiAPI(state.apiKey, state.model, "orchestrator", orchestratorPrompt);
