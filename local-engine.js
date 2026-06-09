@@ -187,6 +187,66 @@ const LocalAgentSimulationEngine = {
     // Dettaglio settore per testi dinamici
     const isPizzaVending = info.isVending && info.sector === "food_beverage";
 
+    const sectorKeywords = {
+      saas: {
+        product: "il software SaaS / piattaforma cloud",
+        client: "abbonati mensili",
+        tech: "hosting Vercel, Supabase database ed automazioni cloud",
+        marketing: "Google Ads, SEO tecnica e content marketing",
+        revenue: "modello di abbonamento ricorrente (MRR)",
+        unit: "utenti attivi paganti"
+      },
+      ecommerce: {
+        product: "l'E-commerce / catalogo prodotti",
+        client: "acquirenti online",
+        tech: "Shopify / WooCommerce e gateway di pagamento Stripe",
+        marketing: "Meta Ads, TikTok Ads e email marketing di fidelizzazione",
+        revenue: "vendita diretta di prodotti fisici con margine",
+        unit: "ordini spediti con successo"
+      },
+      food_beverage: {
+        product: "l'attività di somministrazione Food & Beverage",
+        client: "clienti locali e turisti",
+        tech: "POS elettronico, menu digitale QR e software di cassa",
+        marketing: "social media marketing (Instagram), Local SEO e promozioni fisiche",
+        revenue: "somministrazione diretta e ordini da asporto",
+        unit: "coperti / pasti erogati"
+      },
+      retail: {
+        product: "il punto vendita retail / negozio fisico",
+        client: "visitatori in negozio",
+        tech: "POS integrato, lettori barcode e software di inventario",
+        marketing: "Google Business Profile, insegne ad alta visibilità e marketing locale",
+        revenue: "vendita di prodotti in negozio",
+        unit: "scontrini battuti"
+      },
+      mobile_app: {
+        product: "l'applicazione mobile (iOS/Android)",
+        client: "utenti dell'app",
+        tech: "SDK App Store, Firebase database e notifiche push",
+        marketing: "App Store Optimization (ASO) e campagne di installazione",
+        revenue: "acquisti in-app (IAP) o abbonamento",
+        unit: "download / abbonati in-app"
+      },
+      services: {
+        product: "il servizio professionale / consulenza agenzia",
+        client: "aziende clienti (B2B) o privati",
+        tech: "CRM di vendita (HubSpot), Calendly per appuntamenti e Zoom",
+        marketing: "LinkedIn Outreach, passaparola strutturato e networking di settore",
+        revenue: "tariffe orarie, consulenze o pacchetti mensili flat",
+        unit: "progetti chiusi / ore erogate"
+      },
+      general: {
+        product: "la soluzione di business",
+        client: "clienti target",
+        tech: "landing page web e strumenti di produttività cloud",
+        marketing: "passaparola, canali digitali e attività SEO locali",
+        revenue: "transazioni dirette e vendite commerciali",
+        unit: "clienti paganti acquisiti"
+      }
+    };
+    const sect = sectorKeywords[info.sector] || sectorKeywords.general;
+
     // 1. DATABASE DI ANALISI SPECIFICHE PER IL CASO PIZZA VENDING (11 Agenti x 8 Fasi)
     const pizzaVendingAnalyses = {
       cmo: {
