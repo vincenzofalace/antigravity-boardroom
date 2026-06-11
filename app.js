@@ -63,6 +63,10 @@ let state = {
   orchestratorOutputs: {}, // Struttura: { phase: { text: "", questions: [] } }
   answers: {},
   brainstormHistories: {}, // Struttura: { agentKey: [ { role: 'user'|'assistant', text: string, agentText: string, ceoText: string } ] }
+  financialOption: "acquisto", // opzione finanziaria attiva: acquisto, leasing, jv
+  financialOverrides: {}, // overrides di prezzo, affitto, ecc.
+  financialsChatHistory: [], // cronologia chat finanziaria
+  isApproved: false, // flag di approvazione finale del progetto
   requestDelay: 4500, // Tempo di attesa tra agenti in ms (default: 4.5s)
   isProcessing: false // Lock per evitare esecuzioni concorrenti
 };
@@ -427,6 +431,50 @@ function setupEventListeners() {
   }
 
   DOM.btnExport.addEventListener("click", exportFullReport);
+
+  // Cambia opzione finanziaria al click dei chip
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".fin-option-btn");
+    if (btn) {
+      const option = btn.dataset.option;
+      if (option && option !== state.financialOption) {
+        state.financialOption = option;
+        if (state.project) {
+          state.project.financialOption = option;
+          state.project.hasLeasingOption = (option === "leasing");
+        }
+        updateFinancialsUI();
+        saveCurrentProjectToStorage();
+        addFinancialsSystemMessage(option);
+      }
+    }
+  });
+
+  // Listener per l'invio della chat finanziaria
+  const btnSendFinancials = document.getElementById("btn-send-financials");
+  const financialsInput = document.getElementById("financials-input");
+  if (btnSendFinancials && financialsInput) {
+    btnSendFinancials.addEventListener("click", () => {
+      handleFinancialsChatSubmit(financialsInput.value.trim());
+      financialsInput.value = "";
+    });
+    financialsInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        handleFinancialsChatSubmit(financialsInput.value.trim());
+        financialsInput.value = "";
+      }
+    });
+  }
+
+  // Listener per i bottoni di approvazione finale
+  const btnApproveHeader = document.getElementById("btn-final-approval");
+  const btnApproveReport = document.getElementById("btn-final-approval-report");
+  if (btnApproveHeader) {
+    btnApproveHeader.addEventListener("click", approveAndExportProject);
+  }
+  if (btnApproveReport) {
+    btnApproveReport.addEventListener("click", approveAndExportProject);
+  }
 }
 
 // Configura i listener per la gestione dello storico progetti
@@ -544,6 +592,10 @@ function createNewProject() {
   state.orchestratorOutputs = {};
   state.answers = {};
   state.brainstormHistories = {};
+  state.financialOption = "acquisto";
+  state.financialOverrides = {};
+  state.financialsChatHistory = [];
+  state.isApproved = false;
   
   const starterForm = document.getElementById("starter-form");
   if (starterForm) starterForm.reset();
@@ -582,6 +634,10 @@ function saveCurrentProjectToStorage() {
     answers: state.answers,
     brainstormHistories: state.brainstormHistories,
     enabledAgents: state.enabledAgents,
+    financialOption: state.financialOption || "acquisto",
+    financialOverrides: state.financialOverrides || {},
+    financialsChatHistory: state.financialsChatHistory || [],
+    isApproved: state.isApproved || false,
     lastModified: Date.now()
   };
   
@@ -606,6 +662,10 @@ function loadProjectFromStorage(id) {
   state.answers = projData.answers || {};
   state.brainstormHistories = projData.brainstormHistories || {};
   state.enabledAgents = projData.enabledAgents || state.enabledAgents;
+  state.financialOption = projData.financialOption || "acquisto";
+  state.financialOverrides = projData.financialOverrides || {};
+  state.financialsChatHistory = projData.financialsChatHistory || [];
+  state.isApproved = projData.isApproved || false;
   
   SafeStorage.setItem("antigravity_active_project_id", id);
   
@@ -1501,21 +1561,67 @@ function updateLeanCanvasUI() {
   DOM.leanCanvasGrid.querySelector(".canvas-customer-segments .canvas-box-content").innerHTML = getBoxContent(2, "cmo", "Segmento target e interviste (CMO)...");
   
   document.getElementById("box-costs").innerHTML = getBoxContent(6, "sourcing", "Struttura costi e forniture (Sourcing)...");
-  document.getElementById("box-revenue").innerHTML = getBoxContent(1, "cfo", "Modello finanziario e tariffe (CFO)...");
-}
-
-// Riempie il tab finanziario (Spreadsheet CFO)
-// Riempie il tab finanziario (Spreadsheet CFO)
-function updateFinancialsUI() {
+  document.getElementById("box-revenue").innerHTML = getBoxContent(1, "cfo", "Modello finanziario e tariffe (CFO)...");function updateFinancialsUI() {
   DOM.financialTableBody.innerHTML = "";
   const chartContainer = document.getElementById("break-even-chart-container");
+  const optionSelector = document.getElementById("financial-option-selector-container");
   
   if (state.currentPhase >= 1 || state.project.type !== "custom") {
     const demoKey = state.project.type === "custom" ? "gardatech" : state.project.type;
     
     if (state.project.type === "custom") {
+      if (optionSelector) {
+        optionSelector.style.display = "block";
+        
+        // Determiniamo le etichette dei pulsanti in base al settore
+        const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+        let btn1Text = "💵 Acquisto Diretto";
+        let btn2Text = "🔄 Leasing / Noleggio";
+        let btn3Text = "🤝 Joint Venture";
+        
+        if (info.sector === "saas" || info.sector === "mobile_app" || info.sector === "marketplace") {
+          btn1Text = "💻 Sviluppo In-House";
+          btn2Text = "⚙️ No-Code Stack";
+          btn3Text = "🤝 CTO Equity Share";
+        } else if (info.sector === "ecommerce" || info.sector === "retail") {
+          btn1Text = "📦 Magazzino Proprio";
+          btn2Text = "🚚 Dropshipping / Fulfillment";
+          btn3Text = "🤝 Conto Vendita / Partner";
+        } else if (!info.isVending) {
+          btn1Text = "🏢 Agenzia Proprietaria";
+          btn2Text = "☁️ Sub-appalto / Outsourcing";
+          btn3Text = "🤝 Partnership / Rev-Share";
+        }
+        
+        const b1 = document.getElementById("fin-btn-option1");
+        const b2 = document.getElementById("fin-btn-option2");
+        const b3 = document.getElementById("fin-btn-option3");
+        
+        if (b1) b1.innerHTML = btn1Text;
+        if (b2) b2.innerHTML = btn2Text;
+        if (b3) b3.innerHTML = btn3Text;
+        
+        // Aggiorna lo stile dei chip attivi
+        const optionButtons = document.querySelectorAll(".fin-option-btn");
+        optionButtons.forEach(btn => {
+          if (btn.dataset.option === state.financialOption) {
+            btn.style.background = "var(--primary-grad)";
+            btn.style.color = "white";
+            btn.style.borderColor = "var(--primary)";
+            btn.style.fontWeight = "600";
+            btn.style.boxShadow = "0 0 10px var(--primary-glow)";
+          } else {
+            btn.style.background = "rgba(255, 255, 255, 0.03)";
+            btn.style.color = "var(--text-main)";
+            btn.style.borderColor = "var(--glass-border)";
+            btn.style.fontWeight = "500";
+            btn.style.boxShadow = "none";
+          }
+        });
+      }
+      
       const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
-      const fin = window.LocalAgentSimulationEngine.generateFinancials(info);
+      const fin = window.LocalAgentSimulationEngine.generateFinancials(info, state.financialOption, state.financialOverrides || {});
       
       document.getElementById("fin-capex").textContent = fin.capex;
       document.getElementById("fin-opex").textContent = fin.opex;
@@ -1535,62 +1641,68 @@ function updateFinancialsUI() {
       // Renderizza il grafico di Break-Even
       renderBreakEvenChart(fin.capexNum, fin.opexNum, fin.priceNum, fin.cogsNum, fin.unitName);
       
-    } else if (demoKey === "gardatech") {
-      document.getElementById("fin-capex").textContent = "1.950 €";
-      document.getElementById("fin-opex").textContent = "175 € / mese";
-      document.getElementById("fin-break-even").textContent = "12 Appartamenti";
+      // Renderizza la chat finanziaria
+      renderFinancialsChatMessages();
       
-      const rows = [
-        { item: "Kit Serratura Nuki Smart Lock", type: "CAPEX", cost: "80.00 € / unità", source: "Sourcing B2B (20% sconto distributore)" },
-        { item: "Sensori Finestre Xiaomi Zigbee", type: "CAPEX", cost: "12.00 € / unità", source: "Sourcing all'ingrosso (Cina)" },
-        { item: "Trasmettitore IR Broadlink RM4 Mini", type: "CAPEX", cost: "16.50 € / alloggio", source: "AliExpress (Sourcing quantitativo)" },
-        { item: "Integrazione Automazioni Make.com", type: "OPEX", cost: "9.00 € / mese", source: "Costi operativi (Make Pro)" },
-        { item: "Notifiche SMS ed Alert Twilio", type: "OPEX", cost: "15.00 € / mese", source: "Costi operativi (Twilio API)" },
-        { item: "Assicurazione RC Prodotti & Danni", type: "OPEX", cost: "37.50 € / mese", source: "Consulenza Allianz (Stima)" },
-        { item: "Consulenza Legale Privacy GDPR & Marchi", type: "CAPEX", cost: "600.00 € (Una tantum)", source: "Studio CLO partner" }
-      ];
+    } else {
+      if (optionSelector) optionSelector.style.display = "none";
       
-      rows.forEach(r => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><strong>${r.item}</strong></td>
-          <td><span class="chip" style="background: ${r.type === "CAPEX" ? "rgba(99,102,241,0.1); color:#6366f1" : "rgba(16,185,129,0.1); color:#10b981"}">${r.type}</span></td>
-          <td><span style="font-family: monospace; font-weight: bold">${r.cost}</span></td>
-          <td style="color: var(--text-muted)">${r.source}</td>
-        `;
-        DOM.financialTableBody.appendChild(tr);
-      });
-      
-      // Renderizza grafico GardaTech: capex 1950, opex 175, price 150, cogs 30
-      renderBreakEvenChart(1950, 175, 150, 30, "Appartamenti");
-      
-    } else if (demoKey === "ecowrap") {
-      document.getElementById("fin-capex").textContent = "600 €";
-      document.getElementById("fin-opex").textContent = "29 € / mese";
-      document.getElementById("fin-break-even").textContent = "3 Lotti (750 scatole)";
-      
-      const rows = [
-        { item: "Fornitura Minima Scatole (Terzista)", type: "CAPEX", cost: "200.00 € / lotto", source: "Sourcing scatolificio Emilia (Favini Crush)" },
-        { item: "Abbonamento Landing Page Carrd.co", type: "OPEX", cost: "1.50 € / mese", source: "Sito Carrd.co (Piano Pro 19$/anno)" },
-        { item: "Commissioni Gateway Stripe", type: "OPEX", cost: "1.4% + 0.25€ / trans.", source: "Stripe pricing" },
-        { item: "Certificazione conformità MOCA per alimenti", type: "CAPEX", cost: "400.00 € (Una tantum)", source: "Ente Certificatore partner CLO" }
-      ];
-      
-      rows.forEach(r => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><strong>${r.item}</strong></td>
-          <td><span class="chip" style="background: ${r.type === "CAPEX" ? "rgba(99,102,241,0.1); color:#6366f1" : "rgba(16,185,129,0.1); color:#10b981"}">${r.type}</span></td>
-          <td><span style="font-family: monospace; font-weight: bold">${r.cost}</span></td>
-          <td style="color: var(--text-muted)">${r.source}</td>
-        `;
-        DOM.financialTableBody.appendChild(tr);
-      });
-      
-      // Renderizza grafico EcoWrap: capex 600, opex 29, price 250, cogs 100
-      renderBreakEvenChart(600, 29, 250, 100, "Lotti");
+      if (demoKey === "gardatech") {
+        document.getElementById("fin-capex").textContent = "1.950 €";
+        document.getElementById("fin-opex").textContent = "175 € / mese";
+        document.getElementById("fin-break-even").textContent = "12 Appartamenti";
+        
+        const rows = [
+          { item: "Kit Serratura Nuki Smart Lock", type: "CAPEX", cost: "80.00 € / unità", source: "Sourcing B2B (20% sconto distributore)" },
+          { item: "Sensori Finestre Xiaomi Zigbee", type: "CAPEX", cost: "12.00 € / unità", source: "Sourcing all'ingrosso (Cina)" },
+          { item: "Trasmettitore IR Broadlink RM4 Mini", type: "CAPEX", cost: "16.50 € / alloggio", source: "AliExpress (Sourcing quantitativo)" },
+          { item: "Integrazione Automazioni Make.com", type: "OPEX", cost: "9.00 € / mese", source: "Costi operativi (Make Pro)" },
+          { item: "Notifiche SMS ed Alert Twilio", type: "OPEX", cost: "15.00 € / mese", source: "Costi operativi (Twilio API)" },
+          { item: "Assicurazione RC Prodotti & Danni", type: "OPEX", cost: "37.50 € / mese", source: "Consulenza Allianz (Stima)" },
+          { item: "Consulenza Legale Privacy GDPR & Marchi", type: "CAPEX", cost: "600.00 € (Una tantum)", source: "Studio CLO partner" }
+        ];
+        
+        rows.forEach(r => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td><strong>${r.item}</strong></td>
+            <td><span class="chip" style="background: ${r.type === "CAPEX" ? "rgba(99,102,241,0.1); color:#6366f1" : "rgba(16,185,129,0.1); color:#10b981"}">${r.type}</span></td>
+            <td><span style="font-family: monospace; font-weight: bold">${r.cost}</span></td>
+            <td style="color: var(--text-muted)">${r.source}</td>
+          `;
+          DOM.financialTableBody.appendChild(tr);
+        });
+        
+        renderBreakEvenChart(1950, 175, 150, 30, "Appartamenti");
+        
+      } else if (demoKey === "ecowrap") {
+        document.getElementById("fin-capex").textContent = "600 €";
+        document.getElementById("fin-opex").textContent = "29 € / mese";
+        document.getElementById("fin-break-even").textContent = "3 Lotti (750 scatole)";
+        
+        const rows = [
+          { item: "Fornitura Minima Scatole (Terzista)", type: "CAPEX", cost: "200.00 € / lotto", source: "Sourcing scatolificio Emilia (Favini Crush)" },
+          { item: "Abbonamento Landing Page Carrd.co", type: "OPEX", cost: "1.50 € / mese", source: "Sito Carrd.co (Piano Pro 19$/anno)" },
+          { item: "Commissioni Gateway Stripe", type: "OPEX", cost: "1.4% + 0.25€ / trans.", source: "Stripe pricing" },
+          { item: "Certificazione conformità MOCA per alimenti", type: "CAPEX", cost: "400.00 € (Una tantum)", source: "Ente Certificatore partner CLO" }
+        ];
+        
+        rows.forEach(r => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td><strong>${r.item}</strong></td>
+            <td><span class="chip" style="background: ${r.type === "CAPEX" ? "rgba(99,102,241,0.1); color:#6366f1" : "rgba(16,185,129,0.1); color:#10b981"}">${r.type}</span></td>
+            <td><span style="font-family: monospace; font-weight: bold">${r.cost}</span></td>
+            <td style="color: var(--text-muted)">${r.source}</td>
+          `;
+          DOM.financialTableBody.appendChild(tr);
+        });
+        
+        renderBreakEvenChart(600, 29, 250, 100, "Lotti");
+      }
     }
   } else {
+    if (optionSelector) optionSelector.style.display = "none";
     document.getElementById("fin-capex").textContent = "-";
     document.getElementById("fin-opex").textContent = "-";
     document.getElementById("fin-break-even").textContent = "-";
@@ -1632,14 +1744,14 @@ function updateReportUI() {
     });
     
     if (phaseNum === 7) {
-      markdown += `### Tabella dei Costi & Modello Finanziario (Spreadsheet CFO)\n\n`;
+      markdown += `### Tabella dei Costi & Modello Finanziario (Spreadsheet CFO - Opzione: ${state.financialOption.toUpperCase()})\n\n`;
       markdown += `| Elemento / Voce di Spesa | Tipo | Costo Stimato | Fonte / Criterio Logico |\n`;
       markdown += `| --- | --- | --- | --- |\n`;
       
       let rows = [];
       if (state.project.type === "custom") {
         const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
-        const fin = window.LocalAgentSimulationEngine.generateFinancials(info);
+        const fin = window.LocalAgentSimulationEngine.generateFinancials(info, state.financialOption, state.financialOverrides || {});
         rows = fin.rows;
       } else if (state.project.type === "gardatech") {
         rows = [
@@ -1671,6 +1783,46 @@ function updateReportUI() {
   
   DOM.reportContent.innerHTML = formatMarkdown(markdown);
   DOM.reportContent.dataset.rawMarkdown = markdown;
+
+  // Gestione visibilità pannello approvazione
+  const approvalContainer = document.getElementById("report-approval-container");
+  const successBadge = document.getElementById("approval-success-badge");
+  const btnApproveReport = document.getElementById("btn-final-approval-report");
+  const btnApproveHeader = document.getElementById("btn-final-approval");
+  
+  if (state.currentPhase >= 1) {
+    if (approvalContainer) approvalContainer.style.display = "block";
+    if (btnApproveHeader) btnApproveHeader.style.display = "inline-flex";
+    
+    if (state.isApproved) {
+      if (successBadge) successBadge.style.display = "block";
+      if (btnApproveReport) {
+        btnApproveReport.innerHTML = "🎉 Progetto Approvato e Archiviato";
+        btnApproveReport.style.background = "var(--success)";
+        btnApproveReport.disabled = true;
+      }
+      if (btnApproveHeader) {
+        btnApproveHeader.innerHTML = "🎉 Approvato!";
+        btnApproveHeader.style.background = "var(--success)";
+        btnApproveHeader.disabled = true;
+      }
+    } else {
+      if (successBadge) successBadge.style.display = "none";
+      if (btnApproveReport) {
+        btnApproveReport.innerHTML = "✅ Approva e Archivia Progetto (OneDrive Sync)";
+        btnApproveReport.style.background = "var(--success-grad)";
+        btnApproveReport.disabled = false;
+      }
+      if (btnApproveHeader) {
+        btnApproveHeader.innerHTML = "✅ Approva Progetto";
+        btnApproveHeader.style.background = "var(--success-grad)";
+        btnApproveHeader.disabled = false;
+      }
+    }
+  } else {
+    if (approvalContainer) approvalContainer.style.display = "none";
+    if (btnApproveHeader) btnApproveHeader.style.display = "none";
+  }
 }
 
 // Esportazione del report in Markdown
@@ -2021,6 +2173,395 @@ function updateAttachmentBadgeUI() {
   }
   
   container.appendChild(badge);
+}
+
+// ==========================================
+// CHAT FINANZIARIA INTERATTIVA & REALIGNMENT
+// ==========================================
+
+// Visualizza i messaggi della discussione finanziaria
+function renderFinancialsChatMessages() {
+  const chatBox = document.getElementById("financials-chat-box");
+  if (!chatBox) return;
+  
+  chatBox.innerHTML = "";
+  const history = state.financialsChatHistory || [];
+  
+  if (history.length === 0) {
+    chatBox.innerHTML = `
+      <div class="brainstorm-msg agent">
+        <span class="brainstorm-msg-sender">CFO / Finance Advisor</span>
+        <div class="brainstorm-msg-bubble" style="border-color: var(--success)">
+          Benvenuto nella sessione di analisi finanziaria. Posso spiegarti le proiezioni di costo, i margini o i calcoli del Break-Even Point. Chiedimi pure qualsiasi chiarimento sui numeri riportati.
+        </div>
+      </div>
+    `;
+    return;
+  }
+  
+  history.forEach(msg => {
+    if (msg.role === "user") {
+      const msgDiv = document.createElement("div");
+      msgDiv.className = "brainstorm-msg user";
+      msgDiv.innerHTML = `
+        <span class="brainstorm-msg-sender">Tu</span>
+        <div class="brainstorm-msg-bubble">${formatMarkdown(msg.text)}</div>
+      `;
+      chatBox.appendChild(msgDiv);
+    } else if (msg.role === "system") {
+      const msgDiv = document.createElement("div");
+      msgDiv.className = "brainstorm-msg agent";
+      msgDiv.innerHTML = `
+        <span class="brainstorm-msg-sender" style="color: var(--primary)">Sistema Antigravity</span>
+        <div class="brainstorm-msg-bubble" style="border-color: var(--primary); background: rgba(99,102,241,0.05)">${formatMarkdown(msg.text)}</div>
+      `;
+      chatBox.appendChild(msgDiv);
+    } else {
+      // Risposta del CFO
+      const agentDiv = document.createElement("div");
+      agentDiv.className = "brainstorm-msg agent";
+      agentDiv.innerHTML = `
+        <span class="brainstorm-msg-sender">CFO / Finance Advisor</span>
+        <div class="brainstorm-msg-bubble" style="border-color: var(--success)">${formatMarkdown(msg.agentText)}</div>
+      `;
+      chatBox.appendChild(agentDiv);
+      
+      // Risposta del CEO (Orchestratore)
+      if (msg.ceoText) {
+        const ceoDiv = document.createElement("div");
+        ceoDiv.className = "brainstorm-msg ceo";
+        ceoDiv.innerHTML = `
+          <span class="brainstorm-msg-sender">Orchestratore Master (CEO)</span>
+          <div class="brainstorm-msg-bubble">${formatMarkdown(msg.ceoText)}</div>
+        `;
+        chatBox.appendChild(ceoDiv);
+      }
+    }
+  });
+  
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Invia ed elabora il messaggio di discussione finanziaria
+async function handleFinancialsChatSubmit(message) {
+  if (!message) return;
+  
+  // Aggiungi il messaggio dell'utente alla cronologia
+  state.financialsChatHistory.push({ role: "user", text: message });
+  saveCurrentProjectToStorage();
+  renderFinancialsChatMessages();
+  
+  const q = message.toLowerCase();
+  let matched = false;
+  let overrideMsg = "";
+  
+  // 1. Rilevamento cambi opzione strategica finanziaria
+  let newOption = "";
+  if (q.includes("acquisto") || q.includes("in-house") || q.includes("in house") || (q.includes("proprio") && !q.includes("conto")) || q.includes("proprietario") || q.includes("diretto")) {
+    newOption = "acquisto";
+  } else if (q.includes("leasing") || q.includes("nolegg") || q.includes("no-code") || q.includes("nocode") || q.includes("dropship") || q.includes("fulfillment") || q.includes("sub-appalto") || q.includes("subappalto") || q.includes("outsourcing")) {
+    newOption = "leasing";
+  } else if (q.includes("joint venture") || q.includes("jv") || q.includes("cto") || q.includes("equity") || q.includes("conto vendita") || q.includes("rev-share") || q.includes("rev share") || q.includes("partnership") || q.includes("partner")) {
+    newOption = "jv";
+  }
+
+  if (newOption && newOption !== state.financialOption) {
+    state.financialOption = newOption;
+    if (state.project) {
+      state.project.financialOption = newOption;
+      state.project.hasLeasingOption = (newOption === "leasing");
+    }
+    overrideMsg += `Opzione strategica cambiata in **${newOption.toUpperCase()}**. `;
+    matched = true;
+  }
+  
+  // 2. Rilevamento cambi parametri con numeri
+  const numRegex = /(\d+[\.,]?\d*)/;
+  const match = q.match(numRegex);
+  if (match) {
+    const value = parseFloat(match[1].replace(',', '.'));
+    if (!isNaN(value)) {
+      if (q.includes("prezzo") || q.includes("tariffa") || q.includes("ricavo")) {
+        state.financialOverrides.price = value;
+        overrideMsg += `Prezzo impostato a **${value.toFixed(2)} €**. `;
+        matched = true;
+      }
+      if (q.includes("affitto") || q.includes("locazione") || q.includes("rent")) {
+        state.financialOverrides.rent = value;
+        overrideMsg += `Affitto/Locazione impostato a **${value.toFixed(2)} €**. `;
+        matched = true;
+      }
+      if (q.includes("elettric") || q.includes("corrente") || q.includes("energia")) {
+        state.financialOverrides.electricity = value;
+        overrideMsg += `Costo Elettricità impostato a **${value.toFixed(2)} €**. `;
+        matched = true;
+      }
+      if (q.includes("cogs") || q.includes("materie") || q.includes("costo unitario") || q.includes("ingredient")) {
+        state.financialOverrides.cogs = value;
+        overrideMsg += `COGS/Costo unitario impostato a **${value.toFixed(2)} €**. `;
+        matched = true;
+      }
+    }
+  }
+  
+  // 3. Rilevamento reset parametri
+  if (q.includes("reset") || q.includes("ripristina") || q.includes("cancella overrides")) {
+    state.financialOverrides = {};
+    overrideMsg = "Tutti i parametri finanziari sono stati ripristinati ai valori di benchmark standard.";
+    matched = true;
+  }
+  
+  if (matched) {
+    // Aggiungi un messaggio di sistema e avvia il ricalcolo e riallineamento
+    state.financialsChatHistory.push({
+      role: "system",
+      text: overrideMsg + " Ricalcolo del piano finanziario e riallineamento della boardroom in corso..."
+    });
+    saveCurrentProjectToStorage();
+    renderFinancialsChatMessages();
+    
+    // Mostriamo un indicatore visuale
+    const chatBox = document.getElementById("financials-chat-box");
+    const loader = document.createElement("div");
+    loader.className = "brainstorm-msg agent";
+    loader.innerHTML = `
+      <span class="brainstorm-msg-sender">CFO / Finance Advisor</span>
+      <div class="brainstorm-msg-bubble">Sto ricalcolando e allineando tutti gli agenti... <span class="typing-dots"><span>.</span><span>.</span><span>.</span></span></div>
+    `;
+    if (chatBox) {
+      chatBox.appendChild(loader);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    regenerateAllAgentReports();
+  } else {
+    // Mostriamo indicatore prima di rispondere con brainstorm standard
+    const chatBox = document.getElementById("financials-chat-box");
+    const loader = document.createElement("div");
+    loader.className = "brainstorm-msg agent";
+    loader.innerHTML = `
+      <span class="brainstorm-msg-sender">CFO / Finance Advisor</span>
+      <div class="brainstorm-msg-bubble"><span class="typing-dots"><span>.</span><span>.</span><span>.</span></span></div>
+    `;
+    if (chatBox) {
+      chatBox.appendChild(loader);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 600));
+    
+    const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+    info.financialOption = state.financialOption;
+    info.hasLeasingOption = (state.financialOption === "leasing");
+    
+    const response = window.LocalAgentSimulationEngine.handleFinancialsBrainstorm(info, message, state.financialsChatHistory);
+    
+    // Rimuove il loader se inserito
+    if (chatBox && loader.parentNode) {
+      chatBox.removeChild(loader);
+    }
+    
+    state.financialsChatHistory.push({
+      role: "cfo",
+      agentText: response.agentText,
+      ceoText: response.ceoText
+    });
+    
+    saveCurrentProjectToStorage();
+    renderFinancialsChatMessages();
+  }
+}
+
+// Aggiunge un messaggio di sistema per cambi opzioni dal chip
+function addFinancialsSystemMessage(option) {
+  let optionName = "Acquisto Diretto / In-House";
+  
+  // Determiniamo i testi delle opzioni in base al settore
+  const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+  if (info.sector === "saas" || info.sector === "mobile_app" || info.sector === "marketplace") {
+    if (option === "leasing") optionName = "No-Code Stack";
+    if (option === "jv") optionName = "CTO Equity Share";
+  } else if (info.sector === "ecommerce" || info.sector === "retail") {
+    if (option === "acquisto") optionName = "Magazzino Proprio";
+    if (option === "leasing") optionName = "Dropshipping / Fulfillment";
+    if (option === "jv") optionName = "Conto Vendita / Partner";
+  } else if (info.isVending) {
+    if (option === "acquisto") optionName = "Acquisto Diretto";
+    if (option === "leasing") optionName = "Leasing / Noleggio";
+    if (option === "jv") optionName = "Joint Venture";
+  } else {
+    if (option === "acquisto") optionName = "Agenzia Proprietaria";
+    if (option === "leasing") optionName = "Sub-appalto / Outsourcing";
+    if (option === "jv") optionName = "Partnership / Rev-Share";
+  }
+  
+  const sysMsg = `Opzione strategica modificata manualmente in: **${optionName}**. Ricalcolo del piano finanziario e allineamento in corso...`;
+  
+  state.financialsChatHistory.push({
+    role: "system",
+    text: sysMsg
+  });
+  
+  // Eseguiamo anche una richiesta automatica di brainstorming per spiegare l'opzione
+  info.financialOption = option;
+  info.hasLeasingOption = (option === "leasing");
+  
+  const response = window.LocalAgentSimulationEngine.handleFinancialsBrainstorm(info, option, state.financialsChatHistory);
+  state.financialsChatHistory.push({
+    role: "cfo",
+    agentText: response.agentText,
+    ceoText: response.ceoText
+  });
+  
+  // Rigenera tutti i report per riflettere l'opzione
+  regenerateAllAgentReports();
+}
+
+// Rigenera tutti i report della boardroom per allinearsi con i nuovi parametri
+function regenerateAllAgentReports() {
+  if (state.currentPhase === 0) return;
+  
+  const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+  info.financialOption = state.financialOption;
+  info.hasLeasingOption = (state.financialOption === "leasing");
+  info.financialOverrides = state.financialOverrides || {};
+  
+  // Rigenera ciascuna fase completata
+  for (let phaseNum = 1; phaseNum <= state.currentPhase; phaseNum++) {
+    if (!state.contributions[phaseNum]) {
+      state.contributions[phaseNum] = {};
+    }
+    
+    state.enabledAgents.forEach(agentKey => {
+      const report = window.LocalAgentSimulationEngine.generateAgentReport(
+        info,
+        phaseNum,
+        agentKey,
+        state.answers,
+        state.project.attachedFile,
+        state.project.attachedImage
+      );
+      state.contributions[phaseNum][agentKey] = report;
+    });
+    
+    const orchReport = window.LocalAgentSimulationEngine.generateOrchestratorReport(
+      info,
+      phaseNum,
+      {},
+      state.answers,
+      state.project.attachedFile,
+      state.project.attachedImage
+    );
+    state.orchestratorOutputs[phaseNum] = {
+      text: orchReport.text,
+      questions: orchReport.questions
+    };
+  }
+  
+  saveCurrentProjectToStorage();
+  
+  // Aggiorna la UI
+  updateLeanCanvasUI();
+  updateFinancialsUI();
+  updateReportUI();
+  renderBoardroomGrid();
+}
+
+// ==========================================
+// APPROVAZIONE PROGETTO & DOWNLOAD/ONEDRIVE
+// ==========================================
+
+// Approva il progetto ed esporta i file in locale e via browser
+function approveAndExportProject() {
+  if (state.currentPhase === 0) {
+    alert("Inizia il progetto prima di approvarlo.");
+    return;
+  }
+  
+  state.isApproved = true;
+  if (state.project) {
+    state.project.isApproved = true;
+  }
+  
+  saveCurrentProjectToStorage();
+  
+  // Aggiorna l'interfaccia (mostra badge e disabilita bottoni)
+  updateReportUI();
+  
+  // Avvia i download nel browser
+  downloadFullReportMD();
+  downloadFinancialsCSV();
+  
+  // Notifica l'utente
+  appendSystemMessage("🎉 Progetto Approvato e Archiviato con successo! I file sono stati scaricati.");
+}
+
+// Download del report markdown consolidato
+function downloadFullReportMD() {
+  const markdownText = DOM.reportContent.dataset.rawMarkdown;
+  if (!markdownText) {
+    alert("Nessun report generato da esportare al momento.");
+    return;
+  }
+  
+  const blob = new Blob([markdownText], { type: "text/markdown;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  const cleanName = state.project.name.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_');
+  link.setAttribute("download", `${cleanName}_Report_Completo.md`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Download del piano finanziario in CSV (UTF-8 BOM per Excel)
+function downloadFinancialsCSV() {
+  let rows = [];
+  if (state.project.type === "custom") {
+    const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+    const fin = window.LocalAgentSimulationEngine.generateFinancials(info, state.financialOption, state.financialOverrides || {});
+    rows = fin.rows;
+  } else if (state.project.type === "gardatech") {
+    rows = [
+      { item: "Kit Serratura Nuki Smart Lock", type: "CAPEX", cost: "80.00 € / unità", source: "Sourcing B2B (20% sconto distributore)" },
+      { item: "Sensori Finestre Xiaomi Zigbee", type: "CAPEX", cost: "12.00 € / unità", source: "Sourcing all'ingrosso (Cina)" },
+      { item: "Trasmettitore IR Broadlink RM4 Mini", type: "CAPEX", cost: "16.50 € / alloggio", source: "AliExpress (Sourcing quantitativo)" },
+      { item: "Integrazione Automazioni Make.com", type: "OPEX", cost: "9.00 € / mese", source: "Costi operativi (Make Pro)" },
+      { item: "Notifiche SMS ed Alert Twilio", type: "OPEX", cost: "15.00 € / mese", source: "Costi operativi (Twilio API)" },
+      { item: "Assicurazione RC Prodotti & Danni", type: "OPEX", cost: "37.50 € / mese", source: "Consulenza Allianz (Stima)" },
+      { item: "Consulenza Legale Privacy GDPR & Marchi", type: "CAPEX", cost: "600.00 € (Una tantum)", source: "Studio CLO partner" }
+    ];
+  } else if (state.project.type === "ecowrap") {
+    rows = [
+      { item: "Fornitura Minima Scatole (Terzista)", type: "CAPEX", cost: "200.00 € / lotto", source: "Sourcing scatolificio Emilia (Favini Crush)" },
+      { item: "Abbonamento Landing Page Carrd.co", type: "OPEX", cost: "1.50 € / mese", source: "Sito Carrd.co (Piano Pro 19$/anno)" },
+      { item: "Commissioni Gateway Stripe", type: "OPEX", cost: "1.4% + 0.25€ / trans.", source: "Stripe pricing" },
+      { item: "Certificazione conformità MOCA per alimenti", type: "CAPEX", cost: "400.00 € (Una tantum)", source: "Ente Certificatore partner CLO" }
+    ];
+  }
+
+  let csvContent = "\uFEFF"; // UTF-8 BOM
+  csvContent += "Elemento / Voce di Spesa;Tipo;Costo Stimato;Fonte / Criterio Logico\r\n";
+  
+  rows.forEach(r => {
+    const item = r.item.replace(/"/g, '""');
+    const cost = r.cost.replace(/"/g, '""');
+    const source = r.source.replace(/"/g, '""');
+    csvContent += `"${item}";"${r.type}";"${cost}";"${source}"\r\n`;
+  });
+  
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  const cleanName = state.project.name.toLowerCase().replace(/[^a-z0-9_]/g, '_').replace(/_+/g, '_');
+  link.setAttribute("download", `${cleanName}_Piano_Finanziario.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 // Avvia l'inizializzazione al caricamento del DOM

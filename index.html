@@ -116,6 +116,9 @@
       <button id="btn-export" class="btn btn-primary" title="Scarica il report in Markdown">
         📥 Esporta Report
       </button>
+      <button id="btn-final-approval" class="btn" style="background: var(--success-grad); color: white; border-color: var(--success); display: none; margin-left: 6px; font-weight: 600;" title="Approva definitivamente il progetto e sincronizza OneDrive">
+        ✅ Approva Progetto
+      </button>
     </div>
   </header>
 
@@ -295,6 +298,21 @@
               <h3>Modello Finanziario & Allocazione Capitale</h3>
               <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Elaborato in tempo reale dall'Agente CFO sulla base dei benchmark e delle stime reali.</p>
             </div>
+
+            <!-- Selettore Opzione Finanziaria Adattiva -->
+            <div id="financial-option-selector-container" class="glass-panel" style="display: none; margin-bottom: 24px; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px);">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+                <div>
+                  <h4 style="margin: 0; font-size: 14px; color: var(--primary); font-weight: 600;">Strategia di Acquisizione / Setup</h4>
+                  <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--text-muted);">Confronta le opzioni per trovare la soluzione ottimale in base alle tue possibilità e al progetto.</p>
+                </div>
+                <div class="financial-chips-container" style="display: flex; gap: 8px;">
+                  <button class="chip fin-option-btn" id="fin-btn-option1" data-option="acquisto">💵 Opzione 1</button>
+                  <button class="chip fin-option-btn" id="fin-btn-option2" data-option="leasing">🔄 Opzione 2</button>
+                  <button class="chip fin-option-btn" id="fin-btn-option3" data-option="jv">🤝 Opzione 3</button>
+                </div>
+              </div>
+            </div>
             
             <!-- High-level stats -->
             <div class="financial-cards" id="financial-cards">
@@ -340,14 +358,46 @@
                 </tbody>
               </table>
             </div>
+
+            <!-- Sezione di Brainstorming Finanziario -->
+            <div class="brainstorm-section" style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+              <h3>💬 Analisi & Discussione Finanziaria (CFO + CEO)</h3>
+              <p class="brainstorm-intro">Fai domande specifiche sui numeri, costi, ricavi, break-even o sul grafico per chiarire i dati finanziari riportati.</p>
+              
+              <div class="brainstorm-chat-box" id="financials-chat-box" style="max-height: 250px; min-height: 120px;">
+                <!-- I messaggi di discussione finanziaria verranno iniettati qui -->
+                <div class="brainstorm-msg agent">
+                  <span class="brainstorm-msg-sender">CFO / Finance Advisor</span>
+                  <div class="brainstorm-msg-bubble" style="border-color: var(--success)">
+                    Benvenuto nella sessione di analisi finanziaria. Posso spiegarti le proiezioni di costo, i margini o i calcoli del Break-Even Point. Chiedimi pure qualsiasi chiarimento sui numeri riportati.
+                  </div>
+                </div>
+              </div>
+              
+              <div class="brainstorm-input-container">
+                <input type="text" id="financials-input" placeholder="Chiedi spiegazioni sui numeri o sul grafico al CFO...">
+                <button id="btn-send-financials" class="btn-send-brainstorm">Analizza</button>
+              </div>
+            </div>
+
           </div>
         </div>
         
         <!-- Tab 4: Compiled Complete Report View -->
         <div class="tab-pane" id="report">
-          <div class="report-view">
+          <div class="report-view" style="display: flex; flex-direction: column; gap: 20px;">
             <div class="report-markdown" id="report-content">
               <!-- Riempito dinamicamente da app.js -->
+            </div>
+            <div class="report-approval-container" id="report-approval-container" style="display: none; padding: 20px; border-top: 1px solid var(--border-color); text-align: center; background: rgba(16, 185, 129, 0.05); border-radius: 12px; margin-top: 20px;">
+              <h4 style="margin: 0 0 8px 0; color: var(--success); font-weight: 600;">Valutazione Strategica Completa</h4>
+              <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Se sei soddisfatto del business plan e dei dati finanziari elaborati, procedi con l'approvazione finale del progetto.</p>
+              <button id="btn-final-approval-report" class="btn" style="background: var(--success-grad); color: white; border-color: var(--success); font-weight: bold; font-size: 14px; padding: 12px 24px; cursor: pointer;" title="Approva e salva il progetto nella cartella OneDrive">
+                ✅ Approva e Archivia Progetto (OneDrive Sync)
+              </button>
+              <div id="approval-success-badge" style="display: none; margin-top: 12px; color: var(--success); font-weight: bold; font-size: 14px; align-items: center; justify-content: center; gap: 8px;">
+                🎉 PROGETTO APPROVATO E SALVATO SU ONEDRIVE!
+              </div>
             </div>
           </div>
         </div>
@@ -487,9 +537,9 @@
   </div>
 
   <!-- Loading scripts -->
-  <script src="mock-data.js?v=1.2"></script>
-  <script src="local-engine.js?v=1.2"></script>
-  <script src="gemini-api.js?v=1.2"></script>
-  <script src="app.js?v=1.2"></script>
+  <script src="mock-data.js?v=1.3"></script>
+  <script src="local-engine.js?v=1.3"></script>
+  <script src="gemini-api.js?v=1.3"></script>
+  <script src="app.js?v=1.3"></script>
 </body>
 </html>

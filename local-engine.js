@@ -4,7 +4,7 @@
 
 const LocalAgentSimulationEngine = {
   // Classifica l'idea e i parametri immessi
-  classifyProject(idea = "", budget = "", objective = "") {
+  classifyProject(idea = "", budget = "", objective = "", previousAnswers = null) {
     const safeIdea = String(idea || "");
     const safeBudget = String(budget || "");
     const safeObjective = String(objective || "");
@@ -84,9 +84,25 @@ const LocalAgentSimulationEngine = {
     // Rileva se il budget è in puro bootstrap
     const isBootstrap = safeBudget.toLowerCase().includes("bootstrap") || 
                         safeBudget.toLowerCase().includes("zero") || 
-                        safeBudget.toLowerCase() === "0" || 
-                        safeBudget.toLowerCase() === "0€" || 
+                        safeBudget.toLowerCase().includes("0€") || 
+                        safeBudget.trim() === "0" || 
                         budgetAmount === 0;
+
+    // Rileva opzione leasing/noleggio operativo
+    let hasLeasingOption = false;
+    const combinedText = (safeIdea + " " + safeBudget + " " + safeObjective).toLowerCase();
+    if (combinedText.includes("leasing") || combinedText.includes("nolegg") || combinedText.includes("rent")) {
+      hasLeasingOption = true;
+    } else {
+      const answers = previousAnswers || (window.state && window.state.answers) || {};
+      for (let k in answers) {
+        const val = String(answers[k] || "").toLowerCase();
+        if (val.includes("leasing") || val.includes("nolegg") || val.includes("rent")) {
+          hasLeasingOption = true;
+          break;
+        }
+      }
+    }
 
     // Estrae un nome temporaneo del progetto
     let name = "Nuovo Progetto";
@@ -100,11 +116,11 @@ const LocalAgentSimulationEngine = {
       name = words.charAt(0).toUpperCase() + words.slice(1) + (location ? " " + location.split(" ")[0] : "");
     }
 
-    return { name, sector, target, location, budgetAmount, isVending, locationMissing: location === "", isBootstrap };
+    return { name, sector, target, location, budgetAmount, isVending, locationMissing: location === "", isBootstrap, hasLeasingOption };
   },
 
   // Genera dati finanziari per la fase 7 / tab finanziario
-  generateFinancials(info) {
+  generateFinancials(info, activeOption, overrides = {}) {
     let capexVal = 0;
     let opexVal = 0;
     let bepUnit = "Unità";
@@ -113,70 +129,215 @@ const LocalAgentSimulationEngine = {
 
     let priceVal = 100;
     let cogsVal = 20;
+    
+    // Rileva l'opzione da utilizzare
+    let selectedOption = activeOption || (window.state && window.state.financialOption) || "acquisto";
+    if (!activeOption && info.hasLeasingOption) {
+      selectedOption = "leasing";
+    }
 
     if (info.isVending && info.sector === "food_beverage") {
-      // CASO DISTRIBUTORE AUTOMATICO DI PIZZA (VALORI AGGIORNATI BENCHMARK ADIAL/LET'S PIZZA 2026 - RISTRUTTURAZIONE COSTI)
-      capexVal = 55000; // Costo macchina professionale nuova premium + trasporto Canarie + allacciamento e autorizzazioni sanitarie
-      opexVal = 950; // Affitto suolo, elettricità industriale, telemetria, assicurazione, Autónomo e manutenzione
-      bepUnit = "Pizze Vendute / Mese";
-      priceVal = 8.0;
-      cogsVal = 2.4; // Ingredienti + comm. POS
-      // Margine medio per pizza: Prezzo vendita medio 8.00€ (turistico) - Costo base+ingredienti 2.20€ - Comm. POS 0.20€ = 5.60€
-      bepVal = Math.round(opexVal / (priceVal - cogsVal)); // Circa 170 pizze al mese (circa 5.6 pizze al giorno per pareggiare gli OPEX)
-      
+      // CASO DISTRIBUTORE AUTOMATICO DI PIZZA
+      priceVal = overrides.price !== undefined ? overrides.price : 8.0;
+      cogsVal = overrides.cogs !== undefined ? overrides.cogs : 2.4;
       const isCanarias = info.location && info.location.includes("Canarie");
-
-      rows = [
-        { item: "Distributore Automatico Pizza Professionale (con forno a pietra integrato - es. Adial Pizzadoor / Let's Pizza - Nuovo ad alta capienza)", type: "CAPEX", cost: "48,000.00 €", source: "Benchmark di mercato produttori UE 2026 (Adial France retail / Let's Pizza)" },
-        { item: "Trasporto, Dogana e Sdoganamento a " + (info.location || "destinazione"), type: "CAPEX", cost: isCanarias ? "3,500.00 €" : "1,800.00 €", source: "Logistica mare/container + Sdoganamento IGIC Canarie e DUA" },
-        { item: "Allacciamento elettrico trifase, aumento potenza (6kW picco) e SCIA comunale", type: "CAPEX", cost: "1,800.00 €", source: "Lavori tecnici di attivazione, certificazione impianto e tasse locali" },
-        { item: "Adempimenti sanitari HACCP, Certificati MOCA e Registro Sanitario locale", type: "CAPEX", cost: "1,200.00 €", source: "Consulenza biologo alimentare + Pratiche Asesoria" },
-        { item: "Affitto spazio commerciale privato (suolo esterno fronte strada o cortile)", type: "OPEX", cost: "450.00 € / mese", source: "Benchmark contratti commerciali area turistica a Gran Canaria" },
-        { item: "Consumo energia elettrica (forno pietra rapido e cella frigo h24)", type: "OPEX", cost: "210.00 € / mese", source: "Consumi stimati tariffe industriali Spagna (forno 3.8 kW picco)" },
-        { item: "Connettività SIM 4G, telemetria Nayax e POS cashless", type: "OPEX", cost: "35.00 € / mese", source: "Abbonamento Nayax Core + canone connessione" },
-        { item: "Assicurazione RC Prodotti & Danni (atti vandalici, urti, guasti forno)", type: "OPEX", cost: "55.00 € / mese", source: "Polizza assicurativa business Spagna (Allianz/Mapfre)" },
-        { item: "Quota Autónomo (previdenza sociale spagnola flat rate primo anno)", type: "OPEX", cost: "80.00 € / mese", source: "Regime spagnolo agevolato Autónomo Canarie" },
-        { item: "Manutenzione ordinaria programmata, parti di ricambio e filtri cappa", type: "OPEX", cost: "120.00 € / mese", source: "Accantonamento usura resistenze e parti meccaniche forno" }
-      ];
-    } else if (info.sector === "saas" || info.sector === "mobile_app") {
-      capexVal = info.budgetAmount <= 1000 ? 250 : Math.round(info.budgetAmount * 0.35);
-      opexVal = info.budgetAmount <= 1000 ? 24 : Math.round(info.budgetAmount * 0.08);
-      bepUnit = "Abbonati SaaS / Mese";
-      priceVal = 29.0;
-      cogsVal = 0.0;
-      bepVal = Math.round(opexVal / priceVal);
-      rows = [
-        { item: "Dominio & Landing Page Professionale (Carrd/Webflow)", type: "CAPEX", cost: "250.00 €", source: "Abbonamento annuale + Template" },
-        { item: "Database & Hosting Cloud (Firebase/Supabase)", type: "OPEX", cost: "25.00 € / mese", source: "Infrastruttura tecnica" },
-        { item: "Piattaforma di Automazione (Make.com/Zapier)", type: "OPEX", cost: "29.00 € / mese", source: "Sincronizzazione API e Webhook" },
-        { item: "Consulenza Legale Privacy GDPR e Cookie (Iubenda)", type: "CAPEX", cost: "350.00 € (Una tantum)", source: "Compliance CLO" }
-      ];
-    } else if (info.sector === "ecommerce") {
-      capexVal = info.budgetAmount <= 1000 ? 300 : Math.round(info.budgetAmount * 0.40);
-      opexVal = info.budgetAmount <= 1000 ? 35 : Math.round(info.budgetAmount * 0.10);
-      bepUnit = "Ordini E-commerce / Mese";
-      priceVal = 30.0;
-      cogsVal = 15.0;
-      bepVal = Math.round(opexVal / (priceVal - cogsVal));
-      rows = [
-        { item: "Primo Lotto di Merce / Packaging Personalizzato", type: "CAPEX", cost: "800.00 €", source: "Sourcing MOQ basso da scatolificio" },
-        { item: "Sito Web E-commerce (Shopify/WooCommerce)", type: "OPEX", cost: "36.00 € / mese", source: "Canone SaaS Shopify" },
-        { item: "Budget Advertising Iniziale (Meta/TikTok Ads)", type: "CAPEX", cost: "400.00 €", source: "Validazione traffico profilato" },
-        { item: "Contratto di Spedizioni B2B (Poste/BRT)", type: "OPEX", cost: "6.80 € / pacco", source: "Tariffa logistica agevolata" }
-      ];
+      const shippingCost = isCanarias ? 3500 : 1800;
+      const installCost = 1800;
+      const practiceCost = 1200;
+      
+      const rentCost = overrides.rent !== undefined ? overrides.rent : 450;
+      const electricityCost = overrides.electricity !== undefined ? overrides.electricity : 210;
+      const otherOpex = 35 + 55 + 80 + 120; // Nayax, Assicurazione, Autónomo, Manutenzione = 290
+      
+      if (selectedOption === "leasing") {
+        const leaseFee = overrides.leaseFee !== undefined ? overrides.leaseFee : 850;
+        capexVal = 1500 + shippingCost + installCost + practiceCost;
+        opexVal = rentCost + electricityCost + otherOpex + leaseFee;
+        bepUnit = "Pizze Vendute / Mese";
+        bepVal = Math.round(opexVal / (priceVal - cogsVal));
+        
+        rows = [
+          { item: "Deposito Cauzionale & Startup fee Noleggio Operativo (Adial / Let's Pizza)", type: "CAPEX", cost: "1,500.00 €", source: "Contratto noleggio con riscatto 36 mesi" },
+          { item: "Canone Mensile Noleggio Operativo Macchinario", type: "OPEX", cost: `${leaseFee.toFixed(2)} € / mese`, source: "Quota leasing finanziario / noleggio operativo europeo" },
+          { item: "Trasporto, Dogana e Sdoganamento a " + (info.location || "destinazione"), type: "CAPEX", cost: `${shippingCost.toFixed(2)} €`, source: "Logistica mare/container + Sdoganamento IGIC Canarie e DUA" },
+          { item: "Allacciamento elettrico trifase, aumento potenza (6kW picco) e SCIA", type: "CAPEX", cost: `${installCost.toFixed(2)} €`, source: "Lavori tecnici di attivazione e tasse locali" },
+          { item: "Adempimenti sanitari HACCP, Certificati MOCA e Registro Sanitario", type: "CAPEX", cost: `${practiceCost.toFixed(2)} €`, source: "Consulenza biologo alimentare + Pratiche Asesoria" },
+          { item: "Affitto spazio commerciale privato (suolo esterno o cortile)", type: "OPEX", cost: `${rentCost.toFixed(2)} € / mese`, source: "Benchmark contratti commerciali area turistica" },
+          { item: "Consumo energia elettrica (forno pietra e cella frigo h24)", type: "OPEX", cost: `${electricityCost.toFixed(2)} € / mese`, source: "Consumi stimati tariffe industriali Spagna" },
+          { item: "Altri OPEX fissi (Nayax SIM, Allianz RC, Autónomo Canarie, Manutenzione)", type: "OPEX", cost: `${otherOpex.toFixed(2)} € / mese`, source: "Costi amministrativi, di telemetria e assicurazione" }
+        ];
+      } else if (selectedOption === "jv") {
+        const partnerShare = overrides.partnerShare !== undefined ? overrides.partnerShare : (priceVal * 0.3);
+        capexVal = shippingCost + installCost + practiceCost + 3500;
+        opexVal = rentCost + electricityCost + otherOpex;
+        const finalCogs = cogsVal + partnerShare;
+        bepUnit = "Pizze Vendute / Mese";
+        bepVal = Math.round(opexVal / (priceVal - finalCogs));
+        
+        rows = [
+          { item: "Quota CAPEX Logistica e Setup (Condivisa partner JV)", type: "CAPEX", cost: `${capexVal.toFixed(2)} €`, source: "Accordo JV: 50% costi allacciamento, trasporto Canarie e pratiche sanitarie" },
+          { item: "Fornitura Macchinario (A carico del Partner JV)", type: "CAPEX", cost: "0.00 €", source: "Asset apportato interamente dal partner locale" },
+          { item: `Revenue Share Partner (${((partnerShare/priceVal)*100).toFixed(0)}% su scontrino medio)`, type: "OPEX", cost: `${partnerShare.toFixed(2)} € / pizza`, source: "Accordo di ripartizione utili / royalties sul fatturato" },
+          { item: "Affitto spazio commerciale privato (suolo esterno o locale)", type: "OPEX", cost: `${rentCost.toFixed(2)} € / mese`, source: "Spazio condiviso o co-locato con attività partner" },
+          { item: "Consumo energia elettrica (forno pietra e cella frigo h24)", type: "OPEX", cost: `${electricityCost.toFixed(2)} € / mese`, source: "Tariffa industriale trifase Gran Canaria" },
+          { item: "Altri OPEX fissi (Nayax SIM, Allianz RC, Autónomo Canarie, Manutenzione)", type: "OPEX", cost: `${otherOpex.toFixed(2)} € / mese`, source: "Costi amministrativi, di telemetria e assicurazione" }
+        ];
+        cogsVal = finalCogs;
+      } else {
+        // acquisto
+        const machineCost = overrides.machineCost !== undefined ? overrides.machineCost : 48000;
+        capexVal = machineCost + shippingCost + installCost + practiceCost;
+        opexVal = rentCost + electricityCost + otherOpex;
+        bepUnit = "Pizze Vendute / Mese";
+        bepVal = Math.round(opexVal / (priceVal - cogsVal));
+        
+        rows = [
+          { item: "Distributore Automatico Pizza Professionale (Nuovo forno pietra)", type: "CAPEX", cost: `${machineCost.toFixed(2)} €`, source: "Benchmark di mercato produttori UE 2026" },
+          { item: "Trasporto, Dogana e Sdoganamento a " + (info.location || "destinazione"), type: "CAPEX", cost: `${shippingCost.toFixed(2)} €`, source: "Logistica mare/container + Sdoganamento IGIC Canarie e DUA" },
+          { item: "Allacciamento elettrico trifase, aumento potenza (6kW picco) e SCIA", type: "CAPEX", cost: `${installCost.toFixed(2)} €`, source: "Lavori tecnici di attivazione, certificazione impianto e tasse" },
+          { item: "Adempimenti sanitari HACCP, Certificati MOCA e Registro Sanitario", type: "CAPEX", cost: `${practiceCost.toFixed(2)} €`, source: "Consulenza biologo alimentare + Pratiche Asesoria" },
+          { item: "Affitto spazio commerciale privato (suolo esterno o cortile)", type: "OPEX", cost: `${rentCost.toFixed(2)} € / mese`, source: "Benchmark contratti commerciali area turistica" },
+          { item: "Consumo energia elettrica (forno pietra e cella frigo h24)", type: "OPEX", cost: `${electricityCost.toFixed(2)} € / mese`, source: "Consumi stimati tariffe industriali Spagna" },
+          { item: "Altri OPEX fissi (Nayax SIM, Allianz RC, Autónomo Canarie, Manutenzione)", type: "OPEX", cost: `${otherOpex.toFixed(2)} € / mese`, source: "Costi amministrativi, di telemetria e assicurazione" }
+        ];
+      }
+    } else if (info.sector === "saas" || info.sector === "mobile_app" || info.sector === "marketplace") {
+      // CASO SAAS / MOBILE APP / MARKETPLACE
+      priceVal = overrides.price !== undefined ? overrides.price : 29.0;
+      cogsVal = overrides.cogs !== undefined ? overrides.cogs : 0.0;
+      
+      const hostingCost = overrides.rent !== undefined ? overrides.rent : 45;
+      const toolsCost = overrides.electricity !== undefined ? overrides.electricity : 35;
+      const legalCost = 600;
+      
+      if (selectedOption === "leasing") {
+        capexVal = 800;
+        opexVal = hostingCost + toolsCost + 170;
+        bepUnit = "Abbonati SaaS / Mese";
+        bepVal = Math.round(opexVal / (priceVal - cogsVal));
+        rows = [
+          { item: "Setup Template No-Code & Dominio (Carrd/Bubble)", type: "CAPEX", cost: "800.00 €", source: "Template e configurazione iniziale" },
+          { item: "Consulenza Legale Privacy GDPR Base (Iubenda)", type: "CAPEX", cost: "400.00 €", source: "Compliance automatica" },
+          { item: "Abbonamento Piattaforma No-Code (Bubble/Webflow Enterprise)", type: "OPEX", cost: `${(hostingCost + 105).toFixed(2)} € / mese`, source: "Hosting, CMS e Database server cloud" },
+          { item: "Abbonamento Automazioni Make/Zapier e Tool di Marketing", type: "OPEX", cost: `${(toolsCost + 65).toFixed(2)} € / mese`, source: "Sincronizzazione dati e notifiche automatiche" }
+        ];
+      } else if (selectedOption === "jv") {
+        const partnerShare = overrides.partnerShare !== undefined ? overrides.partnerShare : (priceVal * 0.35);
+        capexVal = legalCost;
+        opexVal = hostingCost + toolsCost;
+        const finalCogs = cogsVal + partnerShare;
+        bepUnit = "Abbonati SaaS / Mese";
+        bepVal = Math.round(opexVal / (priceVal - finalCogs));
+        rows = [
+          { item: "Setup Legale Societario & Patti Parasociali (Assegnazione Equity)", type: "CAPEX", cost: `${legalCost.toFixed(2)} €`, source: "Studio CLO partner e spese notarili" },
+          { item: "Sviluppo Tecnologico ed Evolution (CTO Co-Founder)", type: "CAPEX", cost: "0.00 €", source: "Apporto d'opera del socio tecnologico in cambio di equity" },
+          { item: `Revenue Share Partner Tecnologico (${((partnerShare/priceVal)*100).toFixed(0)}% su scontrino)`, type: "OPEX", cost: `${partnerShare.toFixed(2)} € / abbonamento`, source: "Ripartizione o royalties concordate da patto parasociale" },
+          { item: "Database & Hosting Cloud (Firebase/Supabase)", type: "OPEX", cost: `${hostingCost.toFixed(2)} € / mese`, source: "Infrastruttura tecnica" },
+          { item: "Piattaforma di Automazione (Make.com/Zapier)", type: "OPEX", cost: `${toolsCost.toFixed(2)} € / mese`, source: "Sincronizzazione API e Webhook" }
+        ];
+        cogsVal = finalCogs;
+      } else {
+        capexVal = 4400 + legalCost;
+        opexVal = hostingCost + toolsCost;
+        bepUnit = "Abbonati SaaS / Mese";
+        bepVal = Math.round(opexVal / (priceVal - cogsVal));
+        rows = [
+          { item: "Sviluppo Iniziale MVP (In-House / Sviluppatori)", type: "CAPEX", cost: "4,400.00 €", source: "Sviluppo frontend/backend ed integrazione database" },
+          { item: "Consulenza Legale Privacy GDPR e Termini d'Uso", type: "CAPEX", cost: `${legalCost.toFixed(2)} €`, source: "Compliance CLO ed informativa contratti" },
+          { item: "Database & Hosting Cloud (Firebase/Supabase)", type: "OPEX", cost: `${hostingCost.toFixed(2)} € / mese`, source: "Infrastruttura tecnica" },
+          { item: "Piattaforma di Automazione (Make.com/Zapier)", type: "OPEX", cost: `${toolsCost.toFixed(2)} € / mese`, source: "Sincronizzazione API e Webhook" }
+        ];
+      }
+    } else if (info.sector === "ecommerce" || info.sector === "retail") {
+      // CASO E-COMMERCE / RETAIL
+      priceVal = overrides.price !== undefined ? overrides.price : 30.0;
+      cogsVal = overrides.cogs !== undefined ? overrides.cogs : 10.0;
+      
+      const storageCost = overrides.rent !== undefined ? overrides.rent : 150;
+      const shippingCost = overrides.electricity !== undefined ? overrides.electricity : 6.8;
+      
+      if (selectedOption === "leasing") {
+        cogsVal = overrides.cogs !== undefined ? overrides.cogs : 18.0;
+        capexVal = 1500;
+        opexVal = storageCost + 450;
+        bepUnit = "Ordini E-commerce / Mese";
+        bepVal = Math.round(opexVal / (priceVal - cogsVal));
+        rows = [
+          { item: "Budget Advertising Iniziale (Meta/TikTok Ads)", type: "CAPEX", cost: "1,100.00 €", source: "Validazione e acquisizione traffico profilato" },
+          { item: "Sito Web Shopify & GDPR (Setup e integrazione)", type: "CAPEX", cost: "400.00 €", source: "Temi e compliance legale" },
+          { item: "Advertising Continuo (Meta / TikTok Ads)", type: "OPEX", cost: "450.00 € / mese", source: "Budget quotidiano per mantenimento vendite" },
+          { item: "Sito Web E-commerce (Shopify SaaS + App Sourcing)", type: "OPEX", cost: `${storageCost.toFixed(2)} € / mese`, source: "Canone Shopify e automazioni importazione" },
+          { item: "Costo Logistica e Spedizione (Fulfillment)", type: "OPEX", cost: `${shippingCost.toFixed(2)} € / ordine`, source: "Tariffa logistica dropshipping" }
+        ];
+      } else if (selectedOption === "jv") {
+        const partnerShare = overrides.partnerShare !== undefined ? overrides.partnerShare : (priceVal * 0.4);
+        capexVal = 2000;
+        opexVal = storageCost + 100;
+        const finalCogs = cogsVal + partnerShare;
+        bepUnit = "Ordini E-commerce / Mese";
+        bepVal = Math.round(opexVal / (priceVal - finalCogs));
+        rows = [
+          { item: "Setup Contrattualistica, Logistica e Spedizione (Condivisa)", type: "CAPEX", cost: "1,600.00 €", source: "Allineamento logistico e contratti legali" },
+          { item: "Consulenza Legale GDPR e Marchi", type: "CAPEX", cost: "400.00 €", source: "Compliance CLO" },
+          { item: `Revenue Share Partner Brand (${((partnerShare/priceVal)*100).toFixed(0)}% su scontrino)`, type: "OPEX", cost: `${partnerShare.toFixed(2)} € / ordine`, source: "Accordo di conto vendita e fornitura condivisa" },
+          { item: "Sito Web E-commerce (Shopify SaaS)", type: "OPEX", cost: `${storageCost.toFixed(2)} € / mese`, source: "Canone Shopify" },
+          { item: "Costo Logistica e Spedizione (Fulfillment)", type: "OPEX", cost: `${shippingCost.toFixed(2)} € / ordine`, source: "Tariffa di spedizione locale" }
+        ];
+        cogsVal = finalCogs;
+      } else {
+        capexVal = 10000;
+        opexVal = storageCost + 200;
+        bepUnit = "Ordini E-commerce / Mese";
+        bepVal = Math.round(opexVal / (priceVal - cogsVal));
+        rows = [
+          { item: "Primo Lotto Minimo di Merce (MOQ)", type: "CAPEX", cost: "8,000.00 €", source: "Acquisto stock all'ingrosso da fornitore" },
+          { item: "Sito Web Shopify & GDPR (Setup e integrazione)", type: "CAPEX", cost: "2,000.00 €", source: "Configurazione e lancio" },
+          { item: "Sito Web E-commerce (Shopify SaaS + App)", type: "OPEX", cost: `${storageCost.toFixed(2)} € / mese`, source: "Canone Shopify" },
+          { item: "Costo Logistica e Spedizione (Fulfillment)", type: "OPEX", cost: `${shippingCost.toFixed(2)} € / ordine`, source: "Tariffa logistica e packaging di spedizione" }
+        ];
+      }
     } else {
-      capexVal = info.budgetAmount <= 1000 ? 250 : Math.round(info.budgetAmount * 0.30);
-      opexVal = info.budgetAmount <= 1000 ? 30 : Math.round(info.budgetAmount * 0.07);
-      bepUnit = "Clienti Attivi / Mese";
-      priceVal = 100.0;
-      cogsVal = 20.0;
-      bepVal = Math.round(opexVal / (priceVal - cogsVal));
-      rows = [
-        { item: "Landing Page & Web Presenza (Carrd/WordPress)", type: "CAPEX", cost: "200.00 €", source: "Software e template" },
-        { item: "Costo Piattaforme Software di Gestione", type: "OPEX", cost: "20.00 € / mese", source: "CRM / Tool di fatturazione" },
-        { item: "Branding, Logo ed Asset Visual (Canva Pro)", type: "OPEX", cost: "12.00 € / mese", source: "Asset di marketing" },
-        { item: "Apertura P.IVA / Consulente Fiscale (Fiscozen)", type: "OPEX", cost: "35.00 € / mese", source: "Consulenza contabile continuativa" }
-      ];
+      // CASO SERVIZI / GENERAL
+      priceVal = overrides.price !== undefined ? overrides.price : 100.0;
+      cogsVal = overrides.cogs !== undefined ? overrides.cogs : 20.0;
+      
+      const softwareCost = overrides.rent !== undefined ? overrides.rent : 30;
+      const marketingCost = overrides.electricity !== undefined ? overrides.electricity : 200;
+      
+      if (selectedOption === "leasing") {
+        capexVal = 500;
+        opexVal = softwareCost + marketingCost;
+        bepUnit = "Clienti Attivi / Mese";
+        bepVal = Math.round(opexVal / (priceVal - cogsVal));
+        rows = [
+          { item: "Setup Landing Page & Portfolio", type: "CAPEX", cost: "500.00 €", source: "Configurazione sito e template" },
+          { item: "Lead Generation & Campagne Marketing (LinkedIn/Google)", type: "OPEX", cost: `${marketingCost.toFixed(2)} € / mese`, source: "Acquisizione clienti attivi" },
+          { item: "CRM, Software di Gestione ed Email", type: "OPEX", cost: `${softwareCost.toFixed(2)} € / mese`, source: "Strumenti operativi" }
+        ];
+      } else if (selectedOption === "jv") {
+        const partnerShare = overrides.partnerShare !== undefined ? overrides.partnerShare : (priceVal * 0.3);
+        capexVal = 1000;
+        opexVal = softwareCost + 100;
+        const finalCogs = cogsVal + partnerShare;
+        bepUnit = "Clienti Attivi / Mese";
+        bepVal = Math.round(opexVal / (priceVal - finalCogs));
+        rows = [
+          { item: "Setup Patti Parasociali & Contratti Partnership", type: "CAPEX", cost: "1,000.00 €", source: "Notaio e consulenza legale" },
+          { item: `Revenue Share Partner (${((partnerShare/priceVal)*100).toFixed(0)}% su scontrino)`, type: "OPEX", cost: `${partnerShare.toFixed(2)} € / cliente`, source: "Accordo di canalizzazione ed intermediazione" },
+          { item: "CRM, Software di Gestione ed Email", type: "OPEX", cost: `${softwareCost.toFixed(2)} € / mese`, source: "Strumenti operativi" }
+        ];
+        cogsVal = finalCogs;
+      } else {
+        capexVal = 2500;
+        opexVal = softwareCost + marketingCost;
+        bepUnit = "Clienti Attivi / Mese";
+        bepVal = Math.round(opexVal / (priceVal - cogsVal));
+        rows = [
+          { item: "Setup Agenzia, Branding e Web Presenza", type: "CAPEX", cost: "2,500.00 €", source: "Sviluppo identità societaria" },
+          { item: "Lead Generation & Campagne Marketing (LinkedIn/Google)", type: "OPEX", cost: `${marketingCost.toFixed(2)} € / mese`, source: "Acquisizione clienti" },
+          { item: "CRM, Software di Gestione ed Email", type: "OPEX", cost: `${softwareCost.toFixed(2)} € / mese`, source: "Strumenti operativi" }
+        ];
+      }
     }
 
     return {
@@ -539,22 +700,39 @@ const LocalAgentSimulationEngine = {
       ];
       verdictReason = "Il posizionamento richiede una validazione preventiva e un wrapping visivo di altissimo livello per superare la diffidenza iniziale.";
     } else if (agentKey === "cfo") {
-      if (info.isBootstrap) {
+      const selectedOption = info.financialOption || (info.hasLeasingOption ? "leasing" : "acquisto");
+      if (info.isBootstrap && selectedOption === "acquisto") {
         objections = [
-          "**INCOMPATIBILITÀ DI BUDGET (CRITICA)**: Hai indicato un budget di 0€ (Bootstrap). Una macchina vending professionale premium nuova costa circa 48.000€ + logistica. Il progetto è finanziariamente IMPOSSIBILE con queste premesse.",
-          "**Costi Fissi Ricorrenti**: Anche se la macchina fosse gratuita, l'affitto dello spazio e l'energia elettrica industriale h24 richiedono un flusso di cassa di almeno 950€/mese fin dal primo giorno.",
-          "**Tempo di Rientro (Payback)**: Con 170 pizze/mese necessarie per il break-even operativo, il rischio di insolvenza nei primi 3 mesi è altissimo in mancanza di capitale circolante."
+          "**Fabbisogno Capitale in Bootstrap**: L'acquisto o investimento diretto entra in conflitto con il budget indicato di 0€. Dobbiamo identificare una soluzione alternativa per coprire o azzerare questa spesa iniziale.",
+          "**Stima del Capitale Circolante**: Sono comunque necessari dei fondi minimi mensili per coprire i costi operativi ricorrenti (OPEX) prima di generare cassa.",
+          "**Tempo di Rientro**: Senza dilazioni o finanziamenti, il rischio finanziario è bloccante nei primi 3 mesi in regime di cassa zero."
         ];
-        verdict = "BOCCIATO (Fondi Insufficienti)";
-        verdictReason = "Il budget corrente non consente l'acquisto o l'installazione del macchinario. È necessario fare un pivot verso il noleggio operativo o capitali esterni.";
+        verdict = "IN VALUTAZIONE (Alternative Richieste)";
+        verdictReason = "Il budget a zero non consente l'acquisto o setup diretto proprietario. Proponiamo di valutare insieme le opzioni di leasing/noleggio operativo, Joint Venture con partner locali, o finanziamenti esterni per trovare la soluzione ottimale.";
+      } else if (selectedOption === "leasing") {
+        objections = [
+          "**Pianificazione del Canone Mensile**: L'adozione del noleggio operativo o canone software/leasing converte il CAPEX in un costo operativo mensile (OPEX). Questo aumenta il BEP mensile in quanto il canone si somma agli altri OPEX fissi.",
+          "**Deposito Cauzionale / Setup**: Sebbene il CAPEX sia abbattuto, sarà necessario un deposito cauzionale iniziale o costo di setup per l'attivazione del contratto.",
+          "**Rischio Penali e Durata**: I contratti operativi/leasing solitamente hanno vincoli di durata (12-36 mesi) con penali per recesso anticipato."
+        ];
+        verdict = "APPROVATO (Con noleggio/leasing)";
+        verdictReason = "L'opzione del leasing o abbonamento operativo riduce drasticamente il CAPEX iniziale, rendendo il progetto avviabile con un budget minimo, purché si garantisca la copertura degli OPEX fin dal primo mese.";
+      } else if (selectedOption === "jv") {
+        objections = [
+          "**Frazionamento delle Decisioni**: Una Joint Venture richiede patti parasociali precisi per evitare stalli decisionali con il partner.",
+          "**Margine Ridotto (Revenue Share)**: Cedere una percentuale sulle vendite (es. 30%-40%) aumenta i costi variabili unitari (COGS), riducendo il margine unitario di contribuzione.",
+          "**Allineamento degli Obiettivi**: Bisogna allineare gli obiettivi a lungo termine del partner (es. socio finanziario o brand partner) con i nostri."
+        ];
+        verdict = "APPROVATO (In Joint Venture)";
+        verdictReason = "La formula della Joint Venture abbatte l'investimento iniziale e il rischio operativo tramite condivisione delle risorse, dividendo i profitti ma tutelando il flusso di cassa in regime di bootstrap.";
       } else {
         objections = [
-          "**Aumento Costo Macchinari**: I costi correnti dei distributori a pietra nuovi premium (Adial, Let's Pizza) sono di circa €48k-52k base.",
-          "**Costo Energia Elettrica**: Il forno a picco trifase (6kW) consuma in media 180-220€ al mese di elettricità a tariffe industriali.",
-          "**Margine su Ingredienti**: Il margine si contrae se non si ottiene un prezzo all'ingrosso (<2.20€ a pizza) sulle basi e packaging."
+          "**Aumento Costo Setup**: I costi correnti per avviare il setup proprietario completo richiedono capitale interamente coperto al giorno zero.",
+          "**Costi Fissi e Gestione**: I costi fissi mensili devono essere monitorati attentamente per non erodere i margini nei primi mesi.",
+          "**Margine su Ingredienti/Forniture**: Il margine si contrae se non si ottiene un prezzo all'ingrosso competitivo sulle forniture e sul packaging."
         ];
         verdict = "APPROVATO";
-        verdictReason = "I margini unitari (>70%) supportano l'investimento se il volume minimo di 6 pizze al giorno viene mantenuto.";
+        verdictReason = "I margini unitari supportano l'investimento se il volume minimo stimato di break-even viene mantenuto e il capitale iniziale è coperto.";
       }
     } else if (agentKey === "cto") {
       objections = [
@@ -655,9 +833,13 @@ const LocalAgentSimulationEngine = {
     if (info.isBootstrap && (info.isVending || info.sector === "food_beverage" || info.sector === "retail")) {
       reportText += `#### 💡 Pivot per Validazione in Bootstrap (Opzioni a Costo Zero)\n`;
       reportText += `> [!IMPORTANT]\n`;
-      reportText += `> **Conflitto Budget/CAPEX**: Il budget 'Bootstrap/0€' non consente l'acquisto diretto del macchinario (€55.000).\n\n`;
+      if (info.hasLeasingOption) {
+        reportText += `> **Opzione Leasing/Noleggio Attivata**: Abbiamo recepito la tua proposta di noleggio operativo o leasing per superare il vincolo del capitale iniziale in bootstrap. Il piano è stato rimodulato di conseguenza.\n\n`;
+      } else {
+        reportText += `> **Conflitto Budget/CAPEX**: Il budget 'Bootstrap/0€' non consente l'acquisto diretto del macchinario (€55.000).\n\n`;
+      }
       reportText += `Ecco come puoi procedere senza disporre dei capitali iniziali:\n`;
-      reportText += `- **Noleggio Operativo / Leasing**: Molti produttori o distributori offrono formule di noleggio a lungo termine con riscatto, riducendo il CAPEX iniziale a un deposito cauzionale di circa 1.00€ e una quota mensile (OPEX).\n`;
+      reportText += `- **Noleggio Operativo / Leasing**: Molti produttori o distributori offrono formule di noleggio a lungo termine con riscatto, riducendo il CAPEX iniziale a un deposito cauzionale di circa 1.000€ e una quota mensile (OPEX).\n`;
       reportText += `- **Macchinario Usato Rigenerato**: Ricerca di modelli precedenti sul mercato dell'usato spagnolo (MilAnuncios / Wallapop) con prezzi inferiori del 50% (€15.000 - €18.000).\n`;
       reportText += `- **Joint Venture con Locali Esistenti**: Trova un bar o un minimarket in una zona strategica. Proponi di installare la macchina all'interno o all'esterno del loro locale: loro mettono lo spazio e la corrente elettrica, tu gestisci l'operatività e dividete gli utili al 50%. Questo azzera i costi fissi e di acquisto iniziale se trovi un partner finanziatore.\n`;
       reportText += `- **Pivot Digitale Temporaneo**: Anziché acquistare una macchina fisica, crea una landing page che aggrega le pizzerie da asporto locali attive di notte a Gran Canaria, prendendo una commissione sulle vendite. Validi il mercato notturno con 0€ di CAPEX.\n\n`;
@@ -665,18 +847,7 @@ const LocalAgentSimulationEngine = {
 
     // Verdetto finale dell'agente
     let verdictColor = "orange";
-    if (verdict.includes("BOCCIATO")) verdictColor = "red";
-    if (verdict === "APPROVATO") verdictColor = "green";
-
-    reportText += `#### 🚨 Verdetto di Sostenibilità dell'Agente\n`;
-    reportText += `- **Verdetto**: **\`${verdict}\`**\n`;
-    reportText += `- **Motivazione**: ${verdictReason}\n\n`;
-    reportText += `---`;
-
-    return reportText;
-  },
-
-  // Genera la sintesi dell'Orchestratore per una fase
+    if (verdict.includes("BOCCIATO")) verdictColor = "red"  // Genera la sintesi dell'Orchestratore per una fase
   generateOrchestratorReport(info, phase, agentBriefs, previousAnswers = {}, attachedFile = null, attachedImage = null) {
     const isPizzaVending = info.isVending && info.sector === "food_beverage";
     const targetLoc = info.location ? `a ${info.location}` : "sul mercato target";
@@ -688,6 +859,29 @@ const LocalAgentSimulationEngine = {
     if (attachedImage) {
       text += `> [!NOTE]\n> **Analisi Visiva**: L'immagine allegata è stata analizzata e considerata nella sintesi dell'Orchestratore.\n\n`;
     }
+    
+    // Iniezione feedback interattivo basato sull'ultimo messaggio inserito in chat
+    const lastUserMsg = previousAnswers[phase - 1] ? String(previousAnswers[phase - 1]) : "";
+    if (lastUserMsg) {
+      const msgLower = lastUserMsg.toLowerCase();
+      text += `#### 💬 Risposta dell'Orchestratore Master al tuo feedback:\n`;
+      
+      if (msgLower.includes("leasing") || msgLower.includes("nolegg") || msgLower.includes("rent")) {
+        text += `> **Su Leasing / Noleggio**: Hai perfettamente ragione. Ho recepito la tua indicazione sulla possibilità di utilizzare il **leasing o noleggio operativo** da parte di un'azienda distributrice spagnola/europea. Ho allineato il Consiglio di Amministrazione: il CFO ha revocato il veto finanziario e abbiamo convertito il CAPEX in OPEX mensili nel piano finanziario. Questo rende l'avvio fattibile anche in bootstrap!\n\n`;
+      } else if (msgLower.includes("canari") || msgLower.includes("palmas") || msgLower.includes("canteras") || msgLower.includes("ingl") || msgLower.includes("maspalomas")) {
+        text += `> **Sulla Localizzazione (Canarie)**: Ricevuto. La scelta geografica delle Canarie (Gran Canaria) è eccellente per via dell'IGIC agevolata al 7% e del turismo continuo tutto l'anno. Gli agenti adatteranno la pianificazione specificamente per Playa del Inglés o Las Palmas nelle prossime fasi.\n\n`;
+      } else if (msgLower.includes("competitor") || msgLower.includes("concorren") || msgLower.includes("pizzeri") || msgLower.includes("adial") || msgLower.includes("let's pizza")) {
+        text += `> **Sulla Concorrenza**: Ho registrato i dettagli sui competitor e sui distributori automatici (Adial/Let's Pizza). La nostra strategia punta a catturare la domanda notturna non soddisfatta dalle pizzerie tradizionali, puntando sulla velocità della cottura a pietra in 3 minuti H24.\n\n`;
+      } else if (msgLower.includes("grafic") || msgLower.includes("tabell") || msgLower.includes("break-even") || msgLower.includes("bep")) {
+        text += `> **Su Grafici & Tabelle**: Certamente. Ho dato indicazioni al CFO di inserire tabelle dettagliate sui costi CAPEX/OPEX e di tracciare chiaramente il Break-Even Point. Puoi visualizzare i dati calcolati nel tab 'Finanziario'.\n\n`;
+      } else if (msgLower.includes("alleg") || msgLower.includes("document") || msgLower.includes("caric")) {
+        text += `> **Sugli Allegati**: Ho notato l'allegato inserito. Ho chiesto al reparto Sourcing ed Operations di estrarne tutte le informazioni utili per integrarle nella nostra pianificazione di business.\n\n`;
+      } else {
+        let excerpt = lastUserMsg.length > 80 ? lastUserMsg.substring(0, 80) + "..." : lastUserMsg;
+        text += `> Abbiamo ricevuto e analizzato la tua indicazione: *"${excerpt}"*.\n> Ho coordinato la boardroom per integrare queste note strategiche e preferenze direttamente nella pianificazione operativa di questa Fase ${phase}.\n\n`;
+      }
+    }
+
     let questions = [];
 
     // Costruiamo la sintesi dell'Orchestratore Master
@@ -705,10 +899,19 @@ const LocalAgentSimulationEngine = {
       text += `> **ANOMALIA GEOGRAFICA DETECTED**: Non è stata specificata una località. Gli agenti concordano che un'installazione fisica o commerciale necessita di geolocalizzazione precisa per valutare traffico, permessi e logistica. Proponiamo come area di test pilota **Gran Canaria (Canarie)** per via dei vantaggi fiscali (IGIC al 7%) e del clima turistico continuo.\n\n`;
     }
 
-    // Se bootstrap ma CAPEX alta
+    // Se bootstrap ma CAPEX/investimento alto
     if (info.isBootstrap && (info.isVending || info.sector === "food_beverage" || info.sector === "retail")) {
-      text += `\n\n> [!WARNING]\n`;
-      text += `> **BLOCCO DI FATTIBILITÀ (VETO FINANZIARIO)**: Il CFO ha bocciato l'idea di acquisto diretto del macchinario in regime di Bootstrap (0€ budget). Il CAPEX richiesto (€36.500) non è sostenibile senza fonti di finanziamento esterne o leasing.\n\n`;
+      const selectedOption = info.financialOption || (info.hasLeasingOption ? "leasing" : "acquisto");
+      if (selectedOption === "leasing") {
+        text += `\n\n> [!NOTE]\n`;
+        text += `> **SOLUZIONE FINANZIARIA ATTIVATA (LEASING/NOLEGGIO)**: L'opzione di **leasing/noleggio operativo** proposta consente di superare il veto finanziario sul CAPEX iniziale. Il progetto procede considerando la macchina in noleggio con riscatto, convertendo l'investimento iniziale in un costo mensile operativo (OPEX).\n\n`;
+      } else if (selectedOption === "jv") {
+        text += `\n\n> [!NOTE]\n`;
+        text += `> **SOLUZIONE FINANZIARIA ATTIVATA (JOINT VENTURE)**: L'opzione di **Joint Venture** consente di condividere i costi e l'asset del distributore automatico con un partner locale. Riduciamo il CAPEX a €10.000 (setup, logistica e marketing di lancio) e dividiamo il rischio concedendo il 30% di revenue share sul venduto.\n\n`;
+      } else {
+        text += `\n\n> [!WARNING]\n`;
+        text += `> **CONFLITTO DI BUDGET RILEVATO (CAPEX)**: Il CFO rileva un conflitto tra il regime di Bootstrap (0€) e il costo stimato del macchinario (€55.000). Suggerisce di non bloccare il progetto, ma di valutare insieme l'alternativa migliore (acquisto con capitale di soci/investitori, noleggio operativo con quota mensile, o Joint Venture con partner locali) per trovare la soluzione ottimale.\n\n`;
+      }
     }
 
     // Dettaglio fasi
@@ -726,11 +929,18 @@ const LocalAgentSimulationEngine = {
             "Fornire una zona differente di tua preferenza."
           ];
         } else if (info.isBootstrap) {
-          questions = [
-            "Accettare il pivot verso il Noleggio Operativo (OPEX mensile, CAPEX minimo).",
-            "Accettare il pivot verso la Joint Venture con un locale esistente a Gran Canaria.",
-            "Modificare il budget immettendo capitale proprio (minimo 55.000€)."
-          ];
+          if (info.hasLeasingOption) {
+            questions = [
+              "Procedere con la validazione sul campo a Gran Canaria per stimare le vendite giornaliere.",
+              "Focalizzarsi esclusivamente sulla clientela dei turisti notturni."
+            ];
+          } else {
+            questions = [
+              "Valutare l'opzione del Noleggio Operativo / Leasing (OPEX mensili ed anticipo ridotto).",
+              "Valutare l'opzione della Joint Venture con locali esistenti a Gran Canaria.",
+              "Modificare il budget apportando capitali propri (minimo €55.000)."
+            ];
+          }
         } else {
           questions = [
             "Procedere con 50 interviste sul campo a Gran Canaria per validare il prezzo di 7.00€.",
@@ -743,7 +953,7 @@ const LocalAgentSimulationEngine = {
         text += `**FASE 2: ANALISI TARGET & COMPETITOR completata.**\n`;
         text += `Abbiamo profilato i clienti e mappato i concorrenti. La notte è la nostra finestra di mercato esclusiva.\n`;
         text += `- **Mercato**: Le pizzerie tradizionali chiudono presto, lasciando un vuoto d'offerta che possiamo colmare.\n`;
-        text += `- **Rischio**: Competitori indiretti (snack bar freddi o fast food aperti H24) hanno prezzi bassi ma qualità inferiore.\n`;
+        text += `- **Rischio**: Competitori indiretti (snack bar freddi o fast food aperti H24) hanno prezzi bassi ma qualità inferiori.\n`;
         
         questions = [
           "Focalizzarsi esclusivamente sulla fascia oraria notturna (22:00 - 06:00).",
@@ -802,9 +1012,15 @@ const LocalAgentSimulationEngine = {
       case 7:
         text += `**FASE 7: PIANO FINANZIARIO completata.**\n`;
         text += `Margini e break-even verificati.\n`;
-        text += `- **CAPEX**: €55.000 (macchina, spedizione, allacciamento, SCIA).\n`;
-        text += `- **OPEX**: €950/mese (affitto suolo, corrente h24, Autónomo flat, SIM, manutenzione).\n`;
-        text += `- **BEP**: 170 pizze al mese (circa 5.6 pizze al giorno a 8.00€ medio).\n`;
+        if (info.hasLeasingOption) {
+          text += `- **CAPEX**: €8.000 (deposito, trasporto, allacciamento, SCIA).\n`;
+          text += `- **OPEX**: €1.800/mese (canone leasing €850 + affitto/corrente/telemetria/Autónomo/manutenzione).\n`;
+          text += `- **BEP**: 321 pizze al mese (circa 10.7 pizze al giorno a 8.00€ medio).\n`;
+        } else {
+          text += `- **CAPEX**: €55.000 (macchina, spedizione, allacciamento, SCIA).\n`;
+          text += `- **OPEX**: €950/mese (affitto suolo, corrente h24, Autónomo flat, SIM, manutenzione).\n`;
+          text += `- **BEP**: 170 pizze al mese (circa 5.6 pizze al giorno a 8.00€ medio).\n`;
+        }
         
         questions = [
           "Accettare il piano finanziario e passare alla sintesi executive.",
@@ -836,38 +1052,163 @@ const LocalAgentSimulationEngine = {
     let agentResponse = "";
     let ceoResponse = "";
 
-    if (info.isVending && info.sector === "food_beverage" && (q.includes("pizza") || q.includes("macchin") || q.includes("forn") || q.includes("distributor"))) {
-      agentResponse = `### Dettaglio Tecnico & Sourcing (${meta.name})
-- Per il distributore automatico, l'alloggiamento refrigerato e il forno autopulente a pietra sono caratteristiche standard dei modelli di punta (es. Let's Pizza o Jofemar).
-- Consigliamo di caricare le pizze precotte fresche ogni mattina, garantendo che non rimangano in camera fredda per più di 48 ore per mantenere l'impasto fragrante.
-- È possibile integrare un sistema di couponing direttamente sullo schermo LCD per attirare i passanti.`;
-      ceoResponse = `### Decisione Strategica (Orchestratore Master)
-- **Eccellente**. La qualità della cottura e la freschezza sono i nostri unici argomenti contro lo scetticismo verso il cibo da distributore.
-- **Azione**: Definiamo una SOP rigorosa per il caricamento giornaliero. Nessuna pizza deve rimanere invenduta oltre il secondo giorno.`;
-    } else if (q.includes("canari") || q.includes("las palmas") || q.includes("spagn") || q.includes("gracia") || q.includes("gran canaria")) {
-      agentResponse = `### Opportunità Territoriale Canarie (${meta.name})
-- Il posizionamento a Gran Canaria beneficia di una stagione turistica continua h24, 12 mesi all'anno, con temperature sempre adatte a passeggiate serali.
-- Dal punto di vista della tassazione, operando con ditta individuale o SL Canaria pagheremo l'IGIC al 7% al posto dell'IVA ordinaria, aumentando la cassa del 13% rispetto alla Spagna continentale.
-- Le zone ideali per il posizionamento sono l'area pedonale commerciale di Las Palmas (vicino al porto/spiaggia) e il centro di Playa del Inglés (sud dell'isola).`;
-      ceoResponse = `### Decisione Strategica (Orchestratore Master)
-- **Fattore Chiave**. Il clima favorevole e il flusso costante di turisti riducono la stagionalità a zero, a differenza delle spiagge italiane.
-- **Azione**: Priorità assoluta ad un accordo di affitto dello spazio con un proprietario privato di Gran Canaria per evitare lungaggini burocratiche comunali.`;
-    } else if (q.includes("costo") || q.includes("prezzo") || q.includes("soldi") || q.includes("budget") || q.includes("spesa") || q.includes("finanz")) {
-      agentResponse = `### Analisi Finanziaria (${meta.name})
-- Il costo di acquisizione del distributore (14.500€) può essere mitigato concordando un canone di noleggio operativo o leasing con il distributore europeo.
-- Con circa 15 pizze vendute al giorno a 6.50€ copriamo l'investimento della macchina in meno di 8 mesi, dopodiché il punto vendita genererà oltre 1.200€ di utile netto al mese.`;
-      ceoResponse = `### Decisione Strategica (Orchestratore Master)
-- Il break-even rapido è l'obiettivo del progetto. Il modello finanziario del CFO conferma che la marginalità al 72% rende il rientro dell'investimento estremamente veloce.
-- **Azione**: Validiamo la prima zona con un test di interesse a costo zero, poi procediamo all'acquisto/leasing.`;
+    if (q.includes("leasing") || q.includes("nolegg") || q.includes("rent")) {
+      if (agentKey === "cfo") {
+        agentResponse = `### Analisi del Noleggio Operativo / Leasing (${meta.name})
+- **Soluzione di Finanziamento**: L'acquisizione del distributore automatico tramite noleggio operativo o leasing con riscatto è la strada ideale.
+- **Rimodulazione Costi**: Abbattiamo il CAPEX da €55.000 a circa €8.000 (comprendente deposito cauzionale, trasporto, installazione e allacciamenti). 
+- **Canone Operativo**: Il canone mensile sarà di circa €850/mese. Questo aumenta gli OPEX totali a €1.800/mese, innalzando il punto di pareggio (BEP) a circa 10.7 pizze al giorno.
+- **Verdetto**: Il progetto passa da BOCCIATO a **APPROVATO (Con noleggio/leasing)**, in quanto la marginalità lorda (>70%) supporta ampiamente il canone se la macchina è posizionata in una zona ad alto traffico.`;
+        ceoResponse = `### Decisione dell'Orchestratore Master (CEO)
+- **Modifica Approvata**: L'opzione del leasing operativo risolve il vincolo di capitale proprio. 
+- **Azione**: Ordino l'aggiornamento istantaneo del Business Plan e del prospetto finanziario per riflettere lo schema di noleggio. Procediamo con questa impostazione.`;
+      } else {
+        agentResponse = `### Impatto Operativo del Leasing / Noleggio (${meta.name})
+- **Esecuzione Lean**: Il ricorso al leasing riduce i rischi di avvio a costo zero di CAPEX. Dal punto di vista delle operazioni, non cambia il flusso di rifornimento giornaliero.
+- **Fornitori**: Dobbiamo selezionare distributori europei che offrano l'assistenza tecnica inclusa nel canone di noleggio (noleggio full-service), fondamentale per operare alle Canarie.`;
+        ceoResponse = `### Decisione dell'Orchestratore Master (CEO)
+- **Approvato**. La boardroom concorda che il noleggio operativo mitiga il rischio operativo complessivo del progetto.`;
+      }
+    } else if (q.includes("bocciat") || q.includes("perché") || q.includes("non approv") || q.includes("veto") || q.includes("fallito") || q.includes("impossibile")) {
+      if (agentKey === "cfo") {
+        agentResponse = `### Chiarimento sul Veto Finanziario (${meta.name})
+- **Motivazione del Veto**: Ho dovuto bocciare il piano iniziale perché hai impostato un regime di **Bootstrap (0€ budget)** pur richiedendo l'acquisto di un distributore automatico di pizza che costa €48.000 + trasporto e installazione (€55.000 totali).
+- **Come Risolverlo**: Per sbloccare l'approvazione, devi semplicemente inserire "leasing" o "noleggio" nelle note o nella chat. Questo convertirà l'acquisto in un canone mensile, permettendo l'avvio a budget zero.`;
+        ceoResponse = `### Nota dell'Orchestratore Master (CEO)
+- **Punto Critico**: Il CFO svolge il suo dovere di tutela finanziaria. L'incompatibilità tra budget zero e CAPEX elevato era bloccante.
+- **Azione**: Adotta la formula del noleggio operativo per sbloccare immediatamente il progetto.`;
+      } else {
+        agentResponse = `### Valutazione di Sostenibilità (${meta.name})
+- Il veto o le riserve sollevate in questa fase derivano dal bilanciamento tra il budget limitato e la necessità di garantire standard di sicurezza e operatività elevati.
+- Possiamo superare queste riserve adottando soluzioni più scalabili (es. spazi privati in affitto invece di suolo pubblico, o accordi di revenue sharing).`;
+        ceoResponse = `### Nota dell'Orchestratore Master (CEO)
+- Le obiezioni degli agenti sono necessarie per evitare perdite di capitale. Affiniamo il modello operando in modo lean.`;
+      }
+    } else if (q.includes("canar") || q.includes("las palmas") || q.includes("spiaggia") || q.includes("posto") || q.includes("location") || q.includes("zona")) {
+      agentResponse = `### Analisi Geografica Dettagliata (${meta.name})
+- **Las Palmas (Nord)**: Offre stabilità durante tutto l'anno grazie a residenti, studenti e turisti urbani. Consigliamo la zona di *Las Canteras* (vicino ai locali serali) per intercettare il rientro notturno.
+- **Playa del Inglés (Sud)**: Flusso turistico di massa e vita notturna incontrollata. Potenziali volumi altissimi nel weekend, ma affitti degli spazi privati più cari.
+- **Consiglio**: Consigliamo di avviare il primo punto su suolo privato (es. di fronte ad un bar h24 o minimarket) per ridurre a zero i tempi di attesa burocratici della SCIA.`;
+      ceoResponse = `### Decisione dell'Orchestratore Master (CEO)
+- **Scelta Strategica**: Las Palmas garantisce minor rischio stagionale. Diamo priorità a contratti di affitto suolo con proprietari privati.`;
+    } else if (q.includes("competitor") || q.includes("concorren") || q.includes("pizzeria") || q.includes("adial") || q.includes("let's pizza")) {
+      agentResponse = `### Analisi Competitiva (${meta.name})
+- **Pizzerie Locali**: Chiudono entro le 23:00 o le 24:00. La nostra finestra notturna (01:00 - 05:00) è priva di concorrenza diretta per la pizza calda.
+- **Fast Food H24**: Offrono panini e hamburger di bassa qualità. La nostra pizza cotta su pietra a 300°C in 3 minuti offre una Value Proposition nettamente superiore.
+- **Vending Tradizionale**: Vende solo snack freddi o merendine. Non rappresentano un pericolo.`;
+      ceoResponse = `### Decisione dell'Orchestratore Master (CEO)
+- **Posizionamento**: Il fattore tempo (pizza calda in 3 minuti a notte fonda) è il nostro vantaggio competitivo. Dobbiamo comunicarlo chiaramente sul wrapping grafico della macchina.`;
+    } else if (q.includes("prezzo") || q.includes("costo") || q.includes("margine") || q.includes("guadagn") || q.includes("ricav") || q.includes("bep") || q.includes("break-even")) {
+      agentResponse = `### Economia del Prodotto (${meta.name})
+- **Scontrino Medio**: Impostato a €8.00 (con un costo degli ingredienti e scatola di €2.40).
+- **Margine Unitario**: Generiamo €5.60 di margine lordo per ogni singola pizza venduta cashless.
+- **Punto di Pareggio (BEP)**:
+  - In acquisto diretto: 170 pizze al mese (5.6 pizze al giorno).
+  - In noleggio operativo: 321 pizze al mese (10.7 pizze al giorno).
+  - Tutto ciò che vendiamo oltre questa soglia rappresenta puro utile netto.`;
+      ceoResponse = `### Decisione dell'Orchestratore Master (CEO)
+- **Validazione Numerica**: Il target di 6 o 11 pizze al giorno è ampiamente realistico per le zone turistiche ad alta densità. I numeri sono validati e sostenibili.`;
+    } else if (q.includes("qualità") || q.includes("fresch") || q.includes("ingredien")) {
+      agentResponse = `### Standard di Qualità del Prodotto (${meta.name})
+- **Base Pizza**: Impasto a lunga lievitazione (24-48h) precotto in forno a legna dal fornitore artigianale locale.
+- **Ingredienti**: Mozzarella a basso rilascio di acqua (taglio julienne) e pomodoro condito con olio e origano, inseriti freschi prima del confezionamento.
+- **Mantenimento**: La cella frigo interna a 4°C garantisce la massima igiene e blocca la proliferazione batterica fino a 48 ore.`;
+      ceoResponse = `### Decisione dell'Orchestratore Master (CEO)
+- **Pilastro Strategico**: La qualità è la chiave per fidelizzare il cliente. Rifiutiamo categoricamente prodotti surgelati di stampo industriale.`;
     } else {
-      // Risposta standard
-      agentResponse = `### Analisi Operativa (${meta.name})
-- Ho esaminato la tua proposta di ottimizzazione per questa sezione del business.
-- Modificheremo le specifiche della Fase corrente per inserire la tua indicazione nel report finale da presentare ai soci.`;
-      ceoResponse = `### Decisione Strategica (Orchestratore Master)
-- La proposta allinea ulteriormente il progetto all'obiettivo di validazione rapida del mercato. Procediamo.`;
+      const capitalizedWord = q.split(/\s+/).filter(w => w.length > 4)[0] || "business";
+      const topic = capitalizedWord.charAt(0).toUpperCase() + capitalizedWord.slice(1);
+      
+      agentResponse = `### Focus Strategico: ${topic} (${meta.name})
+- Ho esaminato la tua richiesta riguardante **"${userQuestion}"**.
+- In merito a questa tematica, gli agenti del Consiglio ritengono che integrare questo elemento rafforzi la nostra pianificazione strategica per la Fase ${state.currentPhase}.
+- Perfezioneremo i flussi operativi per assicurarci che questa indicazione sia pienamente operativa nel report consolidato.`;
+      ceoResponse = `### Decisione dell'Orchestratore Master (CEO)
+- **Recepito**. Ho allineato il team sul tema da te sollevato (*${topic}*). Ottimo spunto per minimizzare i rischi commerciali. Procediamo.`;
     }
 
+    return { agentText: agentResponse, ceoText: ceoResponse };
+  },
+
+  // Gestisce la sessione di brainstorming specifica sui numeri e grafici
+  handleFinancialsBrainstorm(info, userQuestion, history = []) {
+    const q = userQuestion.toLowerCase();
+    let agentResponse = "";
+    let ceoResponse = "";
+    
+    // Rileva l'opzione da utilizzare
+    const selectedOption = info.financialOption || (info.hasLeasingOption ? "leasing" : "acquisto");
+    const sector = info.sector;
+    const isVending = info.isVending;
+    
+    // Ricalcoliamo localmente per dare risposte precise sui numeri attuali
+    const fin = this.generateFinancials(info, selectedOption, (window.state && window.state.financialOverrides) || {});
+
+    // Seleziona risposte specifiche in base a parole chiave
+    if (q.includes("grafic") || q.includes("curv") || q.includes("line")) {
+      agentResponse = `### Analisi del Grafico di Break-Even (${selectedOption.toUpperCase()}) (CFO)
+- **Costi Cumulati (Linea Viola)**: Parte dal valore di CAPEX iniziale di **${fin.capex}** ed ha una pendenza basata sui costi operativi fissi di **${fin.opex}** e i costi variabili unitari (COGS) di **${fin.cogsNum.toFixed(2)} €**.
+- **Ricavi Cumulati (Linea Verde)**: Parte da zero ed ha una pendenza determinata dal prezzo medio di vendita di **${fin.priceNum.toFixed(2)} €**.
+- **Punto di Pareggio (BEP)**: Il punto di intersezione corrisponde a **${fin.bep}**. A parità di volumi, questa soglia determina l'inizio della redditività netta.`;
+      ceoResponse = `### Nota dell'Orchestratore Master (CEO)
+- **Strategia Finanziaria**: Il grafico evidenzia la differenza tra le opzioni. Con l'acquisto diretto, l'esposizione iniziale è alta ma i profitti futuri sono più ripidi (costi fissi minimi). Con leasing/noleggio o Joint Venture, riduciamo l'esposizione iniziale ma il Break-Even si sposta o richiede volumi diversi per via del canone o delle royalties.`;
+    } else if (q.includes("capex") || q.includes("investimento") || q.includes("inizial") || q.includes("costi inizial")) {
+      agentResponse = `### Dettaglio Spese Iniziali (CAPEX): ${fin.capex} (CFO)
+- **Dettaglio Attivo**: In questa opzione (**${selectedOption}**), le spese di setup iniziali sono stimate a **${fin.capex}**.
+- Le voci principali includono i costi di setup, sdoganamento/logistica ed eventuali depositi o registrazioni legali/sanitarie. Puoi consultare il dettaglio riga per riga nella tabella sovrastante.`;
+      ceoResponse = `### Nota dell'Orchestratore Master (CEO)
+- **Fabbisogno Capitale**: L'obiettivo del Consiglio è minimizzare la CAPEX per validare l'MVP. Se disponiamo del capitale, l'acquisto riduce gli OPEX mensili; altrimenti, l'alternativa del leasing o della Joint Venture protegge il flusso di cassa iniziale.`;
+    } else if (q.includes("opex") || q.includes("ricorrent") || q.includes("mensil") || q.includes("affitt") || q.includes("corrente") || q.includes("elettric")) {
+      agentResponse = `### Dettaglio Costi Ricorrenti (OPEX): ${fin.opex} (CFO)
+- **Spese Mensili Fisse**: Stimate a **${fin.opex}**.
+- Include abbonamenti software, hosting, affitti di suolo/ufficio, elettricità ed accantonamenti per manutenzione ordinaria.
+- Un aumento dei costi fissi aumenta la pendenza della retta dei costi nel grafico e allontana il BEP.`;
+      ceoResponse = `### Nota dell'Orchestratore Master (CEO)
+- **Ottimizzazione OPEX**: Se stiamo operando in leasing, il canone incide notevolmente sui costi fissi. Dobbiamo puntare all'efficienza operativa negoziando contratti flessibili.`;
+    } else if (q.includes("prezzo") || q.includes("margine") || q.includes("cogs") || q.includes("ingredien") || q.includes("costo unitario")) {
+      const margin = fin.priceNum - fin.cogsNum;
+      const marginPct = ((margin / fin.priceNum) * 100).toFixed(0);
+      agentResponse = `### Struttura del Margine Prodotto (CFO)
+- **Prezzo di Vendita Medio (Prezzo)**: **${fin.priceNum.toFixed(2)} €**.
+- **Costo del Venduto (COGS)**: **${fin.cogsNum.toFixed(2)} €** per unità.
+- **Margine Lordo Unitario**: **${margin.toFixed(2)} €** per vendita (pari al **${marginPct}%** dello scontrino).`;
+      ceoResponse = `### Nota dell'Orchestratore Master (CEO)
+- **Redditività**: Un margine del **${marginPct}%** è un ottimo indicatore. Possiamo incrementarlo aumentando lo scontrino medio o riducendo i costi delle materie prime tramite acquisti centralizzati una volta validato il business.`;
+    } else if (q.includes("bep") || q.includes("break-even") || q.includes("pareggio") || q.includes("vendite") || q.includes("rientro")) {
+      agentResponse = `### Calcolo del Punto di Pareggio (BEP) (CFO)
+- **Soglia di Pareggio**: **${fin.bep}**.
+- **Calcolo Lineare**: Costi OPEX Mensili (${fin.opexNum} €) divisi per il Margine Unitario (${(fin.priceNum - fin.cogsNum).toFixed(2)} €) = **${fin.bepVolumeNum}** unità/mese.`;
+      ceoResponse = `### Nota dell'Orchestratore Master (CEO)
+- **Rientro Investimento**: Questa soglia è il nostro traguardo primario. Nel settore ${sector.toUpperCase()}, raggiungere questo volume è pienamente fattibile con un buon posizionamento commerciale o campagne di lead generation mirate.`;
+    } else if (q.includes("joint venture") || q.includes("jv") || q.includes("soci") || q.includes("partnership") || q.includes("co-investimento")) {
+      agentResponse = `### Analisi del modello Joint Venture / Soci (CFO)
+- **Caratteristiche**: La Joint Venture abbatte il CAPEX iniziale dividendo le spese di logistica e setup ed azzera il costo dell'asset principale, fornito dal partner.
+- **Revenue Share**: In cambio, cediamo una quota percentuale sul fatturato (es. 30%-40%), che incrementa il COGS unitario e riduce il margine a pizza o abbonamento.
+- **Soglia BEP**: Si attesta a circa **${fin.bepVolumeNum} unità/mese** per via del margine più basso, ma è l'opzione a minor rischio finanziario complessivo.`;
+      ceoResponse = `### Nota dell'Orchestratore Master (CEO)
+- **Valutazione Partner**: Questa opzione è ottimale se il partner porta valore strategico (es. posizionamento unico per il distributore, o portfolio clienti per un'agenzia) riducendo la nostra necessità di cassa.`;
+    } else if (q.includes("leasing") || q.includes("nolegg") || q.includes("rent")) {
+      agentResponse = `### Analisi del modello Leasing / Noleggio Operativo (CFO)
+- **Caratteristiche**: Il leasing/noleggio operativo riduce l'esborso iniziale di oltre l'80% (CAPEX a circa ${fin.capex}), permettendoci di installare e validare l'MVP con un budget ridotto.
+- **OPEX Mensile**: Incorpora il canone mensile, innalzando i costi operativi fissi a circa ${fin.opex} complessivi.
+- **Soglia BEP**: Si attesta a **${fin.bep}** per coprire il canone fisso.`;
+      ceoResponse = `### Nota dell'Orchestratore Master (CEO)
+- **Considerazione**: Soluzione ideale per validare l'idea in bootstrap. Dobbiamo prestare attenzione alla durata del contratto e alle clausole di riscatto/recesso anticipato.`;
+    } else if (q.includes("in-house") || q.includes("proprio") || q.includes("sviluppo") || q.includes("acquisto")) {
+      agentResponse = `### Analisi del modello Acquisto Proprietario / In-House (CFO)
+- **Caratteristiche**: Richiede l'intero investimento iniziale coperto al Giorno Zero (pari a ${fin.capex}).
+- **Vantaggi**: Massimizza il margine e riduce i costi operativi fissi mensili, consentendo un Break-Even molto più basso in termini di vendite mensili.`;
+      ceoResponse = `### Nota dell'Orchestratore Master (CEO)
+- **Asset Ownership**: L'acquisto rende l'infrastruttura o il macchinario un bene ammortizzabile di proprietà aziendale. Adatto se disponiamo dei fondi e vogliamo massimizzare i profitti nel lungo periodo.`;
+    } else {
+      agentResponse = `### Supporto Decisionale Finanziario (CFO)
+- Sto analizzando il modello di business del progetto **${info.name}** in modalità **${selectedOption.toUpperCase()}**.
+- I dati attuali indicano: CAPEX di **${fin.capex}**, OPEX di **${fin.opex}** e Break-Even di **${fin.bep}**.
+- Chiedimi pure spiegazioni sui calcoli, su voci di costo specifiche, o chiedimi di simulare variazioni scrivendo ad esempio *"imposta prezzo a X"* o *"riduci l'affitto a Y"*.`;
+      ceoResponse = `### Nota dell'Orchestratore Master (CEO)
+- **Allineamento**: Utilizza questa chat per testare diversi scenari di prezzo e contratti. Una volta trovata la combinazione ottimale, l'intera strategia della boardroom si allineerà automaticamente.`;
+    }
+    
     return { agentText: agentResponse, ceoText: ceoResponse };
   }
 };
