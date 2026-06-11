@@ -847,7 +847,15 @@ const LocalAgentSimulationEngine = {
 
     // Verdetto finale dell'agente
     let verdictColor = "orange";
-    if (verdict.includes("BOCCIATO")) verdictColor = "red"  // Genera la sintesi dell'Orchestratore per una fase
+    if (verdict.includes("BOCCIATO")) verdictColor = "red";
+    if (verdict.includes("APPROVATO")) verdictColor = "var(--success)";
+
+    return `### 📄 Report di: ${AGENT_METADATA[agentKey].name} (${AGENT_METADATA[agentKey].role})\n\n` +
+      `**Stato della Valutazione:** <span style="color: ${verdictColor}; font-weight: bold;">${verdict}</span>\n\n` +
+      reportText;
+  },
+
+  // Genera la sintesi dell'Orchestratore per una fase
   generateOrchestratorReport(info, phase, agentBriefs, previousAnswers = {}, attachedFile = null, attachedImage = null) {
     const isPizzaVending = info.isVending && info.sector === "food_beverage";
     const targetLoc = info.location ? `a ${info.location}` : "sul mercato target";
