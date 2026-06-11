@@ -1,5 +1,43 @@
 // Logica applicativa principale per il Multi-Agent Boardroom Workspace
 
+// Wrapper per un utilizzo sicuro e resiliente del localStorage (previene crash in navigazione privata o in caso di spazio esaurito)
+const SafeStorage = {
+  memoryStorage: {},
+  getItem(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.warn(`[SafeStorage] Errore lettura per chiave "${key}", uso fallback in memoria:`, e);
+      return this.memoryStorage[key] || null;
+    }
+  },
+  setItem(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.error(`[SafeStorage] Errore scrittura per chiave "${key}", uso fallback in memoria:`, e);
+      this.memoryStorage[key] = String(value);
+      
+      // Se è un errore di quota, avvisa l'utente in modo visibile e non distruttivo
+      if (e.name === 'QuotaExceededError' || e.code === 22 || e.number === 0x8007000E) {
+        setTimeout(() => {
+          if (typeof appendSystemMessage === 'function') {
+            appendSystemMessage("⚠️ **Spazio Browser Esaurito!** Il progetto attuale è conservato in memoria temporanea. Consigliamo di eliminare vecchi progetti per liberare spazio.");
+          }
+        }, 1000);
+      }
+    }
+  },
+  removeItem(key) {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.error(`[SafeStorage] Errore rimozione per chiave "${key}":`, e);
+      delete this.memoryStorage[key];
+    }
+  }
+};
+
 // Stato globale dell'applicazione
 let state = {
   apiKey: "",
@@ -115,7 +153,7 @@ function init() {
   setupProjectsMenuListener();
   
   // Carica l'ultimo progetto attivo, altrimenti avvia da zero
-  const lastActiveId = localStorage.getItem("antigravity_active_project_id");
+  const lastActiveId = SafeStorage.getItem("antigravity_active_project_id");
   const allProjects = getSavedProjectsList();
   
   if (lastActiveId && allProjects[lastActiveId]) {
@@ -127,11 +165,11 @@ function init() {
 
 // Carica configurazione dal localStorage
 function loadConfigFromStorage() {
-  const savedEngine = localStorage.getItem("antigravity_processing_engine");
-  const savedKey = localStorage.getItem("antigravity_api_key");
-  const savedModel = localStorage.getItem("antigravity_model");
-  const savedAgents = localStorage.getItem("antigravity_enabled_agents");
-  const savedDelay = localStorage.getItem("antigravity_request_delay");
+  const savedEngine = SafeStorage.getItem("antigravity_processing_engine");
+  const savedKey = SafeStorage.getItem("antigravity_api_key");
+  const savedModel = SafeStorage.getItem("antigravity_model");
+  const savedAgents = SafeStorage.getItem("antigravity_enabled_agents");
+  const savedDelay = SafeStorage.getItem("antigravity_request_delay");
   
   if (savedEngine) {
     state.processingEngine = savedEngine;
@@ -278,14 +316,14 @@ function setupEventListeners() {
       }
     }
     
-    localStorage.setItem("antigravity_processing_engine", engine);
+    SafeStorage.setItem("antigravity_processing_engine", engine);
     state.processingEngine = engine;
 
     if (key) {
-      localStorage.setItem("antigravity_api_key", key);
+      SafeStorage.setItem("antigravity_api_key", key);
       state.apiKey = key;
     } else {
-      localStorage.removeItem("antigravity_api_key");
+      SafeStorage.removeItem("antigravity_api_key");
       state.apiKey = "";
     }
     
@@ -306,12 +344,12 @@ function setupEventListeners() {
       }
     }
     
-    localStorage.setItem("antigravity_model", model);
+    SafeStorage.setItem("antigravity_model", model);
     state.model = model;
     
     if (DOM.selectDelay) {
       const delayVal = DOM.selectDelay.value;
-      localStorage.setItem("antigravity_request_delay", delayVal);
+      SafeStorage.setItem("antigravity_request_delay", delayVal);
       state.requestDelay = parseInt(delayVal, 10);
     }
     
@@ -319,7 +357,7 @@ function setupEventListeners() {
     DOM.checkboxAgents.forEach(cb => {
       if (cb.checked) enabled.push(cb.dataset.agent);
     });
-    localStorage.setItem("antigravity_enabled_agents", JSON.stringify(enabled));
+    SafeStorage.setItem("antigravity_enabled_agents", JSON.stringify(enabled));
     state.enabledAgents = enabled;
     
     DOM.settingsModal.classList.remove("open");
@@ -425,12 +463,12 @@ function setupProjectsMenuListener() {
 // ==========================================
 
 function getSavedProjectsList() {
-  const listRaw = localStorage.getItem("antigravity_projects_list");
+  const listRaw = SafeStorage.getItem("antigravity_projects_list");
   return listRaw ? JSON.parse(listRaw) : {};
 }
 
 function saveProjectsList(list) {
-  localStorage.setItem("antigravity_projects_list", JSON.stringify(list));
+  SafeStorage.setItem("antigravity_projects_list", JSON.stringify(list));
 }
 
 function createNewProject() {
@@ -488,7 +526,7 @@ function saveCurrentProjectToStorage() {
   };
   
   saveProjectsList(allProjects);
-  localStorage.setItem("antigravity_active_project_id", id);
+  SafeStorage.setItem("antigravity_active_project_id", id);
 }
 
 function loadProjectFromStorage(id) {
@@ -505,7 +543,7 @@ function loadProjectFromStorage(id) {
   state.brainstormHistories = projData.brainstormHistories || {};
   state.enabledAgents = projData.enabledAgents || state.enabledAgents;
   
-  localStorage.setItem("antigravity_active_project_id", id);
+  SafeStorage.setItem("antigravity_active_project_id", id);
   
   // Ricostruisce la chat principale
   DOM.chatMessages.innerHTML = "";
@@ -548,7 +586,7 @@ function deleteProjectFromStorage(id, event) {
     saveProjectsList(allProjects);
     
     // Se stavamo visualizzando il progetto eliminato, carichiamo/creiamo un altro
-    const activeId = localStorage.getItem("antigravity_active_project_id");
+    const activeId = SafeStorage.getItem("antigravity_active_project_id");
     if (activeId === id) {
       const remainingIds = Object.keys(allProjects);
       if (remainingIds.length > 0) {
@@ -628,6 +666,21 @@ function resetProject() {
   
   saveCurrentProjectToStorage();
 }
+
+// Ripristina l'applicazione pulendo completamente lo storage locale e ricaricando la pagina
+function forceHardReset() {
+  if (confirm("ATTENZIONE: Questa operazione eliminerà tutti i progetti salvati e ripristinerà l'applicazione allo stato iniziale. Vuoi procedere?")) {
+    try {
+      localStorage.clear();
+      SafeStorage.memoryStorage = {};
+      alert("Applicazione resettata con successo. La pagina verrà ricaricata.");
+      window.location.reload();
+    } catch (e) {
+      alert("Errore durante il reset dello storage: " + e.message);
+    }
+  }
+}
+window.forceHardReset = forceHardReset;
 
 // Script iniziale obbligatorio
 function startAppFlow() {

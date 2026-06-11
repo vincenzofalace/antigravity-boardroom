@@ -4,8 +4,11 @@
 
 const LocalAgentSimulationEngine = {
   // Classifica l'idea e i parametri immessi
-  classifyProject(idea, budget, objective) {
-    const text = (idea + " " + objective).toLowerCase();
+  classifyProject(idea = "", budget = "", objective = "") {
+    const safeIdea = String(idea || "");
+    const safeBudget = String(budget || "");
+    const safeObjective = String(objective || "");
+    const text = (safeIdea + " " + safeObjective).toLowerCase();
     
     // Rileva settore
     let sector = "general";
@@ -64,13 +67,13 @@ const LocalAgentSimulationEngine = {
 
     // Rileva budget in euro
     let budgetAmount = 0;
-    const numMatch = budget.match(/(\d+[\d\s.,]*)/);
+    const numMatch = safeBudget.match(/(\d+[\d\s.,]*)/);
     if (numMatch) {
       budgetAmount = parseFloat(numMatch[1].replace(/\s/g, '').replace('.', '').replace(',', '.'));
     } else {
       // Se il budget è "quello che ci vuole" o simile, impostiamo un budget adeguato per il settore
       if (isVending) {
-        budgetAmount = 32000; // Costo macchina standard aggiornato
+        budgetAmount = 48000; // Costo macchina standard aggiornato (es. Adial Pizzadoor)
       } else if (sector === "saas" || sector === "mobile_app") {
         budgetAmount = 5000;
       } else {
@@ -79,10 +82,10 @@ const LocalAgentSimulationEngine = {
     }
     
     // Rileva se il budget è in puro bootstrap
-    const isBootstrap = budget.toLowerCase().includes("bootstrap") || 
-                        budget.toLowerCase().includes("zero") || 
-                        budget.toLowerCase() === "0" || 
-                        budget.toLowerCase() === "0€" || 
+    const isBootstrap = safeBudget.toLowerCase().includes("bootstrap") || 
+                        safeBudget.toLowerCase().includes("zero") || 
+                        safeBudget.toLowerCase() === "0" || 
+                        safeBudget.toLowerCase() === "0€" || 
                         budgetAmount === 0;
 
     // Estrae un nome temporaneo del progetto
@@ -91,8 +94,8 @@ const LocalAgentSimulationEngine = {
       name = "PizzaVending" + (location ? " " + location.split(" ")[0] : "");
     } else if (text.includes("pizz")) {
       name = "PizzaGo" + (location ? " " + location.split(" ")[0] : "");
-    } else if (idea.trim().length > 0) {
-      const cleanIdea = idea.replace(/vorrei creare|voglio creare|un'idea per|un servizio di|una piattaforma di/gi, "").trim();
+    } else if (safeIdea.trim().length > 0) {
+      const cleanIdea = safeIdea.replace(/vorrei creare|voglio creare|un'idea per|un servizio di|una piattaforma di/gi, "").trim();
       const words = cleanIdea.split(/\s+/).slice(0, 3).join(" ");
       name = words.charAt(0).toUpperCase() + words.slice(1) + (location ? " " + location.split(" ")[0] : "");
     }
@@ -109,26 +112,26 @@ const LocalAgentSimulationEngine = {
     let rows = [];
 
     if (info.isVending && info.sector === "food_beverage") {
-      // CASO DISTRIBUTORE AUTOMATICO DI PIZZA (VALORI AGGIORNATI BENCHMARK ADIAL/LET'S PIZZA 2026)
-      capexVal = 36500; // Costo macchina professionale nuova + spedizione Canarie + allacciamento e autorizzazioni
-      opexVal = 890; // Affitto suolo, elettricità industriale forno+frigo h24, telemetria, assicurazione, manutenzione
+      // CASO DISTRIBUTORE AUTOMATICO DI PIZZA (VALORI AGGIORNATI BENCHMARK ADIAL/LET'S PIZZA 2026 - RISTRUTTURAZIONE COSTI)
+      capexVal = 55000; // Costo macchina professionale nuova premium + trasporto Canarie + allacciamento e autorizzazioni sanitarie
+      opexVal = 950; // Affitto suolo, elettricità industriale, telemetria, assicurazione, Autónomo e manutenzione
       bepUnit = "Pizze Vendute / Mese";
-      // Margine medio per pizza: Prezzo vendita medio 7.00€ - Costo base+ingredienti 2.00€ - Comm. POS 0.15€ = 4.85€
-      bepVal = Math.round(opexVal / 4.85); // Circa 184 pizze al mese (circa 6 pizze al giorno per pareggiare gli OPEX)
+      // Margine medio per pizza: Prezzo vendita medio 8.00€ (turistico) - Costo base+ingredienti 2.20€ - Comm. POS 0.20€ = 5.60€
+      bepVal = Math.round(opexVal / 5.60); // Circa 170 pizze al mese (circa 5.6 pizze al giorno per pareggiare gli OPEX)
       
       const isCanarias = info.location && info.location.includes("Canarie");
 
       rows = [
-        { item: "Distributore Automatico Pizza Professionale (con forno a pietra integrato - es. Adial Pizzadoor / Let's Pizza)", type: "CAPEX", cost: "32,000.00 €", source: "Benchmark di mercato produttori UE (Adial France / Let's Pizza retail)" },
-        { item: "Trasporto, Dogana e Sdoganamento a " + (info.location || "destinazione"), type: "CAPEX", cost: isCanarias ? "2,500.00 €" : "1,200.00 €", source: "Logistica mare/container + Sdoganamento IGIC Canarie" },
-        { item: "Allacciamento elettrico trifase, aumento potenza (5kW picco) e SCIA comunale", type: "CAPEX", cost: "1,200.00 €", source: "Lavori tecnici di attivazione e certificazione loco" },
-        { item: "Affitto spazio commerciale (suolo privato esterno o fronte strada)", type: "OPEX", cost: "450.00 € / mese", source: "Stima contratti area commerciale ad alto traffico a Gran Canaria" },
-        { item: "Consumo energia elettrica (forno pietra e frigo h24)", type: "OPEX", cost: "180.00 € / mese", source: "Tariffe energia elettrica industriale Spagna (picco forno 3.5 kW)" },
-        { item: "Connettività SIM 4G e Telemetria remota (Nayax/POS cashless)", type: "OPEX", cost: "35.00 € / mese", source: "Abbonamento Nayax Core + Canone SIM" },
-        { item: "Assicurazione RC Prodotti & Danni (atti vandalici e guasti)", type: "OPEX", cost: "45.00 € / mese", source: "Polizza assicurativa business Allianz Spagna" },
-        { item: "Quota Autónomo (previdenza sociale spagnola flat rate)", type: "OPEX", cost: "80.00 € / mese", source: "Regime agevolato primo anno Autónomo Spagna" },
-        { item: "Accantonamento manutenzione ordinaria programmata e filtri", type: "OPEX", cost: "100.00 € / mese", source: "Stima costi usura parti meccaniche/resistenze" },
-        { item: "Adempimenti amministrativi, HACCP e Registro Sanitario", type: "CAPEX", cost: "800.00 €", source: "Pratiche Asesoria locale e biologo alimentare" }
+        { item: "Distributore Automatico Pizza Professionale (con forno a pietra integrato - es. Adial Pizzadoor / Let's Pizza - Nuovo ad alta capienza)", type: "CAPEX", cost: "48,000.00 €", source: "Benchmark di mercato produttori UE 2026 (Adial France retail / Let's Pizza)" },
+        { item: "Trasporto, Dogana e Sdoganamento a " + (info.location || "destinazione"), type: "CAPEX", cost: isCanarias ? "3,500.00 €" : "1,800.00 €", source: "Logistica mare/container + Sdoganamento IGIC Canarie e DUA" },
+        { item: "Allacciamento elettrico trifase, aumento potenza (6kW picco) e SCIA comunale", type: "CAPEX", cost: "1,800.00 €", source: "Lavori tecnici di attivazione, certificazione impianto e tasse locali" },
+        { item: "Adempimenti sanitari HACCP, Certificati MOCA e Registro Sanitario locale", type: "CAPEX", cost: "1,200.00 €", source: "Consulenza biologo alimentare + Pratiche Asesoria" },
+        { item: "Affitto spazio commerciale privato (suolo esterno fronte strada o cortile)", type: "OPEX", cost: "450.00 € / mese", source: "Benchmark contratti commerciali area turistica a Gran Canaria" },
+        { item: "Consumo energia elettrica (forno pietra rapido e cella frigo h24)", type: "OPEX", cost: "210.00 € / mese", source: "Consumi stimati tariffe industriali Spagna (forno 3.8 kW picco)" },
+        { item: "Connettività SIM 4G, telemetria Nayax e POS cashless", type: "OPEX", cost: "35.00 € / mese", source: "Abbonamento Nayax Core + canone connessione" },
+        { item: "Assicurazione RC Prodotti & Danni (atti vandalici, urti, guasti forno)", type: "OPEX", cost: "55.00 € / mese", source: "Polizza assicurativa business Spagna (Allianz/Mapfre)" },
+        { item: "Quota Autónomo (previdenza sociale spagnola flat rate primo anno)", type: "OPEX", cost: "80.00 € / mese", source: "Regime spagnolo agevolato Autónomo Canarie" },
+        { item: "Manutenzione ordinaria programmata, parti di ricambio e filtri cappa", type: "OPEX", cost: "120.00 € / mese", source: "Accantonamento usura resistenze e parti meccaniche forno" }
       ];
     } else if (info.sector === "saas" || info.sector === "mobile_app") {
       capexVal = info.budgetAmount <= 1000 ? 250 : Math.round(info.budgetAmount * 0.35);
@@ -268,19 +271,19 @@ const LocalAgentSimulationEngine = {
         8: `- **Piano Marketing Consolidato**: Focus totale su Local SEO, passaparola digitale, QR code promozionale ed estetica ad alta visibilità notturna.`
       },
       cfo: {
-        1: `- **Pricing Iniziale**: Impostazione prezzo Margherita a 6.50€, pizze farcite (Diavola, Prosciutto) a 7.50€, con uno scontrino medio stimato a 7.00€.
-- **Costo del Venduto (COGS)**: Base pizza precotta artigianale + ingredienti + cartone termico certificato = 2.00€ a pizza.
-- **Margine Lordo**: Margine unitario stimato al 71% (~4.85€ di profitto lordo per transazione).`,
+        1: `- **Pricing Iniziale**: Impostazione prezzo Margherita a 7.50€, pizze farcite (Diavola, Prosciutto) a 8.50€, con uno scontrino medio stimato a 8.00€ nelle zone turistiche.
+- **Costo del Venduto (COGS)**: Base pizza artigianale locale + ingredienti freschi + cartone termico microonda = 2.20€ a pizza.
+- **Margine Lordo**: Margine unitario stimato al 70% (~5.60€ di profitto lordo per singola transazione cashless).`,
         2: `- **Analisi di Sensibilità**:
-  - Scenario Conservativo (10 pizze/giorno): Rientro investimento in 22 mesi.
-  - Scenario Realistico (18 pizze/giorno): Utile netto ~1.250€/mese, rientro in 15 mesi.
-  - Scenario Ottimistico (30 pizze/giorno): Utile netto ~2.700€/mese, rientro in 8 mesi.`,
-        3: `- **Struttura CAPEX**: Fabbisogno iniziale stimato a €36.500 (macchina professionale nuova €32.000, logistica e dogana Canarie €2.500, allacciamento elettrico e SCIA €1.200, HACCP €800).`,
+  - Scenario Conservativo (10 pizze/giorno): Rientro dell'investimento in 24 mesi.
+  - Scenario Realistico (18 pizze/giorno): Utile netto ~2.000€/mese, rientro in 16 mesi.
+  - Scenario Optimistico (30 pizze/giorno): Utile netto ~4.000€/mese, rientro in 9 mesi.`,
+        3: `- **Struttura CAPEX**: Fabbisogno iniziale stimato a €55.000 (macchina professionale premium nuova €48.000, trasporto e sdoganamento Canarie €3.500, allacciamento elettrico e SCIA €1.800, certificazioni HACCP/MOCA €1.200).`,
         4: `- **Flusso di Cassa Promozionale**: Calcolo del costo degli sconti QR (20%) e delle pizze omaggio per i tassisti per verificare l'impatto sul margine lordo.`,
         5: `- **Spese Amministrative e Tasse**: Inquadramento come Autónomo Spagna con quota agevolata flat rate a 80€/mese per il primo anno.
-- **Costo Assicurativo**: Polizza RC Danni e vandalismo stimata in 45€/mese.`,
-        6: `- **Dettaglio OPEX Fissi**: Affitto spazio commerciale privato (450€/mese), energia elettrica forno/frigo (180€/mese), telemetria Nayax (35€/mese), commercialista locale (80€/mese). Totale OPEX: 890€/mese.`,
-        7: `- **Break-Even Point (BEP)**: Fissato a 184 pizze al mese (circa 6 pizze al giorno). Superato il BEP, ogni pizza aggiuntiva genera 4.85€ di utile netto.`,
+- **Costo Assicurativo**: Polizza RC Danni e vandalismo stimata in 55€/mese.`,
+        6: `- **Dettaglio OPEX Fissi**: Affitto spazio commerciale privato (450€/mese), energia elettrica forno/frigo (210€/mese), telemetria Nayax (35€/mese), commercialista locale (80€/mese), manutenzione/filtri (120€/mese). Totale OPEX: 950€/mese.`,
+        7: `- **Break-Even Point (BEP)**: Fissato a 170 pizze al mese (circa 5.6 pizze al giorno). Superato il BEP, ogni pizza aggiuntiva genera 5.60€ di utile netto.`,
         8: `- **Modello Finanziario Finale**: Prospetto a 12 mesi completato, dimostrando un ROI elevato ed un ammortamento rapido se la location rispetta il target realistico.`
       },
       cto: {
@@ -364,7 +367,7 @@ const LocalAgentSimulationEngine = {
         8: `- **Commercial Pipeline**: Contratto di locazione privato firmato, terminale Nayax attivo e configurato per incassi automatici.`
       },
       capital: {
-        1: `- **Struttura Investimento**: Finanziamento dell'investimento iniziale di €36.500 interamente tramite capitale proprio per evitare interessi bancari.`,
+        1: `- **Struttura Investimento**: Finanziamento dell'investimento iniziale di €55.000 interamente tramite capitale proprio per evitare interessi bancari e garantire la massima flessibilità operativa.`,
         2: `- **Contributo Autónomo Canarie**: Richiesta di sussidio a fondo perduto per l'avvio di nuove imprese da parte di lavoratori autonomi (fino a 5.500€).`,
         3: `- **Pianificazione Reinvestimento**: Destinazione del 100% degli utili generati dal primo punto ad un fondo cassa per finanziare la seconda macchina al mese 10.`,
         4: `- **Pitch Deck Vending**: Creazione di un documento di presentazione del business basato su metriche reali di marginalità e ROI per investitori.`,
@@ -521,17 +524,17 @@ const LocalAgentSimulationEngine = {
     } else if (agentKey === "cfo") {
       if (info.isBootstrap) {
         objections = [
-          "**INCOMPATIBILITÀ DI BUDGET (CRITICA)**: Hai indicato un budget di 0€ (Bootstrap). Una macchina vending professionale nuova costa circa 32.000€ + logistica. Il progetto è finanziariamente IMPOSSIBILE con queste premesse.",
-          "**Costi Fissi Ricorrenti**: Anche se la macchina fosse gratuita, l'affitto dello spazio e l'energia elettrica industriale h24 richiedono un flusso di cassa di almeno 800€/mese fin dal primo giorno.",
-          "**Tempo di Rientro (Payback)**: Con 184 pizze/mese necessarie per il break-even operativo, il rischio di insolvenza nei primi 3 mesi è altissimo in mancanza di capitale circolante."
+          "**INCOMPATIBILITÀ DI BUDGET (CRITICA)**: Hai indicato un budget di 0€ (Bootstrap). Una macchina vending professionale premium nuova costa circa 48.000€ + logistica. Il progetto è finanziariamente IMPOSSIBILE con queste premesse.",
+          "**Costi Fissi Ricorrenti**: Anche se la macchina fosse gratuita, l'affitto dello spazio e l'energia elettrica industriale h24 richiedono un flusso di cassa di almeno 950€/mese fin dal primo giorno.",
+          "**Tempo di Rientro (Payback)**: Con 170 pizze/mese necessarie per il break-even operativo, il rischio di insolvenza nei primi 3 mesi è altissimo in mancanza di capitale circolante."
         ];
         verdict = "BOCCIATO (Fondi Insufficienti)";
         verdictReason = "Il budget corrente non consente l'acquisto o l'installazione del macchinario. È necessario fare un pivot verso il noleggio operativo o capitali esterni.";
       } else {
         objections = [
-          "**Aumento Costo Macchinari**: I costi correnti dei distributori a pietra (Adial, Let's Pizza) sono aumentati a causa delle materie prime (€32k-35k base).",
-          "**Costo Energia Elettrica**: Il forno a picco trifase (5kW) consuma in media 150-200€ al mese di elettricità a tariffe industriali.",
-          "**Margine su Ingredienti**: Il margine si contrae se non si ottiene un prezzo all'ingrosso (<1.80€ a pizza) sulle basi precotte."
+          "**Aumento Costo Macchinari**: I costi correnti dei distributori a pietra nuovi premium (Adial, Let's Pizza) sono di circa €48k-52k base.",
+          "**Costo Energia Elettrica**: Il forno a picco trifase (6kW) consuma in media 180-220€ al mese di elettricità a tariffe industriali.",
+          "**Margine su Ingredienti**: Il margine si contrae se non si ottiene un prezzo all'ingrosso (<2.20€ a pizza) sulle basi e packaging."
         ];
         verdict = "APPROVATO";
         verdictReason = "I margini unitari (>70%) supportano l'investimento se il volume minimo di 6 pizze al giorno viene mantenuto.";
@@ -629,7 +632,7 @@ const LocalAgentSimulationEngine = {
     if (info.isBootstrap && (info.isVending || info.sector === "food_beverage" || info.sector === "retail")) {
       reportText += `#### 💡 Pivot per Validazione in Bootstrap (Opzioni a Costo Zero)\n`;
       reportText += `> [!IMPORTANT]\n`;
-      reportText += `> **Conflitto Budget/CAPEX**: Il budget 'Bootstrap/0€' non consente l'acquisto diretto del macchinario (€36.500).\n\n`;
+      reportText += `> **Conflitto Budget/CAPEX**: Il budget 'Bootstrap/0€' non consente l'acquisto diretto del macchinario (€55.000).\n\n`;
       reportText += `Ecco come puoi procedere senza disporre dei capitali iniziali:\n`;
       reportText += `- **Noleggio Operativo / Leasing**: Molti produttori o distributori offrono formule di noleggio a lungo termine con riscatto, riducendo il CAPEX iniziale a un deposito cauzionale di circa 1.00€ e una quota mensile (OPEX).\n`;
       reportText += `- **Macchinario Usato Rigenerato**: Ricerca di modelli precedenti sul mercato dell'usato spagnolo (MilAnuncios / Wallapop) con prezzi inferiori del 50% (€15.000 - €18.000).\n`;
@@ -662,9 +665,9 @@ const LocalAgentSimulationEngine = {
     text += `### 👑 Orchestratore Master - Sintesi Strategica della Fase ${phase}\n\n`;
     
     if (isPizzaVending) {
-      text += `Il progetto **${info.name}** si concentra sulla somministrazione di pizza calda H24 tramite distributore automatico. `;
+      text += `Il progetto **${info.name || "Senza Nome"}** si concentra sulla somministrazione di pizza calda H24 tramite distributore automatico. `;
     } else {
-      text += `Il progetto **${info.name}** si colloca nel settore **${info.sector.toUpperCase()}** ${targetLoc}. `;
+      text += `Il progetto **${info.name || "Senza Nome"}** si colloca nel settore **${(info.sector || "N/D").toUpperCase()}** ${targetLoc}. `;
     }
 
     // Se località mancante
@@ -697,7 +700,7 @@ const LocalAgentSimulationEngine = {
           questions = [
             "Accettare il pivot verso il Noleggio Operativo (OPEX mensile, CAPEX minimo).",
             "Accettare il pivot verso la Joint Venture con un locale esistente a Gran Canaria.",
-            "Modificare il budget immettendo capitale proprio (minimo 36.500€)."
+            "Modificare il budget immettendo capitale proprio (minimo 55.000€)."
           ];
         } else {
           questions = [
@@ -770,9 +773,9 @@ const LocalAgentSimulationEngine = {
       case 7:
         text += `**FASE 7: PIANO FINANZIARIO completata.**\n`;
         text += `Margini e break-even verificati.\n`;
-        text += `- **CAPEX**: €36.500 (macchina, spedizione, allacciamento, SCIA).\n`;
-        text += `- **OPEX**: €890/mese (affitto suolo, corrente h24, Autónomo flat, SIM, manutenzione).\n`;
-        text += `- **BEP**: 184 pizze al mese (circa 6 pizze al giorno a 7.00€ medio).\n`;
+        text += `- **CAPEX**: €55.000 (macchina, spedizione, allacciamento, SCIA).\n`;
+        text += `- **OPEX**: €950/mese (affitto suolo, corrente h24, Autónomo flat, SIM, manutenzione).\n`;
+        text += `- **BEP**: 170 pizze al mese (circa 5.6 pizze al giorno a 8.00€ medio).\n`;
         
         questions = [
           "Accettare il piano finanziario e passare alla sintesi executive.",

@@ -7,6 +7,62 @@
   
   <!-- CSS Stylesheet -->
   <link rel="stylesheet" href="style.css?v=1.2">
+  
+  <script>
+    // Cattura ed evidenziazione errori per diagnostica in tempo reale
+    window.addEventListener('error', function(e) {
+      console.error("Uncaught runtime error:", e);
+      showCriticalErrorBanner("Errore critico: " + e.message + " (" + (e.filename ? e.filename.split('/').pop() : 'script sconosciuto') + ":" + e.lineno + ")");
+    });
+
+    window.addEventListener('unhandledrejection', function(e) {
+      console.error("Unhandled promise rejection:", e);
+      showCriticalErrorBanner("Errore asincrono: " + e.reason);
+    });
+
+    function showCriticalErrorBanner(msg) {
+      let banner = document.getElementById('critical-error-banner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'critical-error-banner';
+        banner.style.cssText = 'position:fixed; top:0; left:0; width:100%; background:#ef4444; color:#fff; padding:12px 20px; font-family:sans-serif; font-size:13px; font-weight:bold; z-index:999999; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 12px rgba(0,0,0,0.3); box-sizing:border-box; gap: 10px;';
+        
+        const textSpan = document.createElement('span');
+        textSpan.id = 'critical-error-banner-text';
+        textSpan.style.cssText = 'flex:1; text-align:left; word-break:break-word;';
+        banner.appendChild(textSpan);
+        
+        const actionGroup = document.createElement('div');
+        actionGroup.style.cssText = 'display:flex; gap:8px; align-items:center;';
+        
+        const resetBtn = document.createElement('button');
+        resetBtn.textContent = 'Forza Reset';
+        resetBtn.style.cssText = 'background:#fff; color:#ef4444; border:none; padding:4px 10px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:bold; transition: opacity 0.2s;';
+        resetBtn.onmouseover = function() { this.style.opacity = '0.9'; };
+        resetBtn.onmouseout = function() { this.style.opacity = '1'; };
+        resetBtn.onclick = function() { 
+          if (typeof window.forceHardReset === 'function') {
+            window.forceHardReset();
+          } else {
+            localStorage.clear();
+            window.location.reload();
+          }
+        };
+        actionGroup.appendChild(resetBtn);
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.style.cssText = 'background:none; border:none; color:#fff; font-size:22px; cursor:pointer; font-weight:bold; padding:0 4px; line-height:1;';
+        closeBtn.onclick = function() { banner.style.display = 'none'; };
+        actionGroup.appendChild(closeBtn);
+        
+        banner.appendChild(actionGroup);
+        document.body.appendChild(banner);
+      }
+      document.getElementById('critical-error-banner-text').innerHTML = `⚠️ <strong>Errore di Esecuzione:</strong> ${msg}`;
+      banner.style.display = 'flex';
+    }
+  </script>
 </head>
 <body>
 
@@ -361,6 +417,9 @@
         
         <button id="btn-save-config" class="btn btn-primary" style="margin-top: 10px; width: 100%;">
           Salva Configurazione
+        </button>
+        <button id="btn-force-reset-app" class="btn btn-secondary" style="margin-top: 8px; width: 100%; border-color: rgba(239, 68, 68, 0.4); color: #ef4444;" onclick="if(typeof window.forceHardReset === 'function') { window.forceHardReset(); } else { localStorage.clear(); window.location.reload(); }">
+          💥 Forza Ripristino Totale (Clear Cache & Storage)
         </button>
       </div>
     </div>
