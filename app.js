@@ -1561,7 +1561,10 @@ function updateLeanCanvasUI() {
   DOM.leanCanvasGrid.querySelector(".canvas-customer-segments .canvas-box-content").innerHTML = getBoxContent(2, "cmo", "Segmento target e interviste (CMO)...");
   
   document.getElementById("box-costs").innerHTML = getBoxContent(6, "sourcing", "Struttura costi e forniture (Sourcing)...");
-  document.getElementById("box-revenue").innerHTML = getBoxContent(1, "cfo", "Modello finanziario e tariffe (CFO)...");function updateFinancialsUI() {
+  document.getElementById("box-revenue").innerHTML = getBoxContent(1, "cfo", "Modello finanziario e tariffe (CFO)...");
+}
+
+function updateFinancialsUI() {
   DOM.financialTableBody.innerHTML = "";
   const chartContainer = document.getElementById("break-even-chart-container");
   const optionSelector = document.getElementById("financial-option-selector-container");
