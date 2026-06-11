@@ -63,6 +63,8 @@
       banner.style.display = 'flex';
     }
   </script>
+  <!-- SheetJS Library for parsing Excel files in-browser -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -140,13 +142,62 @@
         <!-- I messaggi verranno inseriti dinamicamente da app.js -->
       </div>
       
+      <!-- Starter Form Area (Visible only in Phase 0) -->
+      <div id="starter-form-container" class="starter-form-container" style="display: none;">
+        <div class="starter-form-header">
+          <h3>🚀 Inizializza il tuo Progetto</h3>
+          <p>Compila i dettagli dell'idea di business. I campi con * sono obbligatori. Puoi includere qualsiasi nota o informazione aggiuntiva.</p>
+        </div>
+        <form id="starter-form" onsubmit="event.preventDefault();">
+          <div class="form-group">
+            <label for="form-project-name">Nome Progetto *</label>
+            <input type="text" id="form-project-name" placeholder="Es. PizzaVending Gran Canaria" required>
+          </div>
+          <div class="form-group">
+            <label for="form-project-idea">Intuizione / Idea di Business *</label>
+            <textarea id="form-project-idea" rows="3" placeholder="Es. Vorrei creare un distributore automatico di pizze calde H24, cotte in forno pietra in 3 minuti..." required></textarea>
+          </div>
+          <div class="form-group-row">
+            <div class="form-group">
+              <label for="form-project-budget">Capitale / Budget Disponibile *</label>
+              <input type="text" id="form-project-budget" placeholder="Es. 55000€ oppure 'Bootstrap'" required>
+            </div>
+            <div class="form-group">
+              <label for="form-project-location">Località / Zona Geografica</label>
+              <input type="text" id="form-project-location" placeholder="Es. Las Palmas (Canarie) o lascia vuoto per ricevere suggerimenti">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="form-project-objective">Obiettivo Primario *</label>
+            <input type="text" id="form-project-objective" placeholder="Es. Validare l'interesse ed il break-even veloce" required>
+          </div>
+          <div class="form-group">
+            <label for="form-project-notes">Note, Competitor o Dettagli Aggiuntivi (Testo Libero)</label>
+            <textarea id="form-project-notes" rows="2" placeholder="Es. Preferenza per macchinari usati, competitor vicini, orari di massimo passaggio..."></textarea>
+          </div>
+          <button type="submit" id="btn-submit-starter" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+            Avvia Riunione del Consiglio d'Amministrazione 👥
+          </button>
+        </form>
+      </div>
+      
       <!-- Input and Chips Area -->
-      <div class="chat-input-area">
+      <div class="chat-input-area" id="chat-input-area">
         <div class="quick-chips" id="quick-chips">
           <!-- Chips inseriti dinamicamente -->
         </div>
         
+        <!-- Badge per l'allegato caricato -->
+        <div id="attachment-badge-container" class="attachment-badge-container" style="display: none;"></div>
+        
         <div class="input-container">
+          <button id="btn-attach" class="btn btn-attach" type="button" title="Allega file (Testo, Excel, Immagine)">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+            </svg>
+          </button>
+          <input type="file" id="attachment-file-input" style="display: none;" accept=".txt,.md,.json,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.webp">
+          
           <textarea id="chat-input" placeholder="Scrivi la tua risposta o idea di business qui..." rows="1"></textarea>
           <button id="btn-send" class="btn-send" title="Invia messaggio">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -258,6 +309,16 @@
               <div class="fin-card">
                 <h4>Soglia Break-Even</h4>
                 <div class="value" id="fin-break-even">-</div>
+              </div>
+            </div>
+            
+            <!-- Grafico Break-Even SVG -->
+            <div id="break-even-chart-container" class="break-even-chart-container glass-panel" style="display: none; margin-bottom: 24px; padding: 20px;">
+              <h4 style="margin: 0 0 16px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                📈 Proiezione e Soglia di Break-Even (12 Mesi)
+              </h4>
+              <div id="break-even-svg-wrapper" style="width: 100%; height: 260px; overflow: visible;">
+                <!-- Disegnato via JS -->
               </div>
             </div>
             

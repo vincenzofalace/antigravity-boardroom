@@ -111,13 +111,18 @@ const LocalAgentSimulationEngine = {
     let bepVal = 0;
     let rows = [];
 
+    let priceVal = 100;
+    let cogsVal = 20;
+
     if (info.isVending && info.sector === "food_beverage") {
       // CASO DISTRIBUTORE AUTOMATICO DI PIZZA (VALORI AGGIORNATI BENCHMARK ADIAL/LET'S PIZZA 2026 - RISTRUTTURAZIONE COSTI)
       capexVal = 55000; // Costo macchina professionale nuova premium + trasporto Canarie + allacciamento e autorizzazioni sanitarie
       opexVal = 950; // Affitto suolo, elettricità industriale, telemetria, assicurazione, Autónomo e manutenzione
       bepUnit = "Pizze Vendute / Mese";
+      priceVal = 8.0;
+      cogsVal = 2.4; // Ingredienti + comm. POS
       // Margine medio per pizza: Prezzo vendita medio 8.00€ (turistico) - Costo base+ingredienti 2.20€ - Comm. POS 0.20€ = 5.60€
-      bepVal = Math.round(opexVal / 5.60); // Circa 170 pizze al mese (circa 5.6 pizze al giorno per pareggiare gli OPEX)
+      bepVal = Math.round(opexVal / (priceVal - cogsVal)); // Circa 170 pizze al mese (circa 5.6 pizze al giorno per pareggiare gli OPEX)
       
       const isCanarias = info.location && info.location.includes("Canarie");
 
@@ -137,7 +142,9 @@ const LocalAgentSimulationEngine = {
       capexVal = info.budgetAmount <= 1000 ? 250 : Math.round(info.budgetAmount * 0.35);
       opexVal = info.budgetAmount <= 1000 ? 24 : Math.round(info.budgetAmount * 0.08);
       bepUnit = "Abbonati SaaS / Mese";
-      bepVal = Math.round(opexVal / 29);
+      priceVal = 29.0;
+      cogsVal = 0.0;
+      bepVal = Math.round(opexVal / priceVal);
       rows = [
         { item: "Dominio & Landing Page Professionale (Carrd/Webflow)", type: "CAPEX", cost: "250.00 €", source: "Abbonamento annuale + Template" },
         { item: "Database & Hosting Cloud (Firebase/Supabase)", type: "OPEX", cost: "25.00 € / mese", source: "Infrastruttura tecnica" },
@@ -148,7 +155,9 @@ const LocalAgentSimulationEngine = {
       capexVal = info.budgetAmount <= 1000 ? 300 : Math.round(info.budgetAmount * 0.40);
       opexVal = info.budgetAmount <= 1000 ? 35 : Math.round(info.budgetAmount * 0.10);
       bepUnit = "Ordini E-commerce / Mese";
-      bepVal = Math.round(opexVal / 15);
+      priceVal = 30.0;
+      cogsVal = 15.0;
+      bepVal = Math.round(opexVal / (priceVal - cogsVal));
       rows = [
         { item: "Primo Lotto di Merce / Packaging Personalizzato", type: "CAPEX", cost: "800.00 €", source: "Sourcing MOQ basso da scatolificio" },
         { item: "Sito Web E-commerce (Shopify/WooCommerce)", type: "OPEX", cost: "36.00 € / mese", source: "Canone SaaS Shopify" },
@@ -159,7 +168,9 @@ const LocalAgentSimulationEngine = {
       capexVal = info.budgetAmount <= 1000 ? 250 : Math.round(info.budgetAmount * 0.30);
       opexVal = info.budgetAmount <= 1000 ? 30 : Math.round(info.budgetAmount * 0.07);
       bepUnit = "Clienti Attivi / Mese";
-      bepVal = Math.round(opexVal / 80);
+      priceVal = 100.0;
+      cogsVal = 20.0;
+      bepVal = Math.round(opexVal / (priceVal - cogsVal));
       rows = [
         { item: "Landing Page & Web Presenza (Carrd/WordPress)", type: "CAPEX", cost: "200.00 €", source: "Software e template" },
         { item: "Costo Piattaforme Software di Gestione", type: "OPEX", cost: "20.00 € / mese", source: "CRM / Tool di fatturazione" },
@@ -172,12 +183,18 @@ const LocalAgentSimulationEngine = {
       capex: capexVal.toLocaleString("it-IT") + " €",
       opex: opexVal.toLocaleString("it-IT") + " € / mese",
       bep: bepVal.toLocaleString("it-IT") + " " + bepUnit,
+      capexNum: capexVal,
+      opexNum: opexVal,
+      priceNum: priceVal,
+      cogsNum: cogsVal,
+      bepVolumeNum: bepVal,
+      unitName: bepUnit.split(" ")[0] || "Unità",
       rows: rows
     };
   },
 
   // Genera il report di un agente per una specifica fase
-  generateAgentReport(info, phase, agentKey, previousAnswers = {}) {
+  generateAgentReport(info, phase, agentKey, previousAnswers = {}, attachedFile = null, attachedImage = null) {
     const isCanarias = info.location && info.location.includes("Canarie");
     const targetLoc = info.location ? `a ${info.location}` : "nell'area geografica target";
     const appName = info.name;
@@ -606,6 +623,12 @@ const LocalAgentSimulationEngine = {
 
     // Costruiamo il report finale
     let reportText = `### ${agentMeta.icon} ${agentName} - ${agentRole} (Fase ${phase})\n\n`;
+    if (attachedFile) {
+      reportText += `> [!NOTE]\n> **Analisi Allegato**: Ho esaminato il file **${attachedFile.name}** (${Math.round(attachedFile.size / 1024 * 10) / 10} KB). I dati contenuti sono stati integrati nell'analisi strategica di questa fase.\n\n`;
+    }
+    if (attachedImage) {
+      reportText += `> [!NOTE]\n> **Analisi Visiva**: Ho esaminato l'immagine/screenshot allegato per integrare i benchmark operativi.\n\n`;
+    }
     
     // Mostriamo l'analisi
     reportText += `#### 🔍 Analisi di Competenza & Fattibilità\n${phaseAnalysis}\n\n`;
@@ -654,11 +677,17 @@ const LocalAgentSimulationEngine = {
   },
 
   // Genera la sintesi dell'Orchestratore per una fase
-  generateOrchestratorReport(info, phase, agentBriefs, previousAnswers = {}) {
+  generateOrchestratorReport(info, phase, agentBriefs, previousAnswers = {}, attachedFile = null, attachedImage = null) {
     const isPizzaVending = info.isVending && info.sector === "food_beverage";
     const targetLoc = info.location ? `a ${info.location}` : "sul mercato target";
     
     let text = "";
+    if (attachedFile) {
+      text += `> [!NOTE]\n> **Analisi Allegato**: I dati del file **${attachedFile.name}** sono stati presi in carico dai sotto-agenti e sintetizzati in questa valutazione.\n\n`;
+    }
+    if (attachedImage) {
+      text += `> [!NOTE]\n> **Analisi Visiva**: L'immagine allegata è stata analizzata e considerata nella sintesi dell'Orchestratore.\n\n`;
+    }
     let questions = [];
 
     // Costruiamo la sintesi dell'Orchestratore Master

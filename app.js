@@ -53,7 +53,9 @@ let state = {
     idea: "",
     budget: "",
     objective: "",
-    type: "custom" // "custom" o "gardatech" o "ecowrap"
+    type: "custom", // "custom" o "gardatech" o "ecowrap"
+    attachedFile: null,  // { name, type, size, content }
+    attachedImage: null  // { mimeType, data }
   },
   enabledAgents: ["cmo", "cfo", "cto", "coo", "capital", "clo", "cco", "cso", "cpo", "sourcing", "sales"], // Tutti abilitati di default
   chatHistory: [],
@@ -111,7 +113,13 @@ const DOM = {
   btnNewProjectDropdown: document.getElementById("btn-new-project-dropdown"),
   btnExportProject: document.getElementById("btn-export-project"),
   btnImportProject: document.getElementById("btn-import-project"),
-  importProjectFile: document.getElementById("import-project-file")
+  importProjectFile: document.getElementById("import-project-file"),
+  
+  // Elementi Form & Allegati Nuovi
+  starterForm: document.getElementById("starter-form"),
+  btnAttach: document.getElementById("btn-attach"),
+  attachmentFileInput: document.getElementById("attachment-file-input"),
+  attachmentBadgeContainer: document.getElementById("attachment-badge-container")
 };
 
 // Definizioni dei meta-dati degli agenti
@@ -372,6 +380,52 @@ function setupEventListeners() {
     }
   });
 
+  // Nuovi listener per form di avvio ed allegati
+  if (DOM.btnAttach && DOM.attachmentFileInput) {
+    DOM.btnAttach.addEventListener("click", () => {
+      DOM.attachmentFileInput.click();
+    });
+    DOM.attachmentFileInput.addEventListener("change", handleFileAttachment);
+  }
+  
+  if (DOM.starterForm) {
+    DOM.starterForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      
+      const projName = document.getElementById("form-project-name").value.trim();
+      const projIdea = document.getElementById("form-project-idea").value.trim();
+      const projBudget = document.getElementById("form-project-budget").value.trim();
+      const projLocation = document.getElementById("form-project-location").value.trim();
+      const projObjective = document.getElementById("form-project-objective").value.trim();
+      const projNotes = document.getElementById("form-project-notes").value.trim();
+      
+      state.project.name = projName;
+      state.project.budget = projBudget;
+      state.project.objective = projObjective;
+      state.project.type = "custom";
+      
+      let fullIdeaText = projIdea;
+      if (projLocation) {
+        fullIdeaText += `\n\nLocalità specificata: ${projLocation}`;
+      }
+      if (projNotes) {
+        fullIdeaText += `\n\nNote aggiuntive ed informazioni di competitor:\n${projNotes}`;
+      }
+      state.project.idea = fullIdeaText;
+      
+      state.project.attachedFile = null;
+      state.project.attachedImage = null;
+      updateAttachmentBadgeUI();
+      
+      appendUserMessage(`🚀 Progetto avviato tramite form: **${projName}**\n- **Idea**: ${projIdea}\n- **Budget**: ${projBudget}\n- **Località**: ${projLocation || "Non specificata (consigliata Gran Canaria)"}\n- **Obiettivo**: ${projObjective}\n${projNotes ? `- **Note aggiuntive**: ${projNotes}` : ""}`);
+      
+      state.currentPhase = 1;
+      togglePhase0View();
+      updatePhaseIndicator();
+      processPhaseTransition();
+    });
+  }
+
   DOM.btnExport.addEventListener("click", exportFullReport);
 }
 
@@ -479,7 +533,9 @@ function createNewProject() {
     idea: "",
     budget: "",
     objective: "",
-    type: "custom"
+    type: "custom",
+    attachedFile: null,
+    attachedImage: null
   };
   
   state.currentPhase = 0;
@@ -489,16 +545,20 @@ function createNewProject() {
   state.answers = {};
   state.brainstormHistories = {};
   
+  const starterForm = document.getElementById("starter-form");
+  if (starterForm) starterForm.reset();
+  
   DOM.chatMessages.innerHTML = "";
+  togglePhase0View();
   updatePhaseIndicator();
   renderBoardroomGrid();
   
   updateLeanCanvasUI();
   updateFinancialsUI();
   updateReportUI();
+  updateAttachmentBadgeUI();
   
   saveCurrentProjectToStorage();
-  startAppFlow();
 }
 
 function saveCurrentProjectToStorage() {
@@ -535,6 +595,10 @@ function loadProjectFromStorage(id) {
   if (!projData) return;
   
   state.project = projData.project;
+  // Assicura che i campi degli allegati esistano nello stato caricato
+  if (!state.project.attachedFile) state.project.attachedFile = null;
+  if (!state.project.attachedImage) state.project.attachedImage = null;
+  
   state.currentPhase = projData.currentPhase;
   state.chatHistory = projData.chatHistory || [];
   state.contributions = projData.contributions || {};
@@ -544,6 +608,9 @@ function loadProjectFromStorage(id) {
   state.enabledAgents = projData.enabledAgents || state.enabledAgents;
   
   SafeStorage.setItem("antigravity_active_project_id", id);
+  
+  togglePhase0View();
+  updateAttachmentBadgeUI();
   
   // Ricostruisce la chat principale
   DOM.chatMessages.innerHTML = "";
@@ -651,6 +718,11 @@ function resetProject() {
   state.project.objective = "";
   state.project.type = "custom";
   state.project.name = "Nuovo Progetto " + new Date().toLocaleDateString('it-IT');
+  state.project.attachedFile = null;
+  state.project.attachedImage = null;
+  
+  const starterForm = document.getElementById("starter-form");
+  if (starterForm) starterForm.reset();
   
   state.isProcessing = false;
   if (DOM.chatInput) DOM.chatInput.disabled = false;
@@ -663,6 +735,7 @@ function resetProject() {
   updateLeanCanvasUI();
   updateFinancialsUI();
   updateReportUI();
+  updateAttachmentBadgeUI();
   
   saveCurrentProjectToStorage();
 }
@@ -685,6 +758,7 @@ window.forceHardReset = forceHardReset;
 // Script iniziale obbligatorio
 function startAppFlow() {
   state.currentPhase = 0;
+  togglePhase0View();
   updatePhaseIndicator();
   
   const greetingText = `**Salve.**
@@ -947,7 +1021,7 @@ async function processPhaseTransition(userFeedback = "") {
         setAgentStatus(agentKey, "running");
         await delay(200); // Ritardo simulato visivo per feedback ottimale
         
-        const report = window.LocalAgentSimulationEngine.generateAgentReport(info, state.currentPhase, agentKey, state.answers);
+        const report = window.LocalAgentSimulationEngine.generateAgentReport(info, state.currentPhase, agentKey, state.answers, state.project.attachedFile, state.project.attachedImage);
         state.contributions[state.currentPhase][agentKey] = report;
         setAgentStatus(agentKey, "done");
       }
@@ -955,7 +1029,7 @@ async function processPhaseTransition(userFeedback = "") {
       await delay(300);
       removeTypingIndicator();
       
-      const orchReport = window.LocalAgentSimulationEngine.generateOrchestratorReport(info, state.currentPhase, {}, state.answers);
+      const orchReport = window.LocalAgentSimulationEngine.generateOrchestratorReport(info, state.currentPhase, {}, state.answers, state.project.attachedFile, state.project.attachedImage);
       state.orchestratorOutputs[state.currentPhase] = {
         text: orchReport.text,
         questions: orchReport.questions
@@ -981,14 +1055,18 @@ async function processPhaseTransition(userFeedback = "") {
       for (let agentKey of state.enabledAgents) {
         setAgentStatus(agentKey, "running");
         
-        const agentPrompt = `Siamo alla FASE ${state.currentPhase}: ${PHASE_TITLES[state.currentPhase]} del progetto "${state.project.name}".
+        let agentPrompt = `Siamo alla FASE ${state.currentPhase}: ${PHASE_TITLES[state.currentPhase]} del progetto "${state.project.name}".
 L'idea di partenza è: ${state.project.idea}
 Il budget: ${state.project.budget}
 L'obiettivo: ${state.project.objective}
 
-L'utente ha fornito questo feedback nell'ultimo step: "${userFeedback}"
+L'utente ha fornito questo feedback nell'ultimo step: "${userFeedback}"`;
 
-Fornisci il tuo report specifico di competenza per questa fase. Scrivi in modo estremamente schematico, professionale ed investor-ready. Usa titoli e bullet-point. Massimizza l'efficacia pragmatica ed evidenzia i costi.
+        if (state.project.attachedFile) {
+          agentPrompt += `\n\n[CONTESTO ALLEGATO DALL'UTENTE (File: ${state.project.attachedFile.name})]:\n\`\`\`\n${state.project.attachedFile.content}\n\`\`\``;
+        }
+
+        agentPrompt += `\n\nFornisci il tuo report specifico di competenza per questa fase. Scrivi in modo estremamente schematico, professionale ed investor-ready. Usa titoli e bullet-point. Massimizza l'efficacia pragmatica ed evidenzia i costi.
 
 REGOLE FONDAMENTALI DI CONDUZIONE (BOARDROOM RULES):
 1. SINCERITÀ E OBIEZIONI: Sii critico, onesto e trova tutte le obiezioni pratiche al progetto (se il mercato non è favorevole, se ci sono rischi operativi, ostacoli legali, o se non è fattibile). Inserisci sempre una sezione 'Critiche & Obiezioni' nel tuo report.
@@ -996,7 +1074,7 @@ REGOLE FONDAMENTALI DI CONDUZIONE (BOARDROOM RULES):
 3. VETO FINANZIARIO / PIVOT BOOTSTRAP: Se il budget indicato è zero/minimo (bootstrap) e l'idea richiede investimenti significativi (es. macchinari vending, hardware, spazi fisici), poni un VETO dicendo chiaramente che il progetto è irrealizzabile con quelle risorse e proponi soluzioni alternative concrete (es. noleggio operativo/leasing, usati rigenerati, joint venture, o pivot verso idee digitali a costo zero).`;
         
         try {
-          const response = await window.callGeminiAPI(state.apiKey, state.model, agentKey, agentPrompt);
+          const response = await window.callGeminiAPI(state.apiKey, state.model, agentKey, agentPrompt, [], state.project.attachedImage);
           state.contributions[state.currentPhase][agentKey] = response;
           setAgentStatus(agentKey, "done");
         } catch (err) {
@@ -1030,21 +1108,22 @@ REGOLE FONDAMENTALI DI CONDUZIONE (BOARDROOM RULES):
         boardroomBrief += `--- REPORT DI ${metadata.name} ---\n${text}\n\n`;
       }
       
-      const orchestratorPrompt = `Siamo alla FASE ${state.currentPhase}: ${PHASE_TITLES[state.currentPhase]} del progetto "${state.project.name}".
+      let orchestratorPrompt = `Siamo alla FASE ${state.currentPhase}: ${PHASE_TITLES[state.currentPhase]} del progetto "${state.project.name}".
 Informazioni generali:
 - Idea: ${state.project.idea}
 - Budget: ${state.project.budget}
-- Obiettivo: ${state.project.objective}
+- Obiettivo: ${state.project.objective}`;
 
-Ecco i report appena generati dai tuoi sotto-agenti nella Boardroom:
-${boardroomBrief}
+      if (state.project.attachedFile) {
+        orchestratorPrompt += `\n\n[CONTESTO ALLEGATO DALL'UTENTE (File: ${state.project.attachedFile.name})]:\n\`\`\`\n${state.project.attachedFile.content}\n\`\`\``;
+      }
 
-Sulla base di questi report, scrivi il paragrafo del Business Plan/Piano Operativo per questa FASE. Sii estremamente sincero, critico ed iper-realista (evidenzia tutte le obiezioni dei sotto-agenti, segnala RED FLAGS, colli di bottiglia o l'eventuale VETO di fattibilità finanziaria se il budget è nullo per attività ad alto CAPEX).
+      orchestratorPrompt += `\n\nEcco i report appena generati dai tuoi sotto-agenti nella Boardroom:\n${boardroomBrief}\n\nSulla base di questi report, scrivi il paragrafo del Business Plan/Piano Operativo per questa FASE. Sii estremamente sincero, critico ed iper-realista (evidenzia tutte le obiezioni dei sotto-agenti, segnala RED FLAGS, colli di bottiglia o l'eventuale VETO di fattibilità finanziaria se il budget è nullo per attività ad alto CAPEX).
 Se l'utente non ha indicato la zona geografica e gli agenti hanno evidenziato la mancanza, riassumi le opzioni delle zone geografiche consigliate e sollecita l'utente a sceglierne una.
 Concludi ponendo un massimo di 1-2 domande specifiche e focalizzate (es. per scegliere tra i pivot proposti o le zone consigliate) per consentire all'utente di definire i dettagli per la successiva FASE ${state.currentPhase + 1}.`;
 
       try {
-        const orchestratorResponse = await window.callGeminiAPI(state.apiKey, state.model, "orchestrator", orchestratorPrompt);
+        const orchestratorResponse = await window.callGeminiAPI(state.apiKey, state.model, "orchestrator", orchestratorPrompt, [], state.project.attachedImage);
         removeTypingIndicator();
         
         state.orchestratorOutputs[state.currentPhase] = {
@@ -1063,6 +1142,11 @@ Concludi ponendo un massimo di 1-2 domande specifiche e focalizzate (es. per sce
     console.error("Errore generale transizione:", error);
     appendSystemMessage(`Errore di esecuzione: ${error.message}`);
   } finally {
+    // Pulisce gli allegati dopo aver avviato la transizione
+    state.project.attachedFile = null;
+    state.project.attachedImage = null;
+    updateAttachmentBadgeUI();
+    
     state.isProcessing = false;
     if (DOM.chatInput) DOM.chatInput.disabled = false;
     if (DOM.btnSend) DOM.btnSend.disabled = false;
@@ -1421,8 +1505,10 @@ function updateLeanCanvasUI() {
 }
 
 // Riempie il tab finanziario (Spreadsheet CFO)
+// Riempie il tab finanziario (Spreadsheet CFO)
 function updateFinancialsUI() {
   DOM.financialTableBody.innerHTML = "";
+  const chartContainer = document.getElementById("break-even-chart-container");
   
   if (state.currentPhase >= 1 || state.project.type !== "custom") {
     const demoKey = state.project.type === "custom" ? "gardatech" : state.project.type;
@@ -1445,6 +1531,10 @@ function updateFinancialsUI() {
         `;
         DOM.financialTableBody.appendChild(tr);
       });
+      
+      // Renderizza il grafico di Break-Even
+      renderBreakEvenChart(fin.capexNum, fin.opexNum, fin.priceNum, fin.cogsNum, fin.unitName);
+      
     } else if (demoKey === "gardatech") {
       document.getElementById("fin-capex").textContent = "1.950 €";
       document.getElementById("fin-opex").textContent = "175 € / mese";
@@ -1470,6 +1560,10 @@ function updateFinancialsUI() {
         `;
         DOM.financialTableBody.appendChild(tr);
       });
+      
+      // Renderizza grafico GardaTech: capex 1950, opex 175, price 150, cogs 30
+      renderBreakEvenChart(1950, 175, 150, 30, "Appartamenti");
+      
     } else if (demoKey === "ecowrap") {
       document.getElementById("fin-capex").textContent = "600 €";
       document.getElementById("fin-opex").textContent = "29 € / mese";
@@ -1492,11 +1586,15 @@ function updateFinancialsUI() {
         `;
         DOM.financialTableBody.appendChild(tr);
       });
+      
+      // Renderizza grafico EcoWrap: capex 600, opex 29, price 250, cogs 100
+      renderBreakEvenChart(600, 29, 250, 100, "Lotti");
     }
   } else {
     document.getElementById("fin-capex").textContent = "-";
     document.getElementById("fin-opex").textContent = "-";
     document.getElementById("fin-break-even").textContent = "-";
+    if (chartContainer) chartContainer.style.display = "none";
     DOM.financialTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted)">Il piano finanziario dettagliato sarà visibile a partire dalla FASE 1.</td></tr>`;
   }
 }
@@ -1533,6 +1631,41 @@ function updateReportUI() {
       }
     });
     
+    if (phaseNum === 7) {
+      markdown += `### Tabella dei Costi & Modello Finanziario (Spreadsheet CFO)\n\n`;
+      markdown += `| Elemento / Voce di Spesa | Tipo | Costo Stimato | Fonte / Criterio Logico |\n`;
+      markdown += `| --- | --- | --- | --- |\n`;
+      
+      let rows = [];
+      if (state.project.type === "custom") {
+        const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+        const fin = window.LocalAgentSimulationEngine.generateFinancials(info);
+        rows = fin.rows;
+      } else if (state.project.type === "gardatech") {
+        rows = [
+          { item: "Kit Serratura Nuki Smart Lock", type: "CAPEX", cost: "80.00 € / unità", source: "Sourcing B2B (20% sconto distributore)" },
+          { item: "Sensori Finestre Xiaomi Zigbee", type: "CAPEX", cost: "12.00 € / unità", source: "Sourcing all'ingrosso (Cina)" },
+          { item: "Trasmettitore IR Broadlink RM4 Mini", type: "CAPEX", cost: "16.50 € / alloggio", source: "AliExpress (Sourcing quantitativo)" },
+          { item: "Integrazione Automazioni Make.com", type: "OPEX", cost: "9.00 € / mese", source: "Costi operativi (Make Pro)" },
+          { item: "Notifiche SMS ed Alert Twilio", type: "OPEX", cost: "15.00 € / mese", source: "Costi operativi (Twilio API)" },
+          { item: "Assicurazione RC Prodotti & Danni", type: "OPEX", cost: "37.50 € / mese", source: "Consulenza Allianz (Stima)" },
+          { item: "Consulenza Legale Privacy GDPR & Marchi", type: "CAPEX", cost: "600.00 € (Una tantum)", source: "Studio CLO partner" }
+        ];
+      } else if (state.project.type === "ecowrap") {
+        rows = [
+          { item: "Fornitura Minima Scatole (Terzista)", type: "CAPEX", cost: "200.00 € / lotto", source: "Sourcing scatolificio Emilia (Favini Crush)" },
+          { item: "Abbonamento Landing Page Carrd.co", type: "OPEX", cost: "1.50 € / mese", source: "Sito Carrd.co (Piano Pro 19$/anno)" },
+          { item: "Commissioni Gateway Stripe", type: "OPEX", cost: "1.4% + 0.25€ / trans.", source: "Stripe pricing" },
+          { item: "Certificazione conformità MOCA per alimenti", type: "CAPEX", cost: "400.00 € (Una tantum)", source: "Ente Certificatore partner CLO" }
+        ];
+      }
+      
+      rows.forEach(r => {
+        markdown += `| ${r.item} | ${r.type} | ${r.cost} | ${r.source} |\n`;
+      });
+      markdown += `\n`;
+    }
+    
     markdown += `***\n`;
   }
   
@@ -1558,15 +1691,43 @@ function exportFullReport() {
   document.body.removeChild(link);
 }
 
-// Parser Markdown semplice e sicuro
+// Parser Markdown semplice e sicuro con supporto allerta
 function formatMarkdown(text) {
   if (!text) return "";
   
+  // Escape HTML per sicurezza
   let html = text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+    
+  // Parsea i blockquotes di allerta in box callout colorati
+  const lines = html.split("\n");
+  let inBlockquote = false;
+  let blockquoteLines = [];
+  let result = [];
   
+  for (let line of lines) {
+    let trimmedLine = line.trim();
+    if (trimmedLine.startsWith("&gt;")) {
+      inBlockquote = true;
+      let content = trimmedLine.replace(/^&gt;\s*/, "");
+      blockquoteLines.push(content);
+    } else {
+      if (inBlockquote) {
+        result.push(renderBlockquoteHtml(blockquoteLines));
+        blockquoteLines = [];
+        inBlockquote = false;
+      }
+      result.push(line);
+    }
+  }
+  if (inBlockquote) {
+    result.push(renderBlockquoteHtml(blockquoteLines));
+  }
+  html = result.join("\n");
+  
+  // Sostituzioni Markdown standard
   html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
   html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
   html = html.replace(/^# (.*?)$/gm, "<h1>$1</h1>");
@@ -1582,8 +1743,287 @@ function formatMarkdown(text) {
   html = html.replace(/<\/ul><br>/g, "</ul>");
   html = html.replace(/<br><ul>/g, "<ul>");
   
+  // Evidenziazione rossa per veti, bocciature ed emoji di allerta
+  html = html.replace(/\b(VETO|BOCCIATO|RED FLAG|INCOMPATIBILITÀ|Critiche|Obiezioni)\b/gi, '<span style="color: var(--danger); font-weight: bold;">$1</span>');
+  html = html.replace(/(⚠️|🚨)/g, '<span style="color: var(--danger); font-weight: bold;">$1</span>');
+  
   return html;
+}
+
+// Renderizzazione dei box allerta (callout-danger, callout-warning, callout-info)
+function renderBlockquoteHtml(lines) {
+  let type = "info";
+  let title = "NOTA INFORMATIVA";
+  let contentLines = [];
+  
+  for (let line of lines) {
+    if (line.includes("[!CAUTION]") || line.includes("[!WARNING]") || line.includes("[!IMPORTANT]") || line.includes("[!NOTE]") || line.includes("[!INFO]")) {
+      if (line.includes("[!CAUTION]")) {
+        type = "danger";
+        title = "PUNTO CRITICO / VETO 🚨";
+      } else if (line.includes("[!WARNING]")) {
+        type = "warning";
+        title = "ATTENZIONE / RISCHIO ⚠️";
+      } else if (line.includes("[!IMPORTANT]")) {
+        type = "warning";
+        title = "DETTAGLIO IMPORTANTE ⚠️";
+      } else {
+        type = "info";
+        title = "NOTA INFORMATIVA 📄";
+      }
+    } else {
+      contentLines.push(line);
+    }
+  }
+  
+  const content = contentLines.join(" ");
+  return `<div class="callout-box callout-${type}"><h4>${title}</h4><p>${content}</p></div>`;
+}
+
+// Genera il grafico di Break-Even lineare interattivo in SVG
+function renderBreakEvenChart(capex, opex, price, cogs, unitName) {
+  const wrapper = document.getElementById("break-even-svg-wrapper");
+  const container = document.getElementById("break-even-chart-container");
+  if (!wrapper || !container) return;
+  
+  container.style.display = "block";
+  
+  // Calcola Volume per BEP al mese 7
+  const targetBEPMonth = 7;
+  const marginPerUnit = price - cogs;
+  const safeMargin = marginPerUnit > 0 ? marginPerUnit : 1.0;
+  const V = (capex / targetBEPMonth + opex) / safeMargin;
+  
+  // Array dei dati sui 12 mesi (0 a 12)
+  const data = [];
+  for (let m = 0; m <= 12; m++) {
+    const cost = capex + (opex + cogs * V) * m;
+    const rev = price * V * m;
+    data.push({ month: m, cost, revenue: rev });
+  }
+  
+  // Coordinate SVG
+  const width = wrapper.clientWidth || 500;
+  const height = 260;
+  const paddingLeft = 65;
+  const paddingRight = 20;
+  const paddingTop = 25;
+  const paddingBottom = 45;
+  
+  const plotWidth = width - paddingLeft - paddingRight;
+  const plotHeight = height - paddingTop - paddingBottom;
+  
+  // Trova il massimo valore di Y per scalare il grafico
+  const maxVal = Math.max(data[12].cost, data[12].revenue) * 1.1;
+  
+  const getX = (m) => paddingLeft + (m / 12) * plotWidth;
+  const getY = (val) => paddingTop + plotHeight - (val / maxVal) * plotHeight;
+  
+  // Costruisci le linee
+  let costPath = `M ${getX(data[0].month)} ${getY(data[0].cost)}`;
+  let revPath = `M ${getX(data[0].month)} ${getY(data[0].revenue)}`;
+  
+  for (let i = 1; i < data.length; i++) {
+    costPath += ` L ${getX(data[i].month)} ${getY(data[i].cost)}`;
+    revPath += ` L ${getX(data[i].month)} ${getY(data[i].revenue)}`;
+  }
+  
+  // Disegna l'SVG
+  let svg = `<svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" style="overflow: visible;">`;
+  
+  // Griglia orizzontale
+  for (let i = 0; i <= 4; i++) {
+    const yVal = (maxVal / 4) * i;
+    const y = getY(yVal);
+    svg += `<line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" class="chart-grid" />`;
+    svg += `<text x="${paddingLeft - 8}" y="${y + 4}" text-anchor="end" class="chart-text" fill="var(--text-muted)">${Math.round(yVal).toLocaleString("it-IT")} €</text>`;
+  }
+  
+  // Griglia verticale
+  for (let m = 0; m <= 12; m++) {
+    const x = getX(m);
+    svg += `<line x1="${x}" y1="${paddingTop}" x2="${x}" y2="${paddingTop + plotHeight}" class="chart-grid" />`;
+    if (m % 2 === 0 || m === 12) {
+      svg += `<text x="${x}" y="${paddingTop + plotHeight + 16}" text-anchor="middle" class="chart-text" fill="var(--text-muted)">M. ${m}</text>`;
+    }
+  }
+  
+  // Assi
+  svg += `<line x1="${paddingLeft}" y1="${paddingTop}" x2="${paddingLeft}" y2="${paddingTop + plotHeight}" class="chart-axis" stroke="var(--glass-border)" />`;
+  svg += `<line x1="${paddingLeft}" y1="${paddingTop + plotHeight}" x2="${width - paddingRight}" y2="${paddingTop + plotHeight}" class="chart-axis" stroke="var(--glass-border)" />`;
+  
+  // Tracciati linee
+  svg += `<path d="${costPath}" class="chart-line-cost" fill="none" stroke="#8b5cf6" stroke-width="3" />`;
+  svg += `<path d="${revPath}" class="chart-line-revenue" fill="none" stroke="#10b981" stroke-width="3" stroke-dasharray="1" />`;
+  
+  // Punto BEP al mese 7
+  const bepx = getX(targetBEPMonth);
+  const bepy = getY(data[targetBEPMonth].cost);
+  svg += `<circle cx="${bepx}" cy="${bepy}" r="6" class="chart-point-bep" fill="#f59e0b" stroke="#fff" stroke-width="2" />`;
+  
+  // Testo BEP
+  svg += `<text x="${bepx}" y="${bepy - 12}" text-anchor="middle" class="chart-label" fill="#f59e0b" style="font-size: 11px; font-weight: bold; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+    Break-Even (Mese ${targetBEPMonth})
+  </text>`;
+  
+  // Legenda
+  const legY = paddingTop - 15;
+  svg += `
+    <g transform="translate(${paddingLeft}, ${legY})">
+      <rect x="0" y="0" width="10" height="10" fill="#8b5cf6" rx="2" />
+      <text x="14" y="9" class="chart-text" fill="var(--text-main)" style="font-size: 9px;">Costi Cumulati</text>
+      
+      <rect x="110" y="0" width="10" height="10" fill="#10b981" rx="2" />
+      <text x="124" y="9" class="chart-text" fill="var(--text-main)" style="font-size: 9px;">Ricavi Cumulati</text>
+      
+      <circle cx="230" cy="5" r="4" fill="#f59e0b" />
+      <text x="238" y="9" class="chart-text" fill="var(--text-main)" style="font-size: 9px;">Break-Even</text>
+    </g>
+  `;
+  
+  // Dettaglio volume sotto
+  svg += `
+    <text x="${paddingLeft + plotWidth / 2}" y="${height - 8}" text-anchor="middle" class="chart-text" style="font-weight: 600; fill: var(--primary); font-size: 10px;">
+      Volume target per payback a 7 mesi: ~${Math.round(V).toLocaleString("it-IT")} ${unitName}/mese (~${Math.round(V/30)}/giorno)
+    </text>
+  `;
+  
+  svg += `</svg>`;
+  wrapper.innerHTML = svg;
+}
+
+// Mostra o nasconde il form di Fase 0 ed il pannello chat
+function togglePhase0View() {
+  const formContainer = document.getElementById("starter-form-container");
+  const chatMessages = DOM.chatMessages;
+  const chatInputArea = document.getElementById("chat-input-area");
+  
+  if (state.currentPhase === 0) {
+    if (formContainer) formContainer.style.display = "block";
+    if (chatMessages) chatMessages.style.display = "none";
+    if (chatInputArea) chatInputArea.style.display = "none";
+  } else {
+    if (formContainer) formContainer.style.display = "none";
+    if (chatMessages) chatMessages.style.display = "flex";
+    if (chatInputArea) chatInputArea.style.display = "flex";
+  }
+}
+
+// Gestore per il caricamento dei file allegati
+function handleFileAttachment(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  const fileName = file.name;
+  const fileSize = file.size;
+  const fileMime = file.type;
+  
+  // Resetta i vecchi allegati prima di caricarne uno nuovo
+  state.project.attachedFile = null;
+  state.project.attachedImage = null;
+  
+  if (fileMime && fileMime.startsWith("image/")) {
+    reader.onload = function(evt) {
+      const dataUrl = evt.target.result;
+      const base64Data = dataUrl.split(",")[1];
+      state.project.attachedImage = {
+        mimeType: fileMime,
+        data: base64Data,
+        name: fileName,
+        size: fileSize
+      };
+      updateAttachmentBadgeUI();
+    };
+    reader.readAsDataURL(file);
+  } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
+    reader.onload = function(evt) {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const csvText = XLSX.utils.sheet_to_csv(worksheet);
+        
+        state.project.attachedFile = {
+          name: fileName,
+          size: fileSize,
+          content: csvText,
+          type: "excel"
+        };
+        updateAttachmentBadgeUI();
+      } catch (err) {
+        alert("Errore nella lettura del file Excel: " + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    // Altri file di testo (.txt, .md, .csv, .json)
+    reader.onload = function(evt) {
+      state.project.attachedFile = {
+        name: fileName,
+        size: fileSize,
+        content: evt.target.result,
+        type: "text"
+      };
+      updateAttachmentBadgeUI();
+    };
+    reader.readAsText(file);
+  }
+  
+  // Resetta il file input per consentire il re-upload dello stesso file
+  e.target.value = "";
+}
+
+// Aggiorna l'interfaccia grafica dei badge degli allegati
+function updateAttachmentBadgeUI() {
+  const container = DOM.attachmentBadgeContainer || document.getElementById("attachment-badge-container");
+  if (!container) return;
+  
+  container.innerHTML = "";
+  
+  const file = state.project.attachedFile;
+  const image = state.project.attachedImage;
+  
+  if (!file && !image) {
+    container.style.display = "none";
+    return;
+  }
+  
+  container.style.display = "flex";
+  
+  const badge = document.createElement("div");
+  badge.className = "attachment-badge";
+  
+  if (image) {
+    badge.innerHTML = `
+      <img class="attachment-preview-img" src="data:${image.mimeType};base64,${image.data}">
+      <span class="file-name">${image.name}</span>
+      <span class="file-size">(${Math.round(image.size / 1024)} KB)</span>
+      <button class="btn-remove-file" title="Rimuovi allegato">&times;</button>
+    `;
+    badge.querySelector(".btn-remove-file").addEventListener("click", () => {
+      state.project.attachedImage = null;
+      updateAttachmentBadgeUI();
+    });
+  } else if (file) {
+    const isExcel = file.type === "excel";
+    badge.innerHTML = `
+      <span class="file-icon">${isExcel ? "📊" : "📄"}</span>
+      <span class="file-name">${file.name}</span>
+      <span class="file-size">(${Math.round(file.size / 1024)} KB)</span>
+      <button class="btn-remove-file" title="Rimuovi allegato">&times;</button>
+    `;
+    badge.querySelector(".btn-remove-file").addEventListener("click", () => {
+      state.project.attachedFile = null;
+      updateAttachmentBadgeUI();
+    });
+  }
+  
+  container.appendChild(badge);
 }
 
 // Avvia l'inizializzazione al caricamento del DOM
 document.addEventListener("DOMContentLoaded", init);
+
+

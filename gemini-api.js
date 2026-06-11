@@ -143,7 +143,7 @@ async function fetchWithRetry(url, options, maxRetries = 5, initialDelay = 5000)
  * @param {Array} history Storico della conversazione per mantenere il contesto (opzionale).
  * @returns {Promise<string>} Il testo generato dal modello.
  */
-async function callGeminiAPI(apiKey, model = "gemini-2.5-flash", agentKey, prompt, history = []) {
+async function callGeminiAPI(apiKey, model = "gemini-2.5-flash", agentKey, prompt, history = [], attachedImage = null) {
   if (!apiKey) {
     throw new Error("Chiave API mancante. Configura la chiave API nelle impostazioni.");
   }
@@ -160,9 +160,19 @@ async function callGeminiAPI(apiKey, model = "gemini-2.5-flash", agentKey, promp
     });
   }
   
+  const userParts = [{ text: prompt }];
+  if (attachedImage && attachedImage.mimeType && attachedImage.data) {
+    userParts.push({
+      inlineData: {
+        mimeType: attachedImage.mimeType,
+        data: attachedImage.data
+      }
+    });
+  }
+  
   contents.push({
     role: "user",
-    parts: [{ text: prompt }]
+    parts: userParts
   });
 
   const requestBody = {
