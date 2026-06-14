@@ -3,6 +3,663 @@
 // e supporta localizzazioni geografiche avanzate (es. Canarie, Gran Canaria).
 
 const LocalAgentSimulationEngine = {
+  // Database di obiezioni e giudizi specifici per settore per gli agenti (esclusi CFO gestiti dinamicamente)
+  sectorSpecifications: {
+    saas: {
+      cmo: {
+        objections: [
+          "**Costo di Acquisizione (CAC) Elevato**: Il mercato SaaS è saturo. Acquisire utenti tramite Google/Meta Ads rischia di costare più del loro Lifetime Value (LTV).",
+          "**Fattore di Differenziazione Debole**: Ci sono molti software simili. Senza una feature unica, convincere gli utenti a migrare da un concorrente è difficile.",
+          "**Frizione all'Attivazione**: Convincere gli utenti a registrarsi ed inserire dati richiede un onboarding guidato per dimostrare subito il valore (Time to Value)."
+        ],
+        verdictReason: "Il successo del SaaS dipende dalla capacità di acquisire lead a basso costo e dimostrare il valore del software nei primi 3 minuti."
+      },
+      cto: {
+        objections: [
+          "**Complessità di Integrazione**: Sviluppare e mantenere integrazioni API stabili con piattaforme esterne richiede manutenzione costante.",
+          "**Debito Tecnico Iniziale**: L'uso eccessivo di strumenti no-code per l'MVP può limitare le performance e la sicurezza all'aumentare degli utenti.",
+          "**Affidabilità dell'Infrastruttura**: Un downtime del server o del database può causare perdite di dati e recensioni negative degli utenti."
+        ],
+        verdictReason: "Raccomandiamo un'architettura serverless o cloud leggera (es. Vercel, Supabase) per ridurre al minimo i costi fissi iniziali e scalare rapidamente."
+      },
+      coo: {
+        objections: [
+          "**Frizione nell'Onboarding**: Se il software richiede configurazioni complesse, il tasso di abbandono prima dell'attivazione reale sarà altissimo.",
+          "**Saturazione del Supporto**: Gestire bug e richieste di assistenza tecnica da parte degli utenti può saturare il tempo del fondatore."
+        ],
+        verdictReason: "È fondamentale documentare i processi di onboarding e configurare un sistema di help desk per gestire i ticket di supporto in modo efficiente."
+      },
+      clo: {
+        objections: [
+          "**GDPR e Trattamento Dati**: La gestione dei dati degli utenti su cloud richiede server conformi e policy di privacy molto severe in UE.",
+          "**Termini di Servizio (ToS)**: La responsabilità civile in caso di perdita di dati o disservizi deve essere limitata tramite contratti chiari."
+        ],
+        verdictReason: "Richiede la stesura di termini d'uso robusti e una cookie policy conforme GDPR, preferendo hosting con server locati in Unione Europea."
+      },
+      cco: {
+        objections: [
+          "**Dashboard Confusa**: Se l'interfaccia utente (UI) non è pulita e moderna, l'utente percepirà il software come antiquato o difficile da usare.",
+          "**Messaggio Troppo Tecnico**: Un copywriting incentrato sulle feature tecniche anziché sui benefici reali ridurrà il tasso di conversione."
+        ],
+        verdictReason: "Focus su design minimale, percorsi d'uso semplificati (UX) e una landing page incentrata sulla risoluzione del problema principale."
+      },
+      cso: {
+        objections: [
+          "**Tasso di Abbandono (Churn)**: I clienti SaaS disdicono l'abbonamento con un click se non usano il software regolarmente.",
+          "**Mancanza di Feedback**: Senza interviste agli utenti che abbandonano, non capiremo mai perché il prodotto non trattiene i clienti."
+        ],
+        verdictReason: "Configurare email automatiche di engagement e monitorare l'attività degli utenti nei primi 7 giorni per prevenire l'abbandono."
+      },
+      cpo: {
+        objections: [
+          "**Feature Creep (Sovraccarico)**: Voler sviluppare troppe funzionalità per il lancio ritarda l'MVP e disperde il budget.",
+          "**Roadmap Rigida**: Sviluppare basandosi su supposizioni anziché sui feedback e sul comportamento degli utenti reali."
+        ],
+        verdictReason: "Definire un perimetro MVP ristretto all'unica funzionalità principale indispensabile per risolvere il problema dell'utente."
+      },
+      sourcing: {
+        objections: [
+          "**Dipendenza da API Esterne**: Se i servizi terzi aumentano i prezzi, la marginalità del SaaS si riduce drasticamente.",
+          "**Costi Cloud Scalabili**: I costi di database e computazione possono crescere in modo imprevisto se il codice non è ottimizzato."
+        ],
+        verdictReason: "Selezionare partner tecnologici stabili e monitorare i consumi API mensili per evitare sorprese in fattura."
+      },
+      sales: {
+        objections: [
+          "**Ciclo di Vendita B2B Lungo**: Se vendiamo ad aziende, la negoziazione e l'approvazione del budget possono richiedere mesi.",
+          "**Assenza di Funnel di Vendita**: Avere traffico ma nessun incentivo (es. prova gratuita) per spingere l'utente a registrarsi."
+        ],
+        verdictReason: "Offrire un modello Freemium o una Free Trial di 14 giorni per abbattere la barriera d'ingresso e raccogliere contatti qualificati."
+      },
+      capital: {
+        objections: [
+          "**Rischio di Cassa in Bootstrap**: Sviluppare e promuovere un SaaS senza capitali richiede molto tempo per raggiungere il break-even.",
+          "**Costi di Marketing Iniziali**: Se non si dispone di canali di traffico organico, il budget per le Ads si esaurisce rapidamente."
+        ],
+        verdictReason: "Massimizzare il marketing organico (SEO, community, content marketing) e puntare ad abbonamenti annuali per incassare subito cassa."
+      }
+    },
+    ecommerce: {
+      cmo: {
+        objections: [
+          "**Pressione Competitiva**: Concorrenza diretta di giganti come Amazon o store specializzati consolidati.",
+          "**Costo del Traffico in Aumento**: Le inserzioni su Meta/Google/TikTok sono sempre più costose e riducono i margini netti per vendita.",
+          "**Fidelizzazione Difficile**: Gli acquirenti online sono volatili e acquistano dove il prezzo è più basso."
+        ],
+        verdictReason: "Il marketing deve concentrarsi su una nicchia specifica di prodotti e su campagne di email marketing per stimolare acquisti ricorrenti."
+      },
+      cto: {
+        objections: [
+          "**Velocità di Caricamento dello Store**: Pagine lente da mobile portano all'abbandono immediato dell'utente prima dell'acquisto.",
+          "**Integrazione Inventory**: Rischio di vendere prodotti non realmente disponibili a magazzino a causa di mancata sincronizzazione."
+        ],
+        verdictReason: "Consigliamo l'uso di Shopify o WooCommerce con temi ottimizzati per le performance mobili e gateway Stripe/PayPal integrati."
+      },
+      coo: {
+        objections: [
+          "**Gestione dei Resi**: Un tasso di reso elevato (specie nell'abbigliamento) può azzerare i profitti operativi.",
+          "**Logistica di Spedizione**: Accordi con corrieri inaffidabili generano ritardi nelle consegne e reclami dei clienti."
+        ],
+        verdictReason: "Definire regole chiare per i resi e appoggiarsi a corrieri rapidi con tracciamento automatico della spedizione."
+      },
+      clo: {
+        objections: [
+          "**Diritto di Recesso UE**: La legge impone il diritto di reso entro 14 giorni per qualsiasi acquisto online, a tutela dell'acquirente.",
+          "**Termini di Vendita e Garanzie**: Obbligo di fornire garanzie sui prodotti venduti e gestire la conformità legale dello store."
+        ],
+        verdictReason: "Richiede la pubblicazione di termini di vendita conformi al Codice del Consumo e policy chiare sul rimborso."
+      },
+      cco: {
+        objections: [
+          "**Schede Prodotto Povere**: Foto di bassa qualità o descrizioni copiate dai fornitori riducono drasticamente le conversioni.",
+          "**Branding Debole**: Uno store che sembra una vetrina generica non trasmette la fiducia necessaria per inserire la carta di credito."
+        ],
+        verdictReason: "Investire in foto prodotto professionali, recensioni in evidenza e un design pulito che trasmetta affidabilità."
+      },
+      cso: {
+        objections: [
+          "**Frizione nel Supporto**: Se l'utente non trova risposte rapide sullo stato della spedizione, aprirà contestazioni PayPal/Stripe.",
+          "**NPS Basso per Spedizioni**: La soddisfazione del cliente è legata alla rapidità e all'integrità del pacco consegnato."
+        ],
+        verdictReason: "Integrare una chat WhatsApp Business e inviare notifiche automatiche via email ad ogni cambio di stato della spedizione."
+      },
+      cpo: {
+        objections: [
+          "**Catalogo Sovraccarico**: Lanciare con troppi prodotti frammenta le risorse e complica la gestione delle scorte.",
+          "**Frizione al Checkout**: Un modulo di pagamento con troppi campi obbligatori riduce il tasso di acquisto."
+        ],
+        verdictReason: "Limitare il lancio a pochi prodotti bestseller e implementare il checkout rapido in un click (es. Shop Pay)."
+      },
+      sourcing: {
+        objections: [
+          "**Rotture di Stock dei Fornitori**: Dipendere da fornitori esterni in dropshipping espone a vendite di merce esaurita.",
+          "**Margini di Profitto Variabili**: Costi di spedizione e tariffe doganali impreviste possono erodere il margine lordo unitario."
+        ],
+        verdictReason: "Contrattualizzare fornitori affidabili con aggiornamento automatico dell'inventario e negoziare tariffe di spedizione flat."
+      },
+      sales: {
+        objections: [
+          "**Tasso di Conversione Basso**: La media degli e-commerce converte meno del 2% dei visitatori in acquirenti.",
+          "**Mancanza di Upsell**: Mancata offerta di prodotti correlati o bundle al momento del carrello per alzare lo scontrino medio."
+        ],
+        verdictReason: "Implementare popup di recupero carrello e strategie di cross-selling (es. 'aggiungi questo con il 10% di sconto')."
+      },
+      capital: {
+        objections: [
+          "**Liquidità Bloccata nello Stock**: Acquistare stock iniziale richiede capitali che non possono essere usati per il marketing.",
+          "**Margine di Cassa Ridotto**: Tempi di sdoganamento e logistica allungano il ciclo di conversione del contante."
+        ],
+        verdictReason: "Iniziare con modelli pre-ordine o dropshipping controllato per validare la domanda prima di investire in grandi lotti."
+      }
+    },
+    food_beverage: {
+      cmo: {
+        objections: [
+          "**Stagionalità e Volatilità**: Forte dipendenza dai flussi di clienti locali nel weekend e da fluttuazioni turistiche.",
+          "**Pressione Concorrenziale Locale**: Ristoranti e locali tradizionali competono per la stessa clientela nello stesso raggio geografico.",
+          "**Barriere al Passaparola**: Un inizio con recensioni medie può stroncare l'acquisizione organica prima di raggiungere stabilità."
+        ],
+        verdictReason: "Focalizzarsi su una Value Proposition culinaria unica e promuovere il brand sui social locali e schede Maps."
+      },
+      cto: {
+        objections: [
+          "**Integrazione Gestionali/POS**: Difficoltà a coordinare gli ordini fisici con menu QR e stampanti per comande in cucina.",
+          "**Frizione Piattaforme Delivery**: Commissioni elevate (fino al 30%) e ritardi nei pagamenti delle piattaforme esterne."
+        ],
+        verdictReason: "Selezionare un sistema di cassa POS moderno con menu QR integrato e sviluppare un canale di ordinazione proprietario diretto."
+      },
+      coo: {
+        objections: [
+          "**Gestione delle Scorte Alimentari**: Rischio di elevati scarti di materie prime fresche se le vendite giornaliere fluttuano.",
+          "**Gestione e Turni del Personale**: La ristorazione richiede orari estesi e staff affidabile, difficile da reperire e fidelizzare.",
+          "**Standard di Servizio Variabili**: Mantenere costante la qualità dei piatti e i tempi di attesa con picchi di lavoro improvvisi."
+        ],
+        verdictReason: "Standardizzare le ricette (linea di cucina) e definire procedure operative rigide (SOP) per la preparazione e pulizia."
+      },
+      clo: {
+        objections: [
+          "**Burocrazia Sanitaria Stringente**: Controlli frequenti delle autorità, autorizzazioni SCIA e certificazioni HACCP obbligatorie.",
+          "**Licenze e Permessi Locali**: Lunghi tempi burocratici per ottenere licenze per alcolici o concessioni di spazi all'aperto."
+        ],
+        verdictReason: "Affidarsi ad un biologo alimentare qualificato per il piano HACCP e presentare le SCIA con anticipo per evitare blocchi."
+      },
+      cco: {
+        objections: [
+          "**Presentazione dei Piatti Scadente**: Un menu visivamente povero o foto poco professionali sui social allontanano i clienti.",
+          "**Brand Identity Confusa**: Se il locale non comunica chiaramente la sua specialità culinaria, viene percepito come generico."
+        ],
+        verdictReason: "Curare l'estetica del menu, l'impiattamento e creare un'atmosfera coerente con il posizionamento di prezzo."
+      },
+      cso: {
+        objections: [
+          "**Impatto Critico delle Recensioni**: Recensioni negative su TripAdvisor/Google per servizio lento o cibo freddo possono deviare il flusso clienti.",
+          "**Gestione delle Intolleranze**: Rischio di contestazioni in caso di mancata trasparenza sulla presenza di allergeni nei piatti."
+        ],
+        verdictReason: "Specificare chiaramente gli allergeni nel menu ed istruire lo staff a gestire le lamentele in tempo reale offrendo rimborsi o omaggi."
+      },
+      cpo: {
+        objections: [
+          "**Menu Troppo Ampio**: Un numero eccessivo di piatti complica gli approvvigionamenti, rallenta la cucina e disperde la qualità.",
+          "**Mancanza di Piatti Iconici**: Nessun piatto forte memorizzabile che spinga il cliente a tornare o a condividere foto online."
+        ],
+        verdictReason: "Limitare il menu a poche proposte eccellenti e definire 1-2 piatti firma unici per differenziarsi dalla concorrenza."
+      },
+      sourcing: {
+        objections: [
+          "**Volatilità dei Costi Alimentari**: Fluttuazioni dei prezzi dei fornitori di materie prime fresche erodono i margini calcolati.",
+          "**Rapporti con Distributori Locali**: Tempi di consegna rigidi o quantitativi minimi d'ordine (MOQ) che pesano sulla cassa."
+        ],
+        verdictReason: "Negoziare listini prezzi bloccati con i distributori principali e valorizzare fornitori locali a km zero per flessibilità."
+      },
+      sales: {
+        objections: [
+          "**Scontrino Medio Basso**: Difficoltà ad incrementare la spesa del cliente oltre il piatto principale.",
+          "**Mancanza di Cross-Selling**: Lo staff di sala non è formato per vendere dessert, antipasti o bevande premium."
+        ],
+        verdictReason: "Formare il personale sulle tecniche di vendita suggestiva e proporre menu degustazione per guidare la scelta."
+      },
+      capital: {
+        objections: [
+          "**Investimento Iniziale Elevato (CAPEX)**: Allestire una cucina professionale e arredare il locale richiede capitali importanti.",
+          "**Rischio di Liquidità nei Primi Mesi**: Tempi lunghi per raggiungere la stabilità delle visite, con costi fissi mensili alti."
+        ],
+        verdictReason: "Prediligere una formula di locazione d'azienda con attrezzature incluse, o partire con un Home Restaurant / Ghost Kitchen lean."
+      }
+    },
+    retail: {
+      cmo: {
+        objections: [
+          "**Posizione e Pedonabilità**: Se il negozio è fuori dalle vie dello shopping, i costi pubblicitari per attirare passanti saranno insostenibili.",
+          "**Concorrenza dell'Online**: Il cliente può confrontare i prezzi in tempo reale sul telefono e preferire l'acquisto online."
+        ],
+        verdictReason: "Scegliere una location con traffico pedonale certificato e puntare su un'esperienza d'acquisto fisica esclusiva."
+      },
+      cto: {
+        objections: [
+          "**Sincronizzazione Cassa-Inventario**: Rischio di discrepanze tra stock fisico in negozio e registri contabili.",
+          "**Hardware POS e Connettività**: Un guasto alla linea internet o al terminale POS blocca le vendite e crea code alla cassa."
+        ],
+        verdictReason: "Adottare registratori di cassa smart (es. Shopify POS, Satispay) per unire inventario fisico e pagamenti cashless."
+      },
+      coo: {
+        objections: [
+          "**Presenza e Orari di Apertura**: Costo elevato del personale per coprire i turni di apertura del negozio (weekend inclusi).",
+          "**Sicurezza e Differenze Inventariali**: Rischio di furti o danneggiamenti dei prodotti esposti nel punto vendita."
+        ],
+        verdictReason: "Organizzare turni efficienti ed installare sistemi di videosorveglianza e taccheggio per proteggere la merce."
+      },
+      clo: {
+        objections: [
+          "**Contratto di Locazione Commerciale**: Contratti vincolanti pluriennali con obbligo di fideiussione a garanzia dei canoni.",
+          "**Permessi Comunali (SCIA)**: Pratiche burocratiche per insegne, agibilità dei locali e conformità degli impianti commerciali."
+        ],
+        verdictReason: "Richiedere una perizia degli impianti prima di firmare il contratto di affitto e negoziare clausole di recesso anticipato."
+      },
+      cco: {
+        objections: [
+          "**Allestimento Vetrina**: Se la vetrina non viene rinnovata frequentemente, i clienti abituali smetteranno di entrare.",
+          "**Atmosfera e Layout**: Luci inadeguate o musica troppo alta possono ridurre il tempo di permanenza nel negozio."
+        ],
+        verdictReason: "Pianificare una rotazione bisettimanale delle vetrine e creare un percorso espositivo (layout) che guidi all'acquisto."
+      },
+      cso: {
+        objections: [
+          "**Qualità del Personale di Vendita**: Addetti scortesi o insistenti allontanano la clientela e danneggiano il brand.",
+          "**Politiche di Reso in Negozio**: Gestire i rimborsi o i cambi merce in modo rigido indispone il cliente locale."
+        ],
+        verdictReason: "Formare lo staff sulla consulenza al cliente e offrire opzioni di cambio merce flessibili (es. buoni acquisto)."
+      },
+      cpo: {
+        objections: [
+          "**Obsolescenza dello Stock**: Merce invenduta che occupa spazio e costringe a svendite a margine zero durante i saldi.",
+          "**Assortimento Limitato**: Mancanza di taglie o varianti che porta il cliente a uscire a mani vuote."
+        ],
+        verdictReason: "Monitorare l'indice di rotazione dello stock e ordinare riassortimenti rapidi solo per i prodotti ad alta vendita."
+      },
+      sourcing: {
+        objections: [
+          "**MOQ dei Brand**: Minimi d'ordine elevati imposti dai fornitori che costringono a bloccare liquidità in merce rischiosa.",
+          "**Tempi di Consegna Stagionali**: Ritardi nella ricezione delle nuove collezioni riducono il periodo di vendita a prezzo pieno."
+        ],
+        verdictReason: "Diversificare i fornitori e negoziare l'acquisto di stock in conto vendita o con pagamenti dilazionati a 60-90 giorni."
+      },
+      sales: {
+        objections: [
+          "**Scontrino Medio Basso**: Clienti che acquistano solo il prodotto in promozione senza aggiungere articoli complementari.",
+          "**Mancanza di Tecniche di Vendita**: Staff passivo che non propone abbinamenti o prodotti aggiuntivi (cross-selling)."
+        ],
+        verdictReason: "Disporre i prodotti d'impulso vicino alla cassa e incentivare lo staff con bonus sulle vendite multiple."
+      },
+      capital: {
+        objections: [
+          "**CAPEX Iniziale Elevato**: Spese di ristrutturazione, caparra affitto e primo assortimento richiedono cassa importante.",
+          "**Costi Fissi (OPEX) Rigidi**: L'affitto del locale e le bollette energetiche pesano anche nei mesi di bassa affluenza."
+        ],
+        verdictReason: "Avviare un temporary shop (pop-up) di 1-2 mesi per validare la location ed il prodotto prima di contratti a lungo termine."
+      }
+    },
+    services: {
+      cmo: {
+        objections: [
+          "**Vendita dell'Immateriale**: Difficoltà a dimostrare il valore del servizio prima dell'erogazione effettiva.",
+          "**Dipendenza da Passaparola**: Crescita lenta e instabile se non si strutturano canali di acquisizione clienti attivi."
+        ],
+        verdictReason: "Costruire un portfolio di casi studio reali ed investire in content marketing per posizionarsi come autorità del settore."
+      },
+      cto: {
+        objections: [
+          "**Strumenti di Delivery Dispersi**: Mancanza di una piattaforma unificata per condividere documenti e aggiornamenti con il cliente.",
+          "**Automazione dei Preventivi**: Perdita di tempo nella stesura manuale di proposte e contratti commerciali standard."
+        ],
+        verdictReason: "Configurare un CRM (es. HubSpot, Notion) e integrare Calendly per automatizzare la prenotazione delle consulenze."
+      },
+      coo: {
+        objections: [
+          "**Colli di Bottiglia del Personale**: Il fatturato è limitato dalle ore del fondatore o dei dipendenti; scalare richiede assunzioni.",
+          "**Scope Creep nei Progetti**: Clienti che richiedono continui extra fuori preventivo, allungando i tempi ed erodendo i margini."
+        ],
+        verdictReason: "Definire in modo millimetrico l'accordo di servizio (SLA) e stabilire tariffe orarie extra per richieste fuori perimetro."
+      },
+      clo: {
+        objections: [
+          "**Contratti di Consulenza Deboli**: Rischio di insoluti o ritardi nei pagamenti in assenza di un contratto firmato prima dell'avvio.",
+          "**Responsabilità Professionale**: Richieste di risarcimento se il cliente non raggiunge i risultati aziendali sperati."
+        ],
+        verdictReason: "Utilizzare contratti commerciali con clausole di limitazione di responsabilità e richiedere acconti del 30-50% all'ordine."
+      },
+      cco: {
+        objections: [
+          "**Posizionamento Generalista**: Proporsi come agenzia/professionista 'tuttofare' costringe a competere solo sul prezzo orario.",
+          "**Sito Web Poco Professionale**: Un sito datato o privo di recensioni distrugge la credibilità del servizio."
+        ],
+        verdictReason: "Identificare una micro-nicchia di specializzazione e creare un brand focalizzato sulla risoluzione di un unico problema."
+      },
+      cso: {
+        objections: [
+          "**Gestione delle Aspettative**: Clienti insoddisfatti perché si aspettavano risultati diversi da quelli reali.",
+          "**Difficoltà di Retention**: Servizi spot che non generano entrate ricorrenti mensili (retrainer fee)."
+        ],
+        verdictReason: "Allineare i report sui risultati mensili e strutturare contratti a canone ricorrente per assistenza continuativa."
+      },
+      cpo: {
+        objections: [
+          "**Servizio su Misura Continuo**: Sviluppare progetti sempre diversi impedisce la standardizzazione e l'efficienza interna.",
+          "**Mancanza di Pacchetti**: Offrire preventivi personalizzati per ogni cliente allunga le trattative commerciali."
+        ],
+        verdictReason: "Trasformare il servizio in pacchetti standardizzati (Productized Services) con prezzi, deliverable e tempi fissi."
+      },
+      sourcing: {
+        objections: [
+          "**Selezione Collaboratori Esterni**: Difficoltà a trovare freelance qualificati a tariffe sostenibili per delegare il lavoro.",
+          "**Costi Software Professionali**: Licenze software costose che pesano sul bilancio prima di avere clienti attivi."
+        ],
+        verdictReason: "Creare un network di collaboratori di fiducia e utilizzare software open-source o tier gratuiti all'inizio."
+      },
+      sales: {
+        objections: [
+          "**Pipeline di Vendita Instabile**: Alternanza continua tra mesi ad alto fatturato (consegna) e mesi a fatturato zero.",
+          "**Difficoltà nel B2B Outreach**: Messaggi di vendita generici su LinkedIn ignorati dai decisori aziendali."
+        ],
+        verdictReason: "Pianificare 30 minuti al giorno per attività di outreach e proporre un audit iniziale a costo ridotto per avviare il rapporto."
+      },
+      capital: {
+        objections: [
+          "**Bootstrap Facile ma Limiti di Scalabilità**: Il business non richiede CAPEX, ma non crea un asset aziendale vendibile in futuro.",
+          "**Mancanza di Flusso di Cassa Mensile**: Esposizione finanziaria se i clienti pagano a 60 o 90 giorni fine mese."
+        ],
+        verdictReason: "Fatturare su base mensile anticipata (es. abbonamento di servizio) per garantire la cassa necessaria all'operatività."
+      }
+    },
+    mobile_app: {
+      cmo: {
+        objections: [
+          "**Costo di Installazione (CPI) Alto**: Acquisire utenti che scaricano l'app tramite Ads richiede budget pubblicitari significativi.",
+          "**Visibilità negli Store**: Concorrenza spietata di milioni di app; il traffico organico dagli Store (ASO) è minimo."
+        ],
+        verdictReason: "Focalizzarsi sul marketing di nicchia e incentivare la condivisione virale organica all'interno dell'app stessa."
+      },
+      cto: {
+        objections: [
+          "**Manutenzione OS Multipli**: Sviluppare e testare l'app su versioni diverse di iOS e Android comporta sforzi costosi.",
+          "**Bugs al Rilascio**: Un bug bloccante nelle prime ore dal lancio può portare a recensioni da 1 stella irrecuperabili."
+        ],
+        verdictReason: "Consigliamo framework ibridi (React Native, Flutter) per codice unico e cicli di test approfonditi prima dell'invio agli store."
+      },
+      coo: {
+        objections: [
+          "**Tempi di Approvazione Store**: Apple App Store e Google Play Store possono impiegare giorni per approvare aggiornamenti critici.",
+          "**Review Guidelines Rigide**: Rischio di rifiuto dell'app per violazione di policy sui pagamenti o tracciamento dati."
+        ],
+        verdictReason: "Pianificare i rilasci con margini di tempo adeguati e seguire scrupolosamente le linee guida ufficiali degli Store."
+      },
+      clo: {
+        objections: [
+          "**Commissioni In-App Store**: Apple e Google trattengono il 15-30% su ogni transazione effettuata tramite i loro sistemi di pagamento.",
+          "**Tracciamento e Privacy (ATT)**: Le restrizioni di tracciamento su iOS rendono difficile l'ottimizzazione delle campagne marketing."
+        ],
+        verdictReason: "Adottare il programma per piccoli sviluppatori (15% di commissione) e implementare form di consenso privacy trasparenti."
+      },
+      cco: {
+        objections: [
+          "**UI Mobile Sovraccarica**: Schermi ridotti richiedono un'interfaccia estremamente pulita e flussi d'uso privi di ostacoli.",
+          "**Mancanza di Micro-Interazioni**: Un design statico o privo di feedback visivi rende l'esperienza d'uso noiosa."
+        ],
+        verdictReason: "Investire in un UI/UX designer specializzato su mobile e implementare animazioni fluide per premiare le azioni dell'utente."
+      },
+      cso: {
+        objections: [
+          "**Tasso di Disinstallazione**: Molti utenti scaricano l'app, la aprono una volta e la disinstallano entro le prime 24 ore.",
+          "**Notifiche Fastidiose**: Notifiche push inviate negli orari sbagliati spingono l'utente a disattivare i permessi o rimuovere l'app."
+        ],
+        verdictReason: "Configurare notifiche push personalizzate basate sul comportamento dell'utente e offrire un canale di feedback in-app."
+      },
+      cpo: {
+        objections: [
+          "**Perimetro MVP Troppo Vasto**: Voler inserire social network, chat, profili e notifiche sin dalla versione 1.0 rallenta lo sviluppo.",
+          "**Time to Value Lungo**: L'utente deve registrarsi e completare troppi passaggi prima di vedere il valore reale dell'app."
+        ],
+        verdictReason: "Permettere l'accesso in modalità ospite (guest mode) e focalizzare l'MVP sulla risoluzione del problema principale in 2 click."
+      },
+      sourcing: {
+        objections: [
+          "**Costi Server e Database Scalabili**: Servizi cloud (AWS, Firebase) con fatturazione basata sui consumi che possono esplodere in caso di picchi.",
+          "**Licenze SDK Terze Parti**: Costi ricorrenti per strumenti di analisi, notifiche o mappe integrate."
+        ],
+        verdictReason: "Configurare limiti di spesa sui servizi cloud e utilizzare SDK open-source o con piani gratuiti per la fase di validazione."
+      },
+      sales: {
+        objections: [
+          "**Basso Tasso di Conversione Premium**: Solo l'1-3% degli utenti free converte ad abbonamento premium in-app.",
+          "**Frizione dei Pagamenti In-App**: L'utente deve associare la carta all'account dello store per completare l'acquisto."
+        ],
+        verdictReason: "Implementare paywall chiari che mostrino i vantaggi premium e sperimentare modelli di pricing flessibili (es. settimanale)."
+      },
+      capital: {
+        objections: [
+          "**Sviluppo Costoso in Bootstrap**: Creare un'app di qualità senza capitali richiede mesi di lavoro personale del fondatore.",
+          "**Flusso di Cassa Negativo Iniziale**: Tempi di pagamento degli store (spesso 30-45 giorni) rallentano la disponibilità di cassa."
+        ],
+        verdictReason: "Sviluppare inizialmente una Progressive Web App (PWA) per validare l'idea nel browser con costi minimi prima di compilare per gli store."
+      }
+    },
+    marketplace: {
+      cmo: {
+        objections: [
+          "**Problema dell'Uovo e della Gallina**: Difficoltà a far crescere contemporaneamente la domanda (acquirenti) e l'offerta (venditori).",
+          "**Fiducia e Sicurezza**: Superare la diffidenza iniziale degli utenti nell'effettuare transazioni con venditori sconosciuti."
+        ],
+        verdictReason: "Il successo del marketplace dipende dalla capacità di risolvere il problema di liquidità bilaterale fin dai primi mesi."
+      },
+      cto: {
+        objections: [
+          "**Complessità di Gestione dei Pagamenti**: Necessità di gestire flussi di pagamento split e pagamenti condizionati (escrow).",
+          "**Sincronizzazione della Disponibilità**: Rischio di vendite doppie o non sincronizzate tra venditori diversi."
+        ],
+        verdictReason: "Suggeriamo l'uso di Stripe Connect o simili per gestire le transazioni split in conformità con le direttive bancarie."
+      },
+      coo: {
+        objections: [
+          "**Risoluzione delle Dispute**: Richiede un impegno operativo elevato per arbitrare i conflitti tra acquirenti e venditori.",
+          "**Verifica e Onboarding dei Venditori**: Processo laborioso per verificare la qualità e la legalità dei venditori registrati."
+        ],
+        verdictReason: "Standardizzare il processo di onboarding dei venditori ed impostare regole di risoluzione controversie automatiche."
+      },
+      clo: {
+        objections: [
+          "**Responsabilità dell'Intermediario**: Proteggere la piattaforma da responsabilità per vizi o illegalità dei prodotti venduti da terzi.",
+          "**Normative sui Pagamenti (PSD2)**: Rischio di essere considerati intermediari finanziari se non ci si appoggia a gateway conformi."
+        ],
+        verdictReason: "I termini contrattuali devono specificare la natura di pura intermediazione per isolare la piattaforma da controversie sul prodotto."
+      },
+      cco: {
+        objections: [
+          "**UX del Flusso di Ricerca**: Frizione nel trovare prodotti o servizi specifici a causa di filtri di ricerca deboli o lenti.",
+          "**Branding a Due Canali**: Difficoltà a comunicare con due target differenti (merchant e consumer) sulla stessa home page."
+        ],
+        verdictReason: "Design incentrato su barra di ricerca intelligente, filtri flessibili e due landing page separate per l'onboarding."
+      },
+      cso: {
+        objections: [
+          "**Tasso di Recensioni False**: Rischio che recensioni fasulle manipolino la reputazione all'interno del portale.",
+          "**Abbandono dei Venditori**: Perdita di merchant se il marketplace non porta un volume di vendite sufficiente nei primi 30 giorni."
+        ],
+        verdictReason: "Verificare gli acquisti prima di consentire recensioni e offrire visibilità gratuita ai nuovi venditori iniziali."
+      },
+      cpo: {
+        objections: [
+          "**Fattore Reputazione**: Sviluppare un sistema di feedback bilaterale robusto per autogestire la qualità dei partecipanti.",
+          "**UX del Checkout Multiproduttore**: Gestione complessa del carrello in caso di acquisto contemporaneo da più venditori."
+        ],
+        verdictReason: "Implementare una valutazione utenti standardizzata e dividere le spedizioni per venditore in fase di checkout."
+      },
+      sourcing: {
+        objections: [
+          "**Costi del KYC/Compliance**: Le tariffe per la verifica dell'identità dei venditori (KYC/Stripe) erodono la marginalità.",
+          "**Acquisizione Partner Chiave**: Difficoltà a convincere i primi grandi venditori ad inserire il proprio catalogo."
+        ],
+        verdictReason: "Selezionare provider di KYC integrati nei gateway di pagamento e proporre zero commissioni iniziali per i merchant fondatori."
+      },
+      sales: {
+        objections: [
+          "**Disintermediazione**: Venditori e acquirenti che scavalcano il portale per concludere le transazioni privatamente per evitare commissioni.",
+          "**Struttura delle Commissioni**: Trovare la percentuale ideale (take rate) che sia sostenibile ma non incentivi l'abbandono."
+        ],
+        verdictReason: "Fornire servizi aggiuntivi (assicurazione, spedizioni agevolate) per rendere rischiosa o sconveniente la transazione esterna."
+      },
+      capital: {
+        objections: [
+          "**Lungo Periodo di Rientro**: I marketplace richiedono anni ed ingenti capitali di marketing per raggiungere la massa critica di rete.",
+          "**Margine Iniziale Basso**: I ricavi da commissione sono minimi finché il volume totale delle transazioni (GMV) non è elevato."
+        ],
+        verdictReason: "Cercare finanziamenti esterni (Venture Capital) o procedere su base locale/nicchia ristretta per autofinanziarsi inizialmente."
+      }
+    },
+    hardware_iot: {
+      cmo: {
+        objections: [
+          "**Frizione all'Acquisto di Dispositivi Sconosciuti**: Gli utenti sono restii ad acquistare hardware non supportato da brand noti.",
+          "**Difficoltà di Dimostrazione**: Comunicare il valore del dispositivo senza una demo fisica o video professionali."
+        ],
+        verdictReason: "Creare campagne video che mostrino il dispositivo in azione ed offrire una garanzia di rimborso a 30 giorni."
+      },
+      cto: {
+        objections: [
+          "**Ciclo di Rilascio Firmware Rigido**: Correggere un bug hardware o firmware dopo la spedizione è estremamente complesso.",
+          "**Certificazioni di Sicurezza**: Lunghi tempi per ottenere la conformità CE, FCC o marchi antincendio/elettrici."
+        ],
+        verdictReason: "Prevedere aggiornamenti firmware OTA (Over-The-Air) automatici e programmare test in laboratorio prima del rilascio."
+      },
+      coo: {
+        objections: [
+          "**Gestione della Catena di Montaggio**: Sfide logistiche nel controllo qualità dei singoli componenti ed assemblaggio.",
+          "**Gestione Garanzia e Resi**: Costo elevato per la sostituzione fisica dei dispositivi difettosi spediti ai clienti."
+        ],
+        verdictReason: "Strutturare una catena di approvvigionamento con controlli qualità su ogni lotto e definire un protocollo di riparazione rapida."
+      },
+      clo: {
+        objections: [
+          "**Responsabilità per Danni Fisici**: Rischio di cause legali in caso di malfunzionamenti dell'hardware che causano danni a cose o persone.",
+          "**Brevetti e Proprietà Intellettuale**: Rischio di contraffazione o violazione involontaria di brevetti registrati da competitor."
+        ],
+        verdictReason: "Richiedere certificazioni di sicurezza standard e tutelare l'azienda con contratti di limitazione di responsabilità e polizza RC prodotti."
+      },
+      cco: {
+        objections: [
+          "**Design Industriale ed Ergonomia**: L'aspetto visivo e l'ergonomia determinano l'appeal del prodotto più delle feature interne.",
+          "**Packaging Povero**: Un imballaggio poco curato riduce il valore percepito del dispositivo al momento dell'unboxing."
+        ],
+        verdictReason: "Collaborare con designer industriali per creare una scocca ergonomica e curare il packaging per un'ottima prima impressione."
+      },
+      cso: {
+        objections: [
+          "**Frizione nella Configurazione**: Utenti che faticano a connettere il dispositivo al Wi-Fi o all'app mobile iniziale.",
+          "**Supporto Tecnico Complesso**: Gestire segnalazioni di malfunzionamento che spesso dipendono dalla rete internet del cliente."
+        ],
+        verdictReason: "Scrivere guide di configurazione visive passo-passo e preparare video tutorial di onboarding facili da seguire."
+      },
+      cpo: {
+        objections: [
+          "**Sincronizzazione Cloud-Device**: Garantire che il software cloud e il firmware dell'hardware siano sempre compatibili.",
+          "**Complessità della Distinta Base (BOM)**: Rischio di aumentare i costi di produzione aggiungendo sensori o funzioni non indispensabili."
+        ],
+        verdictReason: "Definire un MVP hardware minimale e bloccare le specifiche della Distinta Base prima di avviare la produzione."
+      },
+      sourcing: {
+        objections: [
+          "**Scarsità di Componenti**: Dipendenza da fornitori di microchip o sensori con tempi di consegna instabili.",
+          "**Minimi d'Ordine Elevati (MOQ)**: Stampi e materie prime richiedono acquisti in grandi volumi per abbattere i costi."
+        ],
+        verdictReason: "Selezionare distributori di componenti standard di facile reperibilità ed individuare fornitori alternativi di backup."
+      },
+      sales: {
+        objections: [
+          "**Prezzo di Vendita (MSRP) Insostenibile**: Difficoltà ad applicare un moltiplicatore sufficiente (3x-4x) per coprire i margini di canale.",
+          "**Ciclo di Vendita Hardware B2B**: Tempi lunghi per far approvare e testare i dispositivi da parte di clienti aziendali."
+        ],
+        verdictReason: "Strutturare un modello di ricavi ricorrenti abbinato (Hardware + Abbonamento Software SaaS) per aumentare il valore del cliente."
+      },
+      capital: {
+        objections: [
+          "**Impegno Finanziario Pre-Lancio**: Elevati investimenti di cassa richiesti per la produzione e stampi prima delle vendite reali.",
+          "**Fatturato Non Ricorrente**: Vendere solo hardware non garantisce entrate stabili nei mesi successivi senza un modulo software."
+        ],
+        verdictReason: "Avviare campagne di crowdfunding (Kickstarter) o pre-ordini per finanziare il primo lotto di produzione con i soldi dei clienti."
+      }
+    },
+    general: {
+      cmo: {
+        objections: [
+          "**Targeting Troppo Ampio**: Voler parlare a tutti diluisce il messaggio di marketing, rendendo le campagne inefficaci.",
+          "**Mancanza di Canali di Acquisizione**: Nessuna strategia definita per generare lead in modo ripetibile e tracciabile."
+        ],
+        verdictReason: "Identificare un unico segmento di clienti target e testare un solo canale di acquisizione principale."
+      },
+      cto: {
+        objections: [
+          "**Sovra-ingegnerizzazione**: Scelta di tecnologie complesse che richiedono troppo tempo per essere modificate o validate.",
+          "**Mancanza di Standard di Sicurezza**: Rischio di vulnerabilità nel database o nella gestione dei pagamenti degli utenti."
+        ],
+        verdictReason: "Adottare soluzioni collaudate e standard (es. piattaforme No-Code o SaaS esistenti) per accelerare la validazione."
+      },
+      coo: {
+        objections: [
+          "**Assenza di Procedure Operative**: Processi manuali caotici che assorbono tutto il tempo del fondatore.",
+          "**Scarsa Pianificazione delle Risorse**: Rischio di blocco operativo in caso di crescita improvvisa delle richieste."
+        ],
+        verdictReason: "Creare checklist e manuali operativi base sin dal primo giorno per consentire future deleghe."
+      },
+      clo: {
+        objections: [
+          "**Inquadramento Fiscale Inadeguato**: Mancanza di pianificazione societaria e fiscale che può generare costi imprevisti.",
+          "**Policy Legali Mancanti**: Assenza di tutele contrattuali adeguate nei confronti di clienti e fornitori."
+        ],
+        verdictReason: "Consultare un professionista per l'inquadramento fiscale corretto e dotarsi di contratti standard protettivi."
+      },
+      cco: {
+        objections: [
+          "**Brand Anonimo**: Un'identità visiva generica che non si differenzia dai concorrenti presenti sul mercato.",
+          "**Payoff Poco Chiaro**: Se il cliente non capisce cosa facciamo in 5 secondi, abbandonerà il sito."
+        ],
+        verdictReason: "Sviluppare una proposta di valore (Value Proposition) chiara e un design coerente con le aspettative del target."
+      },
+      cso: {
+        objections: [
+          "**Mancanza di Canali di Feedback**: Ignorare i suggerimenti o le critiche dei primi clienti impedisce il miglioramento del prodotto.",
+          "**Tempi di Risposta Lunghi**: Un servizio clienti lento crea frustrazione ed elimina le possibilità di passaparola."
+        ],
+        verdictReason: "Configurare un canale di supporto diretto (es. WhatsApp o email dedicata) e rispondere entro le 4 ore lavorative."
+      },
+      cpo: {
+        objections: [
+          "**Perimetro MVP Indefinito**: Continuare ad aggiungere funzionalità ritardando il lancio sul mercato reale.",
+          "**Mancanza di Validazione sul Campo**: Sviluppare basandosi unicamente su intuizioni personali senza confrontarsi con i clienti."
+        ],
+        verdictReason: "Rilasciare la versione minima del prodotto per raccogliere feedback reali prima di scrivere altro codice o investire capitali."
+      },
+      sourcing: {
+        objections: [
+          "**Dipendenza da un Singolo Fornitore**: Rischio di blocco dell'attività in caso di problemi del partner chiave.",
+          "**Contratti di Fornitura Rigidi**: Accordi a lungo termine che limitano la flessibilità dell'attività in fase di avvio."
+        ],
+        verdictReason: "Prediligere contratti mensili flessibili e identificare partner di backup per i servizi critici."
+      },
+      sales: {
+        objections: [
+          "**Mancanza di un Funnel di Conversione**: Avere visite ma nessun percorso strutturato per trasformarle in vendite o lead.",
+          "**Pricing Non Validato**: Prezzi fissati a caso senza verificare la reale disponibilità di spesa del cliente target."
+        ],
+        verdictReason: "Strutturare una landing page ottimizzata per la conversione e testare diverse fasce di prezzo per trovare il punto di massimo utile."
+      },
+      capital: {
+        objections: [
+          "**Pianificazione Finanziaria Assente**: Rischio di esaurire la cassa prima di aver raggiunto il punto di pareggio (BEP).",
+          "**Mancanza di Reinvestimento**: Destinare i primi utili a spese personali anziché consolidare la crescita aziendale."
+        ],
+        verdictReason: "Creare un prospetto mensile delle entrate ed uscite ed accantonare una riserva di cassa per le emergenze operative."
+      }
+    }
+  },
+
   // Classifica l'idea e i parametri immessi
   classifyProject(idea = "", budget = "", objective = "", previousAnswers = null) {
     const safeIdea = String(idea || "");
@@ -108,12 +765,27 @@ const LocalAgentSimulationEngine = {
     let name = "Nuovo Progetto";
     if (isVending && text.includes("pizz")) {
       name = "PizzaVending" + (location ? " " + location.split(" ")[0] : "");
-    } else if (text.includes("pizz")) {
-      name = "PizzaGo" + (location ? " " + location.split(" ")[0] : "");
     } else if (safeIdea.trim().length > 0) {
-      const cleanIdea = safeIdea.replace(/vorrei creare|voglio creare|un'idea per|un servizio di|una piattaforma di/gi, "").trim();
-      const words = cleanIdea.split(/\s+/).slice(0, 3).join(" ");
-      name = words.charAt(0).toUpperCase() + words.slice(1) + (location ? " " + location.split(" ")[0] : "");
+      let cleanIdea = safeIdea.replace(/vorrei creare|voglio creare|un'idea per|un servizio di|una piattaforma di|creare un|creare una/gi, "").trim();
+      // Clean leading common Italian articles / prepositions / filler phrases
+      cleanIdea = cleanIdea.replace(/^(a casa mia|a|da|in|su|per|un|uno|una|il|lo|la|i|gli|le|di|del|della|dello|dei|degli|delle)\s+/i, "").trim();
+      const cleanWords = cleanIdea.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").split(/\s+/).filter(w => w.length > 0);
+      
+      let wordsToUse = [];
+      for (let i = 0; i < cleanWords.length && wordsToUse.length < 3; i++) {
+        const w = cleanWords[i];
+        if (i > 0 && (w.length <= 2 || ["con", "per", "del", "dal", "col", "sul", "tra", "fra"].includes(w.toLowerCase()))) {
+          continue;
+        }
+        wordsToUse.push(w);
+      }
+      
+      if (wordsToUse.length > 0) {
+        const wordsFormatted = wordsToUse.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+        name = wordsFormatted.join(" ") + (location ? " " + location.split(" ")[0] : "");
+      } else {
+        name = "Nuovo Progetto" + (location ? " " + location.split(" ")[0] : "");
+      }
     }
 
     return { name, sector, target, location, budgetAmount, isVending, locationMissing: location === "", isBootstrap, hasLeasingOption };
@@ -691,112 +1363,165 @@ const LocalAgentSimulationEngine = {
     let verdict = "APPROVATO CON RISERVA";
     let verdictReason = "";
 
-    // Obiezioni specifiche per agente
-    if (agentKey === "cmo") {
-      objections = [
-        "**Scetticismo del Consumatore**: C'è una barriera culturale forte nell'acquistare cibo caldo (specialmente pizza) da un distributore automatico, spesso percepito come di bassa qualità.",
-        "**Dipendenza Totale dalla Location**: Se il posizionamento fisico non ha un passaggio pedonale continuo h24 (specialmente notturno), la macchina rimarrà inutilizzata.",
-        "**Vandalismo e Visibilità**: I punti ad alto traffico notturno sono esposti ad atti vandalici o sporcizia che allontanano la clientela."
-      ];
-      verdictReason = "Il posizionamento richiede una validazione preventiva e un wrapping visivo di altissimo livello per superare la diffidenza iniziale.";
-    } else if (agentKey === "cfo") {
-      const selectedOption = info.financialOption || (info.hasLeasingOption ? "leasing" : "acquisto");
-      if (info.isBootstrap && selectedOption === "acquisto") {
+    if (isPizzaVending) {
+      // Obiezioni specifiche per agente (Pizza Vending)
+      if (agentKey === "cmo") {
         objections = [
-          "**Fabbisogno Capitale in Bootstrap**: L'acquisto o investimento diretto entra in conflitto con il budget indicato di 0€. Dobbiamo identificare una soluzione alternativa per coprire o azzerare questa spesa iniziale.",
-          "**Stima del Capitale Circolante**: Sono comunque necessari dei fondi minimi mensili per coprire i costi operativi ricorrenti (OPEX) prima di generare cassa.",
-          "**Tempo di Rientro**: Senza dilazioni o finanziamenti, il rischio finanziario è bloccante nei primi 3 mesi in regime di cassa zero."
+          "**Scetticismo del Consumatore**: C'è una barriera culturale forte nell'acquistare cibo caldo (specialmente pizza) da un distributore automatico, spesso percepito come di bassa qualità.",
+          "**Dipendenza Totale dalla Location**: Se il posizionamento fisico non ha un passaggio pedonale continuo h24 (specialmente notturno), la macchina rimarrà inutilizzata.",
+          "**Vandalismo e Visibilità**: I punti ad alto traffico notturno sono esposti ad atti vandalici o sporcizia che allontanano la clientela."
         ];
-        verdict = "IN VALUTAZIONE (Alternative Richieste)";
-        verdictReason = "Il budget a zero non consente l'acquisto o setup diretto proprietario. Proponiamo di valutare insieme le opzioni di leasing/noleggio operativo, Joint Venture con partner locali, o finanziamenti esterni per trovare la soluzione ottimale.";
-      } else if (selectedOption === "leasing") {
+        verdictReason = "Il posizionamento richiede una validazione preventiva e un wrapping visivo di altissimo livello per superare la diffidenza iniziale.";
+      } else if (agentKey === "cfo") {
+        const selectedOption = info.financialOption || (info.hasLeasingOption ? "leasing" : "acquisto");
+        if (info.isBootstrap && selectedOption === "acquisto") {
+          objections = [
+            "**Fabbisogno Capitale in Bootstrap**: L'acquisto o investimento diretto entra in conflitto con il budget indicato di 0€. Dobbiamo identificare una soluzione alternativa per coprire o azzerare questa spesa iniziale.",
+            "**Stima del Capitale Circolante**: Sono comunque necessari dei fondi minimi mensili per coprire i costi operativi ricorrenti (OPEX) prima di generare cassa.",
+            "**Tempo di Rientro**: Senza dilazioni o finanziamenti, il rischio finanziario è bloccante nei primi 3 mesi in regime di cassa zero."
+          ];
+          verdict = "IN VALUTAZIONE (Alternative Richieste)";
+          verdictReason = "Il budget a zero non consente l'acquisto o setup diretto proprietario. Proponiamo di valutare insieme le opzioni di leasing/noleggio operativo, Joint Venture con partner locali, o finanziamenti esterni per trovare la soluzione ottimale.";
+        } else if (selectedOption === "leasing") {
+          objections = [
+            "**Pianificazione del Canone Mensile**: L'adozione del noleggio operativo o canone software/leasing converte il CAPEX in un costo operativo mensile (OPEX). Questo aumenta il BEP mensile in quanto il canone si somma agli altri OPEX fissi.",
+            "**Deposito Cauzionale / Setup**: Sebbene il CAPEX sia abbattuto, sarà necessario un deposito cauzionale iniziale o costo di setup per l'attivazione del contratto.",
+            "**Rischio Penali e Durata**: I contratti operativi/leasing solitamente hanno vincoli di durata (12-36 mesi) con penali per recesso anticipato."
+          ];
+          verdict = "APPROVATO (Con noleggio/leasing)";
+          verdictReason = "L'opzione del leasing o abbonamento operativo riduce drasticamente il CAPEX iniziale, rendendo il progetto avviabile con un budget minimo, purché si garantisca la copertura degli OPEX fin dal primo mese.";
+        } else if (selectedOption === "jv") {
+          objections = [
+            "**Frazionamento delle Decisioni**: Una Joint Venture richiede patti parasociali precisi per evitare stalli decisionali con il partner.",
+            "**Margine Ridotto (Revenue Share)**: Cedere una percentuale sulle vendite (es. 30%-40%) aumenta i costi variabili unitari (COGS), riducendo il margine unitario di contribuzione.",
+            "**Allineamento degli Obiettivi**: Bisogna allineare gli obiettivi a lungo termine del partner (es. socio finanziario o brand partner) con i nostri."
+          ];
+          verdict = "APPROVATO (In Joint Venture)";
+          verdictReason = "La formula della Joint Venture abbatte l'investimento iniziale e il rischio operativo tramite condivisione delle risorse, dividendo i profitti ma tutelando il flusso di cassa in regime di bootstrap.";
+        } else {
+          objections = [
+            "**Aumento Costo Setup**: I costi correnti per avviare il setup proprietario completo richiedono capitale interamente coperto al giorno zero.",
+            "**Costi Fissi e Gestione**: I costi fissi mensili devono essere monitorati attentamente per non erodere i margini nei primi mesi.",
+            "**Margine su Ingredienti/Forniture**: Il margine si contrae se non si ottiene un prezzo all'ingrosso competitivo sulle forniture e sul packaging."
+          ];
+          verdict = "APPROVATO";
+          verdictReason = "I margini unitari supportano l'investimento se il volume minimo stimato di break-even viene mantenuto e il capitale iniziale è coperto.";
+        }
+      } else if (agentKey === "cto") {
         objections = [
-          "**Pianificazione del Canone Mensile**: L'adozione del noleggio operativo o canone software/leasing converte il CAPEX in un costo operativo mensile (OPEX). Questo aumenta il BEP mensile in quanto il canone si somma agli altri OPEX fissi.",
-          "**Deposito Cauzionale / Setup**: Sebbene il CAPEX sia abbattuto, sarà necessario un deposito cauzionale iniziale o costo di setup per l'attivazione del contratto.",
-          "**Rischio Penali e Durata**: I contratti operativi/leasing solitamente hanno vincoli di durata (12-36 mesi) con penali per recesso anticipato."
+          "**Rischio Alimentare (Catena del Freddo)**: Se il frigo interno subisce un blackout o un guasto al compressore, le pizze raggiungono temperature pericolose per la proliferazione batterica.",
+          "**Complessità Meccanica**: Il sistema di trasferimento della pizza dal frigo al forno a pietra ha molte parti in movimento soggette a inceppamenti causati da umidità o cartone deformato.",
+          "**Manutenzione in Loco**: Sulle isole come Gran Canaria, i pezzi di ricambio specifici (es. cinghie ad alta temperatura, schede Nayax) richiedono giorni per la spedizione dalla Spagna continentale."
         ];
-        verdict = "APPROVATO (Con noleggio/leasing)";
-        verdictReason = "L'opzione del leasing o abbonamento operativo riduce drasticamente il CAPEX iniziale, rendendo il progetto avviabile con un budget minimo, purché si garantisca la copertura degli OPEX fin dal primo mese.";
-      } else if (selectedOption === "jv") {
+        verdictReason = "La telemetria h24 è indispensabile per monitorare sbalzi termici e bloccare le vendite in automatico in caso di anomalie.";
+      } else if (agentKey === "coo") {
         objections = [
-          "**Frazionamento delle Decisioni**: Una Joint Venture richiede patti parasociali precisi per evitare stalli decisionali con il partner.",
-          "**Margine Ridotto (Revenue Share)**: Cedere una percentuale sulle vendite (es. 30%-40%) aumenta i costi variabili unitari (COGS), riducendo il margine unitario di contribuzione.",
-          "**Allineamento degli Obiettivi**: Bisogna allineare gli obiettivi a lungo termine del partner (es. socio finanziario o brand partner) con i nostri."
+          "**Saturazione Operativa**: Il rifornimento giornaliero e la pulizia del forno a pietra (rimozione briciole, igienizzazione vano) richiedono circa 1 ora al giorno. Se svolto dal fondatore, limita la scalabilità; se esternalizzato, azzera i profitti del singolo punto.",
+          "**Logistica delle Basi Fresche**: Ottenere una fornitura costante di basi pizza fresche che durino 48 ore senza deteriorarsi richiede una partnership molto rigida con un panificio locale.",
+          "**Gestione degli Scarti**: Le pizze non vendute entro 48 ore devono essere eliminate fisicamente, aumentando il tasso di scarto stimato al 10% all'inizio."
         ];
-        verdict = "APPROVATO (In Joint Venture)";
-        verdictReason = "La formula della Joint Venture abbatte l'investimento iniziale e il rischio operativo tramite condivisione delle risorse, dividendo i profitti ma tutelando il flusso di cassa in regime di bootstrap.";
+        verdictReason = "Operatività fattibile per un singolo punto, ma richiede la standardizzazione dei processi prima di scalare a una flotta di macchine.";
+      } else if (agentKey === "clo") {
+        objections = [
+          "**Tempi di Concessione Comunale (Suolo Pubblico)**: Richiedere l'occupazione di suolo pubblico al Ayuntamiento locale può richiedere fino a 12 mesi di burocrazia, con alta probabilità di diniego.",
+          "**Normativa Sanitaria e HACCP**: Il controllo della temperatura della carne/formaggio sulle pizze precotte richiede la certificazione del laboratorio fornitore e la SCIA sanitaria della macchina.",
+          "**Assicurazione RC obbligatoria**: I rischio di intossicazione alimentare o danni fisici da erogatore caldo richiede coperture assicurative elevate."
+        ];
+        verdictReason = "Consigliamo vivamente di evitare il suolo pubblico ed installare la macchina su suolo privato (fronte strada o corte di negozi esistenti) tramite contratto di locazione privato.";
+      } else if (agentKey === "cco") {
+        objections = [
+          "**Percezione 'Cibo Spazzatura'**: Un design troppo industriale o freddo farà associare la pizza a quella surgelata da microonde.",
+          "**Incoerenza Visiva**: Se il wrapping grafico non comunica immediatamente l'artigianalità italiana della base, il passante ignorerà la macchina."
+        ];
+        verdictReason = "Uso obbligatorio di wrapping texturizzato (effetto pietra/legno), illuminazione calda ed elementi grafici che richiamino la tradizione italiana.";
+      } else if (agentKey === "cso") {
+        objections = [
+          "**Assenza di Contatto Umano**: In caso di errore di erogazione (es. pizza incastrata o non cotta bene), il cliente si sente truffato e frustrato, lasciando recensioni negative online.",
+          "**Difficoltà per Utenti Senior**: Schermi touch e pagamenti solo digitali escludono una parte di clientela locale più anziana."
+        ];
+        verdictReason = "Necessario un adesivo gigante con QR/WhatsApp per rimborsi immediati automatici in 5 minuti (es. via Bizum/PayPal).";
+      } else if (agentKey === "cpo") {
+        objections = [
+          "**Limiti di Menu**: La macchina può contenere solo 3-4 gusti al massimo. Gusti troppo complessi si degradano rapidamente nella cella frigo.",
+          "**Qualità della Cottura a Tempo**: Cuocere una pizza in 180 secondi richiede basi con idratazione specifica (65%) e formaggio a basso rilascio di acqua per evitare l'effetto 'bollito'."
+        ];
+        verdictReason = "Menu limitato a 3 classici (Margherita, Diavola, Prosciutto) per ottimizzare la rotazione ed evitare scarti commerciali.";
+      } else if (agentKey === "sourcing") {
+        objections = [
+          "**Spedizione e Sdoganamento Canarie**: Spedire un macchinario da 500 kg richiede trasporto marittimo. Le dogane canarie (DUA) e l'applicazione dell'IGIC possono ritardare l'installazione di settimane.",
+          "**Fornitura Basi Speciali**: Pochi panifici locali a Gran Canaria sono attrezzati per produrre basi precotte stese a mano con le dimensioni geometriche precise richieste dal braccio meccanico."
+        ];
+        verdictReason = "La macchina richiede tolleranze millimetriche sul diametro (26cm) e spessore per non inceppare il caricatore.";
+      } else if (agentKey === "sales") {
+        objections = [
+          "**Trattativa Spazi ad Alto Traffico**: I proprietari di spazi commerciali migliori richiedono affitti mensili sproporzionati rispetto alle vendite stimate, erodendo tutto l'utile.",
+          "**Commissioni POS Cashless**: La telemetria e i pagamenti digitali Nayax trattengono fino al 3.5% su transazioni di piccolo importo."
+        ];
+        verdictReason = "Proporre un affitto variabile (% sulle vendite con minimo garantito) per allineare gli interessi del proprietario dello spazio.";
+      } else if (agentKey === "capital") {
+        objections = [
+          "**Mancanza di Scalabilità per Venture Capital**: Un singolo distributore è un'attività di puro sostentamento familiare. Non è adatta ad attirare fondi di investimento senza un piano per una flotta di 50+ macchine.",
+          "**Difficoltà di Finanziamento Bancario**: Le banche tradizionali finanziano difficilmente macchinari vending posizionati all'aperto a causa del rischio furto/vandalismo."
+        ];
+        verdictReason = "Utilizzare autofinanziamento o micro-crediti agevolati regionali (es. prestiti ENISA o fondi per lo sviluppo delle Canarie).";
       } else {
         objections = [
-          "**Aumento Costo Setup**: I costi correnti per avviare il setup proprietario completo richiedono capitale interamente coperto al giorno zero.",
-          "**Costi Fissi e Gestione**: I costi fissi mensili devono essere monitorati attentamente per non erodere i margini nei primi mesi.",
-          "**Margine su Ingredienti/Forniture**: Il margine si contrae se non si ottiene un prezzo all'ingrosso competitivo sulle forniture e sul packaging."
+          "**Rischio Esecutivo**: Mancanza di competenze verticali nella gestione di reti di distribuzione automatica.",
+          "**Barriere di Ingresso**: Concorrenza di catene fast-food consolidate con orari estesi."
         ];
-        verdict = "APPROVATO";
-        verdictReason = "I margini unitari supportano l'investimento se il volume minimo stimato di break-even viene mantenuto e il capitale iniziale è coperto.";
+        verdictReason = "Avviare un test pilota per misurare la risposta del mercato reale.";
       }
-    } else if (agentKey === "cto") {
-      objections = [
-        "**Rischio Alimentare (Catena del Freddo)**: Se il frigo interno subisce un blackout o un guasto al compressore, le pizze raggiungono temperature pericolose per la proliferazione batterica.",
-        "**Complessità Meccanica**: Il sistema di trasferimento della pizza dal frigo al forno a pietra ha molte parti in movimento soggette a inceppamenti causati da umidità o cartone deformato.",
-        "**Manutenzione in Loco**: Sulle isole come Gran Canaria, i pezzi di ricambio specifici (es. cinghie ad alta temperatura, schede Nayax) richiedono giorni per la spedizione dalla Spagna continentale."
-      ];
-      verdictReason = "La telemetria h24 è indispensabile per monitorare sbalzi termici e bloccare le vendite in automatico in caso di anomalie.";
-    } else if (agentKey === "coo") {
-      objections = [
-        "**Saturazione Operativa**: Il rifornimento giornaliero e la pulizia del forno a pietra (rimozione briciole, igienizzazione vano) richiedono circa 1 ora al giorno. Se svolto dal fondatore, limita la scalabilità; se esternalizzato, azzera i profitti del singolo punto.",
-        "**Logistica delle Basi Fresche**: Ottenere una fornitura costante di basi pizza fresche che durino 48 ore senza deteriorarsi richiede una partnership molto rigida con un panificio locale.",
-        "**Gestione degli Scarti**: Le pizze non vendute entro 48 ore devono essere eliminate fisicamente, aumentando il tasso di scarto stimato al 10% all'inizio."
-      ];
-      verdictReason = "Operatività fattibile per un singolo punto, ma richiede la standardizzazione dei processi prima di scalare a una flotta di macchine.";
-    } else if (agentKey === "clo") {
-      objections = [
-        "**Tempi di Concessione Comunale (Suolo Pubblico)**: Richiedere l'occupazione di suolo pubblico al Ayuntamiento locale può richiedere fino a 12 mesi di burocrazia, con alta probabilità di diniego.",
-        "**Normativa Sanitaria e HACCP**: Il controllo della temperatura della carne/formaggio sulle pizze precotte richiede la certificazione del laboratorio fornitore e la SCIA sanitaria della macchina.",
-        "**Assicurazione RC obbligatoria**: Il rischio di intossicazione alimentare o danni fisici da erogatore caldo richiede coperture assicurative elevate."
-      ];
-      verdictReason = "Consigliamo vivamente di evitare il suolo pubblico ed installare la macchina su suolo privato (fronte strada o corte di negozi esistenti) tramite contratto di locazione privato.";
-    } else if (agentKey === "cco") {
-      objections = [
-        "**Percezione 'Cibo Spazzatura'**: Un design troppo industriale o freddo farà associare la pizza a quella surgelata da microonde.",
-        "**Incoerenza Visiva**: Se il wrapping grafico non comunica immediatamente l'artigianalità italiana della base, il passante ignorerà la macchina."
-      ];
-      verdictReason = "Uso obbligatorio di wrapping texturizzato (effetto pietra/legno), illuminazione calda ed elementi grafici che richiamino la tradizione italiana.";
-    } else if (agentKey === "cso") {
-      objections = [
-        "**Assenza di Contatto Umano**: In caso di errore di erogazione (es. pizza incastrata o non cotta bene), il cliente si sente truffato e frustrato, lasciando recensioni negative online.",
-        "**Difficoltà per Utenti Senior**: Schermi touch e pagamenti solo digitali escludono una parte di clientela locale più anziana."
-      ];
-      verdictReason = "Necessario un adesivo gigante con QR/WhatsApp per rimborsi immediati automatici in 5 minuti (es. via Bizum/PayPal).";
-    } else if (agentKey === "cpo") {
-      objections = [
-        "**Limiti di Menu**: La macchina può contenere solo 3-4 gusti al massimo. Gusti troppo complessi si degradano rapidamente nella cella frigo.",
-        "**Qualità della Cottura a Tempo**: Cuocere una pizza in 180 secondi richiede basi con idratazione specifica (65%) e formaggio a basso rilascio di acqua per evitare l'effetto 'bollito'."
-      ];
-      verdictReason = "Menu limitato a 3 classici (Margherita, Diavola, Prosciutto) per ottimizzare la rotazione ed evitare scarti commerciali.";
-    } else if (agentKey === "sourcing") {
-      objections = [
-        "**Spedizione e Sdoganamento Canarie**: Spedire un macchinario da 500 kg richiede trasporto marittimo. Le dogane canarie (DUA) e l'applicazione dell'IGIC possono ritardare l'installazione di settimane.",
-        "**Fornitura Basi Speciali**: Pochi panifici locali a Gran Canaria sono attrezzati per produrre basi precotte stese a mano con le dimensioni geometriche precise richieste dal braccio meccanico."
-      ];
-      verdictReason = "La macchina richiede tolleranze millimetriche sul diametro (26cm) e spessore per non inceppare il caricatore.";
-    } else if (agentKey === "sales") {
-      objections = [
-        "**Trattativa Spazi ad Alto Traffico**: I proprietari di spazi commerciali migliori richiedono affitti mensili sproporzionati rispetto alle vendite stimate, erodendo tutto l'utile.",
-        "**Commissioni POS Cashless**: La telemetria e i pagamenti digitali Nayax trattengono fino al 3.5% su transazioni di piccolo importo."
-      ];
-      verdictReason = "Proporre un affitto variabile (% sulle vendite con minimo garantito) per allineare gli interessi del proprietario dello spazio.";
-    } else if (agentKey === "capital") {
-      objections = [
-        "**Mancanza di Scalabilità per Venture Capital**: Un singolo distributore è un'attività di puro sostentamento familiare. Non è adatta ad attirare fondi di investimento senza un piano per una flotta di 50+ macchine.",
-        "**Difficoltà di Finanziamento Bancario**: Le banche tradizionali finanziano difficilmente macchinari vending posizionati all'aperto a causa del rischio furto/vandalismo."
-      ];
-      verdictReason = "Utilizzare autofinanziamento o micro-crediti agevolati regionali (es. prestiti ENISA o fondi per lo sviluppo delle Canarie).";
     } else {
-      objections = [
-        "**Rischio Esecutivo**: Mancanza di competenze verticali nella gestione di reti di distribuzione automatica.",
-        "**Barriere di Ingresso**: Concorrenza di catene fast-food consolidate con orari estesi."
-      ];
-      verdictReason = "Avviare un test pilota per misurare la risposta del mercato reale.";
+      // Obiezioni specifiche per settore per gli altri progetti
+      if (agentKey === "cfo") {
+        const selectedOption = info.financialOption || (info.hasLeasingOption ? "leasing" : "acquisto");
+        if (info.isBootstrap && selectedOption === "acquisto") {
+          objections = [
+            "**Fabbisogno Capitale in Bootstrap**: L'acquisto o investimento diretto entra in conflitto con il budget indicato di 0€. Dobbiamo identificare una soluzione alternativa per coprire o azzerare questa spesa iniziale.",
+            "**Stima del Capitale Circolante**: Sono comunque necessari dei fondi minimi mensili per coprire i costi operativi ricorrenti (OPEX) prima di generare cassa.",
+            "**Tempo di Rientro**: Senza dilazioni o finanziamenti, il rischio finanziario è bloccante nei primi 3 mesi in regime di cassa zero."
+          ];
+          verdict = "IN VALUTAZIONE (Alternative Richieste)";
+          verdictReason = "Il budget a zero non consente l'acquisto o setup diretto proprietario. Proponiamo di valutare insieme le opzioni di leasing/noleggio operativo, Joint Venture con partner locali, o finanziamenti esterni per trovare la soluzione ottimale.";
+        } else if (selectedOption === "leasing") {
+          objections = [
+            "**Pianificazione del Canone Mensile**: L'adozione del noleggio operativo o canone software/leasing converte il CAPEX in un costo operativo mensile (OPEX). Questo aumenta le spese fisse mensili in quanto il canone si somma agli altri OPEX.",
+            "**Deposito Cauzionale / Setup**: Sebbene il CAPEX sia abbattuto, sarà necessario un deposito cauzionale iniziale o costo di setup per l'attivazione del contratto.",
+            "**Rischio Penali e Durata**: I contratti operativi/leasing solitamente hanno vincoli di durata (12-36 mesi) con penali per recesso anticipato."
+          ];
+          verdict = "APPROVATO (Con noleggio/leasing)";
+          verdictReason = "L'opzione del leasing o abbonamento operativo riduce drasticamente il CAPEX iniziale, rendendo il progetto avviabile con un budget minimo, purché si garantisca la copertura degli OPEX fin dal primo mese.";
+        } else if (selectedOption === "jv") {
+          objections = [
+            "**Frazionamento delle Decisioni**: Una Joint Venture richiede patti parasociali precisi per evitare stalli decisionali con il partner.",
+            "**Margine Ridotto (Revenue Share)**: Cedere una percentuale sulle vendite (es. 30%-40%) aumenta i costi variabili unitari (COGS), riducendo il margine unitario di contribuzione.",
+            "**Allineamento degli Obiettivi**: Bisogna allineare gli obiettivi a lungo termine del partner (es. socio finanziario o brand partner) con i nostri."
+          ];
+          verdict = "APPROVATO (In Joint Venture)";
+          verdictReason = "La formula della Joint Venture abbatte l'investimento iniziale e il rischio operativo tramite condivisione delle risorse, dividendo i profitti ma tutelando il flusso di cassa in regime di bootstrap.";
+        } else {
+          objections = [
+            "**Aumento Costo Setup**: I costi correnti per avviare il setup proprietario completo richiedono capitale interamente coperto al giorno zero.",
+            "**Costi Fissi e Gestione**: I costi fissi mensili devono essere monitorati attentamente per non erodere i margini nei primi mesi.",
+            "**Margine di Vendita**: Il margine si contrae se non si ottengono condizioni d'acquisto o di licenza competitive con i fornitori chiave."
+          ];
+          verdict = "APPROVATO";
+          verdictReason = "I margini unitari supportano l'investimento se il volume minimo stimato di break-even viene mantenuto e il capitale iniziale è coperto.";
+        }
+      } else {
+        const spec = (LocalAgentSimulationEngine.sectorSpecifications[info.sector] && LocalAgentSimulationEngine.sectorSpecifications[info.sector][agentKey]) || 
+                     (LocalAgentSimulationEngine.sectorSpecifications.general[agentKey]);
+        if (spec) {
+          objections = spec.objections;
+          verdictReason = spec.verdictReason;
+        } else {
+          objections = [
+            `**Sfida Operativa (${agentKey.toUpperCase()})**: La validazione richiede il monitoraggio attento delle scorte e dei flussi di lavoro.`,
+            `**Competitività di Settore**: Necessità di differenziare la proposta di valore per attirare e fidelizzare il target.`
+          ];
+          verdictReason = "Consigliamo di avviare il test pilota per analizzare i comportamenti iniziali degli utenti sul campo.";
+        }
+      }
     }
 
     // Costruiamo il report finale
@@ -923,130 +1648,256 @@ const LocalAgentSimulationEngine = {
     }
 
     // Dettaglio fasi
-    switch (phase) {
-      case 1:
-        text += `**FASE 1: VALIDAZIONE & LEAN CANVAS completata.**\n`;
-        text += `Abbiamo analizzato il modello di business. La Boardroom solleva forti obiezioni sulla fattibilità in bootstrap e sulla mancanza di geolocalizzazione.\n`;
-        text += `- **Obiezione Principale (CMO)**: Scetticismo culturale sul cibo da distributore. Dobbiamo testare l'interesse con interviste fisiche prima di investire.\n`;
-        text += `- **Obiezione di Costo (CFO)**: Costo della macchina di €32.000 insostenibile in bootstrap. Consigliato il pivot verso il noleggio o la Joint Venture.\n`;
-        
-        if (info.locationMissing) {
-          questions = [
-            "Selezionare l'Opzione 1: Playa del Inglés (Maspalomas) - Ottimale per il turismo notturno.",
-            "Selezionare l'Opzione 2: Las Palmas (Las Canteras) - Ottimale per residenti e turisti fissi.",
-            "Fornire una zona differente di tua preferenza."
-          ];
-        } else if (info.isBootstrap) {
-          if (info.hasLeasingOption) {
+    if (isPizzaVending) {
+      switch (phase) {
+        case 1:
+          text += `**FASE 1: VALIDAZIONE & LEAN CANVAS completata.**\n`;
+          text += `Abbiamo analizzato il modello di business. La Boardroom solleva forti obiezioni sulla fattibilità in bootstrap e sulla mancanza di geolocalizzazione.\n`;
+          text += `- **Obiezione Principale (CMO)**: Scetticismo culturale sul cibo da distributore. Dobbiamo testare l'interesse con interviste fisiche prima di investire.\n`;
+          text += `- **Obiezione di Costo (CFO)**: Costo della macchina di €32.000 insostenibile in bootstrap. Consigliato il pivot verso il noleggio o la Joint Venture.\n`;
+          
+          if (info.locationMissing) {
             questions = [
-              "Procedere con la validazione sul campo a Gran Canaria per stimare le vendite giornaliere.",
-              "Focalizzarsi esclusivamente sulla clientela dei turisti notturni."
+              "Selezionare l'Opzione 1: Playa del Inglés (Maspalomas) - Ottimale per il turismo notturno.",
+              "Selezionare l'Opzione 2: Las Palmas (Las Canteras) - Ottimale per residenti e turisti fissi.",
+              "Fornire una zona differente di tua preferenza."
+            ];
+          } else if (info.isBootstrap) {
+            if (info.hasLeasingOption) {
+              questions = [
+                "Procedere con la validazione sul campo a Gran Canaria per stimare le vendite giornaliere.",
+                "Focalizzarsi esclusivamente sulla clientela dei turisti notturni."
+              ];
+            } else {
+              questions = [
+                "Valutare l'opzione del Noleggio Operativo / Leasing (OPEX mensili ed anticipo ridotto).",
+                "Valutare l'opzione della Joint Venture con locali esistenti a Gran Canaria.",
+                "Modificare il budget apportando capitali propri (minimo €55.000)."
+              ];
+            }
+          } else {
+            questions = [
+              "Procedere con 50 interviste sul campo a Gran Canaria per validare il prezzo di 7.00€.",
+              "Sviluppare un sondaggio online da promuovere sui gruppi turisti Canarie."
+            ];
+          }
+          break;
+
+        case 2:
+          text += `**FASE 2: ANALISI TARGET & COMPETITOR completata.**\n`;
+          text += `Abbiamo profilato i clienti e mappato i concorrenti. La notte è la nostra finestra di mercato exclusiva.\n`;
+          text += `- **Mercato**: Le pizzerie tradizionali chiudono presto, lasciando un vuoto d'offerta che possiamo colmare.\n`;
+          text += `- **Rischio**: Competitori indiretti (snack bar freddi o fast food aperti H24) hanno prezzi bassi ma qualità inferiori.\n`;
+          
+          questions = [
+            "Focalizzarsi esclusivamente sulla fascia oraria notturna (22:00 - 06:00).",
+            "Mantenere la macchina attiva H24 con promozioni diurne per studenti e lavoratori."
+          ];
+          break;
+
+        case 3:
+          text += `**FASE 3: STRATEGIA IBRIDA & GTM completata.**\n`;
+          text += `La strategia GTM si basa sull'estetica del punto vendita fisico e sulla SEO locale.\n`;
+          text += `- **Estetica (CCO)**: Wrapping che evoca la tradizione italiana per combattere la percezione di 'cibo da microonde'.\n`;
+          text += `- **Digitale (CMO)**: Presenza sulle mappe per catturare le ricerche organiche da smartphone.\n`;
+          
+          questions = [
+            "Wrapping classico: Rosso pomodoro ed effetto pietra / legno rustico.",
+            "Wrapping moderno: Colori neon e grafiche futuristiche per la clientela giovane."
+          ];
+          break;
+
+        case 4:
+          text += `**FASE 4: GROWTH HACK & OUTREACH completata.**\n`;
+          text += `Pianificato il passaparola e le partnership locali.\n`;
+          text += `- **Growth Hack**: QR Code sulla confezione che regala sconti in cambio di recensioni su Google Maps.\n`;
+          text += `- **Outreach**: Accordo con i gestori di alloggi turistici e host Airbnb per includere la pizza H24 nelle loro guide di benvenuto.\n`;
+          
+          questions = [
+            "Attivare il QR code sconto del 20% per recensioni Google immediate.",
+            "Attivare una partnership offrendo pizza gratis ai tassisti per farli parlare del nostro punto."
+          ];
+          break;
+
+        case 5:
+          text += `**FASE 5: COMPLIANCE & RISCHI completata.**\n`;
+          text += `Analizzati i permessi legali e sanitari.\n`;
+          text += `- **Red Flag (CLO)**: I tempi per l'occupazione di suolo pubblico comunale sono biblici. La Boardroom consiglia l'affitto su suolo privato di fronte a un negozio.\n`;
+          text += `- **Sanità**: Obbligo di SCIA sanitaria e catena del freddo certificata HACCP.\n`;
+          
+          questions = [
+            "Procedere solo con spazi privati (bar, stazioni, cortili privati) per avvio rapido in 15 giorni.",
+            "Presentare domanda per suolo pubblico comunale accettando tempi lunghi (6-12 mesi)."
+          ];
+          break;
+
+        case 6:
+          text += `**FASE 6: PIANO OPERATIVO & TECH STACK completata.**\n`;
+          text += `Definite le routine giornaliere e la telemetria.\n`;
+          text += `- **Operations**: Rifornimento quotidiano (1 ora/giorno) e pulizia igienica manuale.\n`;
+          text += `- **Tech**: Nayax Onyx gestisce la telemetria (alert temperature/scorte via Make e Telegram) ed i pagamenti cashless.\n`;
+          
+          questions = [
+            "Gestione operativa diretta (svolta da te in loco).",
+            "Delega ad un operatore locale part-time (incide per circa 300€/mese sul bilancio)."
+          ];
+          break;
+
+        case 7:
+          text += `**FASE 7: PIANO FINANZIARIO completata.**\n`;
+          text += `Margini e break-even verificati.\n`;
+          if (info.hasLeasingOption) {
+            text += `- **CAPEX**: €8.000 (deposito, trasporto, allacciamento, SCIA).\n`;
+            text += `- **OPEX**: €1.800/mese (canone leasing €850 + affitto/corrente/telemetria/Autónomo/manutenzione).\n`;
+            text += `- **BEP**: 321 pizze al mese (circa 10.7 pizze al giorno a 8.00€ medio).\n`;
+          } else {
+            text += `- **CAPEX**: €55.000 (macchina, spedizione, allacciamento, SCIA).\n`;
+            text += `- **OPEX**: €950/mese (affitto suolo, corrente h24, Autónomo flat, SIM, manutenzione).\n`;
+            text += `- **BEP**: 170 pizze al mese (circa 5.6 pizze al giorno a 8.00€ medio).\n`;
+          }
+          
+          questions = [
+            "Accettare il piano finanziario e passare alla sintesi executive.",
+            "Ricalcolare il piano ipotizzando l'uso di una macchina usata (€20.000 CAPEX)."
+          ];
+          break;
+
+        case 8:
+          text += `**FASE 8: EXECUTIVE SUMMARY & PITCH completata.**\n`;
+          text += `Il progetto è investor-ready. Tutti i dati sono strutturati.\n`;
+          text += `- **Stato**: Pronto per l'esportazione in formato Markdown.\n`;
+          text += `- **Raccomandazione**: Presenta questo report a proprietari di spazi o finanziatori per negoziare le migliori condizioni.\n`;
+          
+          questions = [
+            "Scarica il report finale in formato Markdown (.md).",
+            "Ricomincia la simulazione con un altro progetto o budget."
+          ];
+          break;
+      }
+    } else {
+      const sectorNames = {
+        saas: "SaaS / Piattaforma Cloud",
+        ecommerce: "E-commerce / Vendita Online",
+        food_beverage: "Food & Beverage / Ristorazione",
+        retail: "Retail / Negozio Fisico",
+        mobile_app: "Applicazione Mobile",
+        services: "Servizi Professionali / Consulenza",
+        marketplace: "Marketplace / Portale",
+        hardware_iot: "Hardware / IoT",
+        general: "Business Strategico"
+      };
+      
+      const sName = sectorNames[info.sector] || sectorNames.general;
+      
+      switch (phase) {
+        case 1:
+          text += `**FASE 1: VALIDAZIONE & LEAN CANVAS completata.**\n`;
+          text += `Abbiamo strutturato il canvas strategico per il progetto **${info.name}** nel settore **${sName}** ${targetLoc}.\n`;
+          text += `- **Obiezione Principale (CMO)**: Validazione dell'interesse e stima del Costo di Acquisizione (CAC) iniziale.\n`;
+          text += `- **Obiezione di Costo (CFO)**: Sostenibilità delle spese di avvio in base al budget di ${info.isBootstrap ? "puro bootstrap (0€)" : info.budgetAmount + "€"}.\n`;
+          
+          if (info.locationMissing) {
+            questions = [
+              "Fornire una località specifica (città o area geografica) per calcolare i costi e permessi locali.",
+              "Procedere ipotizzando un test di lancio pilota interamente online (SaaS/E-commerce)."
             ];
           } else {
             questions = [
-              "Valutare l'opzione del Noleggio Operativo / Leasing (OPEX mensili ed anticipo ridotto).",
-              "Valutare l'opzione della Joint Venture con locali esistenti a Gran Canaria.",
-              "Modificare il budget apportando capitali propri (minimo €55.000)."
+              `Lanciare una Landing Page pilota per raccogliere email di utenti interessati ${info.location ? "a " + info.location : ""}.`,
+              "Intervistare direttamente 15 potenziali clienti target per validare il problema."
             ];
           }
-        } else {
+          break;
+          
+        case 2:
+          text += `**FASE 2: ANALISI TARGET & COMPETITOR completata.**\n`;
+          text += `La Boardroom ha analizzato il mercato di riferimento per ${sect.product}. Abbiamo profilato il cliente ideale e mappato i concorrenti diretti.\n`;
+          text += `- **Mercato**: Evidenziato un posizionamento basato su ${sect.revenue} per differenziarci dai competitor.\n`;
+          text += `- **Rischio**: Competitori generici o soluzioni manuali alternative usate attualmente dal target.\n`;
+          
           questions = [
-            "Procedere con 50 interviste sul campo a Gran Canaria per validare il prezzo di 7.00€.",
-            "Sviluppare un sondaggio online da promuovere sui gruppi turisti Canarie."
+            `Focalizzarsi su una micro-nicchia di clienti molto specifica per ridurre la concorrenza.`,
+            "Puntare ad un target di massa con un prezzo d'ingresso competitivo."
           ];
-        }
-        break;
-
-      case 2:
-        text += `**FASE 2: ANALISI TARGET & COMPETITOR completata.**\n`;
-        text += `Abbiamo profilato i clienti e mappato i concorrenti. La notte è la nostra finestra di mercato esclusiva.\n`;
-        text += `- **Mercato**: Le pizzerie tradizionali chiudono presto, lasciando un vuoto d'offerta che possiamo colmare.\n`;
-        text += `- **Rischio**: Competitori indiretti (snack bar freddi o fast food aperti H24) hanno prezzi bassi ma qualità inferiori.\n`;
-        
-        questions = [
-          "Focalizzarsi esclusivamente sulla fascia oraria notturna (22:00 - 06:00).",
-          "Mantenere la macchina attiva H24 con promozioni diurne per studenti e lavoratori."
-        ];
-        break;
-
-      case 3:
-        text += `**FASE 3: STRATEGIA IBRIDA & GTM completata.**\n`;
-        text += `La strategia GTM si basa sull'estetica del punto vendita fisico e sulla SEO locale.\n`;
-        text += `- **Estetica (CCO)**: Wrapping che evoca la tradizione italiana per combattere la percezione di 'cibo da microonde'.\n`;
-        text += `- **Digitale (CMO)**: Presenza sulle mappe per catturare le ricerche organiche da smartphone.\n`;
-        
-        questions = [
-          "Wrapping classico: Rosso pomodoro ed effetto pietra / legno rustico.",
-          "Wrapping moderno: Colori neon e grafiche futuristiche per la clientela giovane."
-        ];
-        break;
-
-      case 4:
-        text += `**FASE 4: GROWTH HACK & OUTREACH completata.**\n`;
-        text += `Pianificato il passaparola e le partnership locali.\n`;
-        text += `- **Growth Hack**: QR Code sulla confezione che regala sconti in cambio di recensioni su Google Maps.\n`;
-        text += `- **Outreach**: Accordo con i gestori di alloggi turistici e host Airbnb per includere la pizza H24 nelle loro guide di benvenuto.\n`;
-        
-        questions = [
-          "Attivare il QR code sconto del 20% per recensioni Google immediate.",
-          "Attivare una partnership offrendo pizza gratis ai tassisti per farli parlare del nostro punto."
-        ];
-        break;
-
-      case 5:
-        text += `**FASE 5: COMPLIANCE & RISCHI completata.**\n`;
-        text += `Analizzati i permessi legali e sanitari.\n`;
-        text += `- **Red Flag (CLO)**: I tempi per l'occupazione di suolo pubblico comunale sono biblici. La Boardroom consiglia l'affitto su suolo privato di fronte a un negozio.\n`;
-        text += `- **Sanità**: Obbligo di SCIA sanitaria e catena del freddo certificata HACCP.\n`;
-        
-        questions = [
-          "Procedere solo con spazi privati (bar, stazioni, cortili privati) per avvio rapido in 15 giorni.",
-          "Presentare domanda per suolo pubblico comunale accettando tempi lunghi (6-12 mesi)."
-        ];
-        break;
-
-      case 6:
-        text += `**FASE 6: PIANO OPERATIVO & TECH STACK completata.**\n`;
-        text += `Definite le routine giornaliere e la telemetria.\n`;
-        text += `- **Operations**: Rifornimento quotidiano (1 ora/giorno) e pulizia igienica manuale.\n`;
-        text += `- **Tech**: Nayax Onyx gestisce la telemetria (alert temperature/scorte via Make e Telegram) ed i pagamenti cashless.\n`;
-        
-        questions = [
-          "Gestione operativa diretta (svolta da te in loco).",
-          "Delega ad un operatore locale part-time (incide per circa 300€/mese sul bilancio)."
-        ];
-        break;
-
-      case 7:
-        text += `**FASE 7: PIANO FINANZIARIO completata.**\n`;
-        text += `Margini e break-even verificati.\n`;
-        if (info.hasLeasingOption) {
-          text += `- **CAPEX**: €8.000 (deposito, trasporto, allacciamento, SCIA).\n`;
-          text += `- **OPEX**: €1.800/mese (canone leasing €850 + affitto/corrente/telemetria/Autónomo/manutenzione).\n`;
-          text += `- **BEP**: 321 pizze al mese (circa 10.7 pizze al giorno a 8.00€ medio).\n`;
-        } else {
-          text += `- **CAPEX**: €55.000 (macchina, spedizione, allacciamento, SCIA).\n`;
-          text += `- **OPEX**: €950/mese (affitto suolo, corrente h24, Autónomo flat, SIM, manutenzione).\n`;
-          text += `- **BEP**: 170 pizze al mese (circa 5.6 pizze al giorno a 8.00€ medio).\n`;
-        }
-        
-        questions = [
-          "Accettare il piano finanziario e passare alla sintesi executive.",
-          "Ricalcolare il piano ipotizzando l'uso di una macchina usata (€20.000 CAPEX)."
-        ];
-        break;
-
-      case 8:
-        text += `**FASE 8: EXECUTIVE SUMMARY & PITCH completata.**\n`;
-        text += `Il progetto è investor-ready. Tutti i dati sono strutturati.\n`;
-        text += `- **Stato**: Pronto per l'esportazione in formato Markdown.\n`;
-        text += `- **Raccomandazione**: Presenta questo report a proprietari di spazi o finanziatori per negoziare le migliori condizioni.\n`;
-        
-        questions = [
-          "Scarica il report finale in formato Markdown (.md).",
-          "Ricomincia la simulazione con un altro progetto o budget."
-        ];
-        break;
+          break;
+          
+        case 3:
+          text += `**FASE 3: STRATEGIA IBRIDA & GTM completata.**\n`;
+          text += `Pianificato il piano di lancio (Go-To-Market) combinando canali online e offline.\n`;
+          text += `- **Estetica (CCO)**: Sviluppo di un'identità visiva premium per trasmettere autorevolezza ed incrementare la fiducia.\n`;
+          text += `- **Digitale (CMO)**: Campagne mirate tramite ${sect.marketing} per convogliare traffico qualificato.\n`;
+          
+          questions = [
+            "Branding minimal ed elegante, focalizzato su un target alto spendente.",
+            "Branding colorato e dinamico, focalizzato su un pubblico giovane e social."
+          ];
+          break;
+          
+        case 4:
+          text += `**FASE 4: GROWTH HACK & OUTREACH completata.**\n`;
+          text += `Definiti i flussi di fidelizzazione e accordi di marketing organico.\n`;
+          text += `- **Growth Hack**: Incentivi al passaparola (referral program o sconti) al primo acquisto/registrazione.\n`;
+          text += `- **Outreach**: Partnership strategiche con influencer locali o community online per acquisire traffico a costo zero.\n`;
+          
+          questions = [
+            "Offrire uno sconto del 15% o un mese gratis in cambio del passaparola (Referral).",
+            "Avviare collaborazioni con micro-influencer di settore offrendo l'uso gratuito del servizio."
+          ];
+          break;
+          
+        case 5:
+          text += `**FASE 5: COMPLIANCE & RISCHI completata.**\n`;
+          text += `Valutati gli adempimenti legali e la privacy per ${sect.product}.\n`;
+          text += `- **Red Flag (CLO)**: Necessità di conformità GDPR per il trattamento dei dati e termini d'uso protettivi.\n`;
+          text += `- **Fisco**: Scelta del regime fiscale (es. forfettario o ditta individuale) in base alle tasse e volume d'affari.\n`;
+          
+          questions = [
+            "Operare inizialmente come ditta individuale/regime forfettario per minimizzare i costi fissi.",
+            "Costituire una società a responsabilità limitata (Srl) per tutelare i patrimoni personali."
+          ];
+          break;
+          
+        case 6:
+          text += `**FASE 6: PIANO OPERATIVO & TECH STACK completata.**\n`;
+          text += `Definita l'architettura tecnica e le routine quotidiane.\n`;
+          text += `- **Tech**: Setup basato su ${sect.tech} per garantire stabilità e automazione dei flussi.\n`;
+          text += `- **Operations**: SOP per la gestione ordini/servizi ed assistenza clienti integrata.\n`;
+          
+          questions = [
+            "Gestione operativa manuale diretta (svolta da te come fondatore).",
+            "Automatizzare il 90% dei flussi integrando Make.com o Zapier con strumenti di intelligenza artificiale."
+          ];
+          break;
+          
+        case 7:
+          text += `**FASE 7: PIANO FINANZIARIO completata.**\n`;
+          text += `Analisi dei costi, prezzi e break-even point elaborata.\n`;
+          
+          const selectedOption = info.financialOption || (info.hasLeasingOption ? "leasing" : "acquisto");
+          const fin = this.generateFinancials(info, selectedOption, (window.state && window.state.financialOverrides) || {});
+          
+          text += `- **CAPEX (Avvio)**: ${fin.capex} (setup e marketing iniziale).\n`;
+          text += `- **OPEX (Mensili)**: ${fin.opex} (hosting, licenze software, pubblicità).\n`;
+          text += `- **BEP (Soglia di pareggio)**: ${fin.bep} per coprire i costi fissi operativi.\n`;
+          
+          questions = [
+            "Accettare il piano finanziario calcolato ed esportare il report executive.",
+            "Rivedere la struttura dei prezzi o negoziare per ridurre gli OPEX mensili."
+          ];
+          break;
+          
+        case 8:
+          text += `**FASE 8: EXECUTIVE SUMMARY & PITCH completata.**\n`;
+          text += `Il progetto è investor-ready. Tutti i dettagli strategici e finanziari sono stati strutturati.\n`;
+          text += `- **Stato**: Pronto per l'esportazione in formato Markdown (.md).\n`;
+          text += `- **Consiglio**: Utilizza questo report strategico per validare l'idea sul mercato o presentarlo a potenziali partner.\n`;
+          
+          questions = [
+            "Scarica il report finale in formato Markdown (.md).",
+            "Ricomincia la simulazione con un altro progetto o budget."
+          ];
+          break;
+      }
     }
 
     return { text, questions };
