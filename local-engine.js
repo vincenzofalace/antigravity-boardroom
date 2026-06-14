@@ -735,6 +735,10 @@ const LocalAgentSimulationEngine = {
       sector = "ecommerce";
     } else if (
       text.includes("ristor") || 
+      text.includes("restaurant") || 
+      text.includes("catering") || 
+      text.includes("chef") || 
+      text.includes("cucina") || 
       text.includes("pizz") || 
       text.includes("bar") || 
       text.includes("cibo") || 
@@ -780,6 +784,14 @@ const LocalAgentSimulationEngine = {
       location = "Bologna";
     } else if (text.includes("garda")) {
       location = "Lago di Garda";
+    }
+    
+    // Se non corrisponde ai preset ma l'utente ha specificato la località nel testo dell'idea (dal form)
+    if (!location) {
+      const locMatch = safeIdea.match(/località specificata:\s*([^\n\r]+)/i);
+      if (locMatch && locMatch[1].trim()) {
+        location = locMatch[1].trim();
+      }
     }
 
     // Rileva budget in euro
