@@ -1219,9 +1219,13 @@ Concludi ponendo un massimo di 1-2 domande specifiche e focalizzate (es. per sce
         const orchestratorResponse = await window.callGeminiAPI(state.apiKey, state.model, "orchestrator", orchestratorPrompt, [], state.project.attachedImage);
         removeTypingIndicator();
         
+        const parsedQuestions = extractQuestionsFromText(orchestratorResponse);
         state.orchestratorOutputs[state.currentPhase] = {
           text: orchestratorResponse,
-          questions: []
+          questions: parsedQuestions.length > 0 ? parsedQuestions : [
+            "Come intendi procedere con i punti discussi in questa fase?",
+            "Ci sono variazioni di costo o di target che desideri applicare?"
+          ]
         };
         
         appendOrchestratorMessage(orchestratorResponse);
@@ -1702,6 +1706,20 @@ function updateFinancialsUI() {
       document.getElementById("fin-opex").textContent = fin.opex;
       document.getElementById("fin-break-even").textContent = fin.bep;
       
+      // Nuove proiezioni guadagni steady-state
+      document.getElementById("fin-target-volume").textContent = `${fin.targetVolumeNum} ${fin.targetVolumeUnit}`;
+      document.getElementById("fin-unit-price").textContent = fin.priceFormatted;
+      document.getElementById("fin-unit-cogs").textContent = fin.cogsFormatted;
+      document.getElementById("fin-unit-margin").textContent = fin.marginFormatted;
+      
+      document.getElementById("fin-rev-day").textContent = fin.revenueDay;
+      document.getElementById("fin-rev-week").textContent = fin.revenueWeek;
+      document.getElementById("fin-rev-month").textContent = fin.revenueMonth;
+      
+      document.getElementById("fin-prof-day").textContent = fin.profitDay;
+      document.getElementById("fin-prof-week").textContent = fin.profitWeek;
+      document.getElementById("fin-prof-month").textContent = fin.profitMonth;
+      
       fin.rows.forEach(r => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -1716,6 +1734,9 @@ function updateFinancialsUI() {
       // Renderizza il grafico di Break-Even
       renderBreakEvenChart(fin.capexNum, fin.opexNum, fin.priceNum, fin.cogsNum, fin.unitName);
       
+      // Renderizza la tabella delle proiezioni mensili
+      renderMonthlyProjectionsTable(fin.capexNum, fin.opexNum, fin.priceNum, fin.cogsNum, fin.unitName, fin.targetVolumeNum);
+      
       // Renderizza la chat finanziaria
       renderFinancialsChatMessages();
       
@@ -1726,6 +1747,20 @@ function updateFinancialsUI() {
         document.getElementById("fin-capex").textContent = "1.950 €";
         document.getElementById("fin-opex").textContent = "175 € / mese";
         document.getElementById("fin-break-even").textContent = "12 Appartamenti";
+        
+        // Nuove proiezioni guadagni steady-state
+        document.getElementById("fin-target-volume").textContent = "15 Appartamenti";
+        document.getElementById("fin-unit-price").textContent = "150,00 €";
+        document.getElementById("fin-unit-cogs").textContent = "30,00 €";
+        document.getElementById("fin-unit-margin").textContent = "120,00 €";
+        
+        document.getElementById("fin-rev-day").textContent = "75,00 €";
+        document.getElementById("fin-rev-week").textContent = "525,70 €";
+        document.getElementById("fin-rev-month").textContent = "2.250,00 €";
+        
+        document.getElementById("fin-prof-day").textContent = "54,17 €";
+        document.getElementById("fin-prof-week").textContent = "379,67 €";
+        document.getElementById("fin-prof-month").textContent = "1.625,00 €";
         
         const rows = [
           { item: "Kit Serratura Nuki Smart Lock", type: "CAPEX", cost: "80.00 € / unità", source: "Sourcing B2B (20% sconto distributore)" },
@@ -1749,11 +1784,26 @@ function updateFinancialsUI() {
         });
         
         renderBreakEvenChart(1950, 175, 150, 30, "Appartamenti");
+        renderMonthlyProjectionsTable(1950, 175, 150, 30, "Appartamenti", 15);
         
       } else if (demoKey === "ecowrap") {
         document.getElementById("fin-capex").textContent = "600 €";
         document.getElementById("fin-opex").textContent = "29 € / mese";
         document.getElementById("fin-break-even").textContent = "3 Lotti (750 scatole)";
+        
+        // Nuove proiezioni guadagni steady-state
+        document.getElementById("fin-target-volume").textContent = "5 Lotti (1250 scatole)";
+        document.getElementById("fin-unit-price").textContent = "250,00 €";
+        document.getElementById("fin-unit-cogs").textContent = "100,00 €";
+        document.getElementById("fin-unit-margin").textContent = "150,00 €";
+        
+        document.getElementById("fin-rev-day").textContent = "41,67 €";
+        document.getElementById("fin-rev-week").textContent = "292,06 €";
+        document.getElementById("fin-rev-month").textContent = "1.250,00 €";
+        
+        document.getElementById("fin-prof-day").textContent = "24,03 €";
+        document.getElementById("fin-prof-week").textContent = "168,46 €";
+        document.getElementById("fin-prof-month").textContent = "721,00 €";
         
         const rows = [
           { item: "Fornitura Minima Scatole (Terzista)", type: "CAPEX", cost: "200.00 € / lotto", source: "Sourcing scatolificio Emilia (Favini Crush)" },
@@ -1774,13 +1824,31 @@ function updateFinancialsUI() {
         });
         
         renderBreakEvenChart(600, 29, 250, 100, "Lotti");
+        renderMonthlyProjectionsTable(600, 29, 250, 100, "Lotti", 5);
       }
     }
   } else {
     if (optionSelector) optionSelector.style.display = "none";
+    const monthlyContainer = document.getElementById("monthly-projections-container");
+    if (monthlyContainer) monthlyContainer.style.display = "none";
     document.getElementById("fin-capex").textContent = "-";
     document.getElementById("fin-opex").textContent = "-";
     document.getElementById("fin-break-even").textContent = "-";
+    
+    // Nuove proiezioni reset
+    document.getElementById("fin-target-volume").textContent = "-";
+    document.getElementById("fin-unit-price").textContent = "-";
+    document.getElementById("fin-unit-cogs").textContent = "-";
+    document.getElementById("fin-unit-margin").textContent = "-";
+    
+    document.getElementById("fin-rev-day").textContent = "-";
+    document.getElementById("fin-rev-week").textContent = "-";
+    document.getElementById("fin-rev-month").textContent = "-";
+    
+    document.getElementById("fin-prof-day").textContent = "-";
+    document.getElementById("fin-prof-week").textContent = "-";
+    document.getElementById("fin-prof-month").textContent = "-";
+    
     if (chartContainer) chartContainer.style.display = "none";
     DOM.financialTableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted)">Il piano finanziario dettagliato sarà visibile a partire dalla FASE 1.</td></tr>`;
   }
@@ -1897,6 +1965,37 @@ function updateReportUI() {
   } else {
     if (approvalContainer) approvalContainer.style.display = "none";
     if (btnApproveHeader) btnApproveHeader.style.display = "none";
+  }
+
+  // Gestione pannello domande ed affinamento progetto (Q&A)
+  const refinementContainer = document.getElementById("refinement-container");
+  const refinementList = document.getElementById("refinement-questions-list");
+  
+  if (refinementContainer && refinementList) {
+    const currentOrchOutput = state.orchestratorOutputs[state.currentPhase];
+    const questions = currentOrchOutput ? currentOrchOutput.questions : [];
+    
+    if (questions && questions.length > 0 && !state.isApproved) {
+      refinementContainer.style.display = "block";
+      refinementList.innerHTML = "";
+      
+      questions.forEach((q, idx) => {
+        const qId = `q-input-${state.currentPhase}-${idx}`;
+        const div = document.createElement("div");
+        div.className = "refinement-question-item";
+        div.style.cssText = "display: flex; flex-direction: column; gap: 8px; padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 8px; margin-top: 10px;";
+        div.innerHTML = `
+          <div style="font-weight: 600; color: var(--text-main); font-size: 13px;">${idx + 1}. ${q}</div>
+          <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
+            <input type="text" id="${qId}" placeholder="Scrivi la tua risposta..." style="flex: 1; padding: 8px 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03); color: var(--text-main);" onkeydown="if(event.key === 'Enter') window.submitRefinementAnswer('${qId}', ${state.currentPhase}, ${idx})">
+            <button class="btn btn-primary" style="padding: 8px 16px; font-size: 12px; cursor: pointer; border-radius: 6px; background: var(--accent-grad);" onclick="window.submitRefinementAnswer('${qId}', ${state.currentPhase}, ${idx})">Invia Risposta</button>
+          </div>
+        `;
+        refinementList.appendChild(div);
+      });
+    } else {
+      refinementContainer.style.display = "none";
+    }
   }
 }
 
@@ -2123,6 +2222,90 @@ function renderBreakEvenChart(capex, opex, price, cogs, unitName) {
   
   svg += `</svg>`;
   wrapper.innerHTML = svg;
+}
+
+// Renderizza la tabella delle proiezioni finanziarie mensili a 12 mesi
+function renderMonthlyProjectionsTable(capex, opex, price, cogs, unitName, targetVolumeNum) {
+  const container = document.getElementById("monthly-projections-container");
+  const tbody = document.getElementById("monthly-projections-table-body");
+  if (!tbody || !container) return;
+  
+  container.style.display = "block";
+  tbody.innerHTML = "";
+  
+  const rampUp = [0.15, 0.30, 0.50, 0.70, 0.90, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00];
+  let cumulativeCash = 0;
+  
+  for (let m = 1; m <= 12; m++) {
+    const rate = rampUp[m - 1];
+    const vol = Math.max(1, Math.round(targetVolumeNum * rate));
+    const rev = vol * price;
+    const fixed = opex;
+    const variable = vol * cogs;
+    const startup = (m === 1) ? capex : 0;
+    const netProfit = rev - fixed - variable - startup;
+    cumulativeCash += netProfit;
+    
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>Mese ${m}</strong></td>
+      <td><span style="font-weight: 500">${vol} ${unitName}</span> <span style="font-size: 11px; color: var(--text-muted)">(${Math.round(rate * 100)}%)</span></td>
+      <td style="font-family: monospace; font-weight: bold; color: var(--text-main)">${rev.toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</td>
+      <td style="font-family: monospace; color: var(--text-muted)">${fixed.toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</td>
+      <td style="font-family: monospace; color: var(--text-muted)">${variable.toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</td>
+      <td style="font-family: monospace; color: ${startup > 0 ? "#f87171" : "var(--text-muted)"}">${startup > 0 ? startup.toLocaleString("it-IT", { minimumFractionDigits: 2 }) + " €" : "-"}</td>
+      <td style="font-family: monospace; font-weight: bold; color: ${netProfit >= 0 ? "var(--success)" : "#f87171"}">${netProfit >= 0 ? "+" : ""}${netProfit.toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</td>
+      <td style="font-family: monospace; font-weight: bold; color: ${cumulativeCash >= 0 ? "var(--success)" : "#f87171"}">${cumulativeCash >= 0 ? "+" : ""}${cumulativeCash.toLocaleString("it-IT", { minimumFractionDigits: 2 })} €</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+// Estrae domande da un testo markdown generato da Gemini
+function extractQuestionsFromText(text) {
+  if (!text) return [];
+  const lines = text.split("\n");
+  const questions = [];
+  
+  for (let line of lines) {
+    let trimmed = line.trim();
+    if (trimmed.startsWith(">")) continue;
+    
+    if (trimmed.includes("?") && (
+      /^[0-9]+[\.\)]/.test(trimmed) || 
+      trimmed.startsWith("-") || 
+      trimmed.startsWith("*") ||
+      trimmed.startsWith("•") ||
+      trimmed.length > 15
+    )) {
+      let cleaned = trimmed
+        .replace(/^[0-9]+[\.\)]\s*/, "")
+        .replace(/^[\-\*\u2022]\s*/, "")
+        .trim();
+      if (cleaned.length > 5 && cleaned.endsWith("?")) {
+        questions.push(cleaned);
+      }
+    }
+  }
+  
+  if (questions.length === 0) {
+    let foundRefinement = false;
+    for (let line of lines) {
+      let trimmed = line.trim();
+      if (trimmed.toLowerCase().includes("domand") || trimmed.toLowerCase().includes("affin")) {
+        foundRefinement = true;
+        continue;
+      }
+      if (foundRefinement && /^[0-9]+[\.\)]/.test(trimmed)) {
+        let cleaned = trimmed.replace(/^[0-9]+[\.\)]\s*/, "").trim();
+        if (cleaned.length > 5) {
+          questions.push(cleaned);
+        }
+      }
+    }
+  }
+  
+  return questions.slice(0, 4);
 }
 
 // Mostra o nasconde il form di Fase 0 ed il pannello chat
@@ -2970,6 +3153,23 @@ function renderGlobalChatMessages() {
   });
   chatBox.scrollTop = chatBox.scrollHeight;
 }
+
+// Gestore dell'invio risposte per domande di affinamento dal report
+window.submitRefinementAnswer = function(qId, phase, idx) {
+  if (state.isProcessing) return;
+  const inputEl = document.getElementById(qId);
+  const text = inputEl ? inputEl.value.trim() : "";
+  if (!text) return;
+  
+  // Naviga programmaticamente al tab della Boardroom
+  switchTabAndSelectAgent("boardroom");
+  
+  // Popola l'input della chat con la risposta dell'utente ed esegui l'invio
+  if (DOM.chatInput) {
+    DOM.chatInput.value = text;
+    handleUserMessageSubmit();
+  }
+};
 
 // Avvia l'inizializzazione al caricamento del DOM
 document.addEventListener("DOMContentLoaded", init);

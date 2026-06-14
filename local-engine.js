@@ -1109,6 +1109,44 @@ const LocalAgentSimulationEngine = {
       }
     }
 
+    // Calcolo target volume operativo mensile per stima guadagni steady state
+    let targetVolumeNum = 100;
+    let targetVolumeUnit = "Unità";
+    
+    if (info.isVending && info.sector === "food_beverage") {
+      targetVolumeNum = 600;
+      targetVolumeUnit = "Pizze";
+    } else if (info.sector === "saas" || info.sector === "mobile_app" || info.sector === "marketplace") {
+      targetVolumeNum = 150;
+      targetVolumeUnit = "Abbonati";
+    } else if (info.sector === "ecommerce" || info.sector === "retail") {
+      targetVolumeNum = 300;
+      targetVolumeUnit = "Ordini";
+    } else if (info.sector === "food_beverage") {
+      targetVolumeNum = 80;
+      targetVolumeUnit = "Ospiti/Coperti";
+    } else if (info.sector === "services") {
+      targetVolumeNum = 10;
+      targetVolumeUnit = "Clienti";
+    } else {
+      targetVolumeNum = 50;
+      targetVolumeUnit = "Unità";
+    }
+
+    const marginVal = priceVal - cogsVal;
+    
+    const revenueMonthVal = targetVolumeNum * priceVal;
+    const revenueWeekVal = revenueMonthVal / 4.28;
+    const revenueDayVal = revenueMonthVal / 30;
+    
+    const profitMonthVal = (targetVolumeNum * marginVal) - opexVal;
+    const profitWeekVal = profitMonthVal / 4.28;
+    const profitDayVal = profitMonthVal / 30;
+
+    const formatCurrency = (val) => {
+      return val.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+    };
+
     return {
       capex: capexVal.toLocaleString("it-IT") + " €",
       opex: opexVal.toLocaleString("it-IT") + " € / mese",
@@ -1119,7 +1157,22 @@ const LocalAgentSimulationEngine = {
       cogsNum: cogsVal,
       bepVolumeNum: bepVal,
       unitName: bepUnit.split(" ")[0] || "Unità",
-      rows: rows
+      rows: rows,
+      
+      targetVolumeNum: targetVolumeNum,
+      targetVolumeUnit: targetVolumeUnit,
+      marginNum: marginVal,
+      priceFormatted: formatCurrency(priceVal),
+      cogsFormatted: formatCurrency(cogsVal),
+      marginFormatted: formatCurrency(marginVal),
+      
+      revenueDay: formatCurrency(revenueDayVal),
+      revenueWeek: formatCurrency(revenueWeekVal),
+      revenueMonth: formatCurrency(revenueMonthVal),
+      
+      profitDay: formatCurrency(profitDayVal),
+      profitWeek: formatCurrency(profitWeekVal),
+      profitMonth: formatCurrency(profitMonthVal)
     };
   },
 
@@ -1280,14 +1333,14 @@ const LocalAgentSimulationEngine = {
     // 2. DATABASE DI ANALISI SPECIFICHE PER IL CASO GENERAL / ALTRI SETTORI (11 Agenti x 8 Fasi)
     const generalAnalyses = {
       cmo: {
-        1: `- **Validazione del Problema**: Rilevazione del dolore di mercato per ${sect.product} ${targetLoc}. Creazione di una landing page pilota per misurare l'interesse reale prima di avviare lo sviluppo.`,
-        2: `- **Studio del Target**: Analisi demografica e comportamentale dei potenziali clienti. Identificazione dei canali social e motori di ricerca più frequentati dal target.`,
-        3: `- **Strategia GTM**: Lancio di campagne di micro-advertising su ${sect.marketing} rivolte ad un pubblico segmentato per misurare il tasso di click e iscrizione.`,
-        4: `- **Growth Strategy**: Strutturazione di un loop di passaparola organico e referral program per ridurre a zero il costo di acquisizione iniziale.`,
-        5: `- **Brand Trust**: Posizionamento basato sulla trasparenza dei dati e recensioni pubbliche per superare la diffidenza iniziale del mercato.`,
-        6: `- **KPI di Acquisizione**: Monitoraggio del conversion rate sulla landing page e calcolo preliminare del costo per lead (CPL).`,
-        7: `- **Modello di Budgeting**: Allocazione della spesa pubblicitaria ottimizzata per mantenere il CAC al di sotto del valore di vita del cliente (LTV).`,
-        8: `- **Executive Summary Marketing**: Sintesi delle metriche di validazione raccolte e pianificazione del lancio commerciale definitivo.`
+        1: `- **Validazione e Posizionamento**: La strategia migliore per validare ${sect.product} ${targetLoc} consiste nel focalizzarsi su una nicchia di mercato specifica e testare la risposta reale tramite una landing page pilota strutturata per raccogliere i primi contatti (lead/iscritti) prima di spendere budget di sviluppo.`,
+        2: `- **Studio Target e Competitor**: Analisi del comportamento d'acquisto. Consigliamo di mappare le soluzioni manuali dei competitor e differenziarsi posizionandosi con un'offerta focalizzata su ${sect.revenue}, evidenziando il vantaggio competitivo (risparmio o qualità).`,
+        3: `- **Strategia di Lancio (GTM)**: Per lanciare con successo il brand sul mercato, la strategia ottimale prevede l'uso combinato di **${sect.marketing}** e Local Marketing se fisico. Raccomandiamo di concentrare il budget di lancio su campagne geolocalizzate con una 'promozione lancio' esclusiva per superare l'inerzia d'acquisto.`,
+        4: `- **Strategia di Crescita & Acquisizione**: Strutturazione di un loop di passaparola incentivato (Referral Program o sconti sul secondo acquisto) abbinato a campagne di outreach organico per abbattere il Costo di Acquisizione Cliente (CAC) e favorire la viralità.`,
+        5: `- **Fiducia & Posizionamento**: Costruzione della credibilità tramite recensioni pubbliche dei primi utenti, certificazioni di qualità e policy di rimborso trasparente. La trasparenza è l'arma strategica chiave contro competitor più grandi.`,
+        6: `- **Ottimizzazione Conversione**: Monitoraggio continuo del tasso di conversione (CR) sul sito/punto vendita. Consigliamo di implementare A/B test sulle headline di vendita per massimizzare la conversione di ogni singolo lead acquisito.`,
+        7: `- **Pianificazione Budget Marketing**: Allocazione strategica della spesa focalizzata al 75% sui canali a conversione immediata (Ads dirette/Local SEO) e 25% su branding/retargeting per mantenere il CAC inferiore al 30% del valore del cliente.`,
+        8: `- **Piano Marketing Integrato**: Focus strategico sull'acquisizione clienti tramite **${sect.marketing}**, referral organico ed ottimizzazione costante del conversion rate per garantire redditività ed una crescita scalabile.`
       },
       cfo: {
         1: `- **Modello Finanziario MVP**: Strutturazione di un piano di cassa per supportare l'MVP in bootstrap, riducendo i costi fissi al minimo assoluto.`,

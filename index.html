@@ -330,6 +330,42 @@
               </div>
             </div>
             
+            <!-- Proiezione Guadagni Potenziali -->
+            <div class="financial-projections glass-panel" style="margin-bottom: 24px; padding: 20px;">
+              <h4 style="margin: 0 0 16px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                💰 Stima Ricavi e Utili Potenziali (Steady State)
+              </h4>
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                Calcolato su un target operativo stimato di <strong id="fin-target-volume" style="color: var(--primary); font-size: 13px;">-</strong> al mese.
+              </div>
+              <div class="financial-cards" style="grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px;">
+                <div class="fin-card" style="border-left: 3px solid var(--accent); text-align: left;">
+                  <h4 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: var(--accent);">Ricavi Potenziali</h4>
+                  <div style="font-size: 13px; font-weight: 500; line-height: 1.6;">
+                    • Al giorno: <span id="fin-rev-day" style="font-weight: bold; color: var(--text-main);">-</span><br>
+                    • Alla settimana: <span id="fin-rev-week" style="font-weight: bold; color: var(--text-main);">-</span><br>
+                    • Al mese: <span id="fin-rev-month" style="font-weight: bold; color: var(--text-main);">-</span>
+                  </div>
+                </div>
+                <div class="fin-card" style="border-left: 3px solid var(--success); text-align: left;">
+                  <h4 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: var(--success);">Utili Potenziali (Netto)</h4>
+                  <div style="font-size: 13px; font-weight: 500; line-height: 1.6;">
+                    • Al giorno: <span id="fin-prof-day" style="font-weight: bold; color: var(--success);">-</span><br>
+                    • Alla settimana: <span id="fin-prof-week" style="font-weight: bold; color: var(--success);">-</span><br>
+                    • Al mese: <span id="fin-prof-month" style="font-weight: bold; color: var(--success);">-</span>
+                  </div>
+                </div>
+                <div class="fin-card" style="border-left: 3px solid var(--primary); text-align: left;">
+                  <h4 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; color: var(--primary);">Marginalità Unitaria</h4>
+                  <div style="font-size: 13px; font-weight: 500; line-height: 1.6;">
+                    • Prezzo unitario: <span id="fin-unit-price" style="font-weight: bold; color: var(--text-main);">-</span><br>
+                    • Costo unitario (COGS): <span id="fin-unit-cogs" style="font-weight: bold; color: var(--text-main);">-</span><br>
+                    • Margine unitario: <span id="fin-unit-margin" style="font-weight: bold; color: var(--primary);">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             <!-- Grafico Break-Even SVG -->
             <div id="break-even-chart-container" class="break-even-chart-container glass-panel" style="display: none; margin-bottom: 24px; padding: 20px;">
               <h4 style="margin: 0 0 16px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
@@ -337,6 +373,37 @@
               </h4>
               <div id="break-even-svg-wrapper" style="width: 100%; height: 260px; overflow: visible;">
                 <!-- Disegnato via JS -->
+              </div>
+            </div>
+
+            <!-- Proiezioni Mensili Dettagliate -->
+            <div id="monthly-projections-container" class="glass-panel" style="display: none; margin-bottom: 24px; padding: 20px;">
+              <h4 style="margin: 0 0 16px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                📅 Tabella delle Proiezioni Finanziarie Mensili (Mesi 1-12)
+              </h4>
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">
+                Simulazione economica dettagliata basata su una rampa di avvio graduale (rampa percentuale del target operativo) nei primi mesi del progetto.
+              </div>
+              <div class="table-wrapper" style="max-height: 350px; overflow-y: auto;">
+                <table class="financial-table">
+                  <thead>
+                    <tr>
+                      <th>Mese</th>
+                      <th>Volume Target</th>
+                      <th>Ricavi lordi</th>
+                      <th>Costi Fissi (OPEX)</th>
+                      <th>Costi Var. (COGS)</th>
+                      <th>Setup (CAPEX)</th>
+                      <th>Utile Netto</th>
+                      <th>Cassa Cumulata</th>
+                    </tr>
+                  </thead>
+                  <tbody id="monthly-projections-table-body">
+                    <tr>
+                      <td colspan="8" style="text-align: center; color: var(--text-muted)">Avvia il progetto per visualizzare il dettaglio mensile.</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
             
@@ -388,6 +455,19 @@
           <div class="report-view" style="display: flex; flex-direction: column; gap: 20px;">
             <div class="report-markdown" id="report-content">
               <!-- Riempito dinamicamente da app.js -->
+            </div>
+
+            <!-- Domande dell'Orchestratore per Affinare il Progetto (Q&A) -->
+            <div id="refinement-container" class="glass-panel" style="display: none; margin-bottom: 24px; padding: 20px; border-left: 4px solid var(--accent); background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(245, 158, 11, 0.03) 100%);">
+              <h4 style="margin: 0 0 12px 0; font-size: 14px; color: var(--accent); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                📋 Domande dell'Orchestratore per Affinare il Progetto
+              </h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">
+                Per completare e perfezionare il report di fattibilità, rispondi a queste domande sollevate dal Consiglio di Amministrazione per allineare le stime di costo e la pianificazione:
+              </p>
+              <div id="refinement-questions-list" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Popolato via JS -->
+              </div>
             </div>
             
             <!-- Sezione di Discussione Strategica Globale (Boardroom Chat) -->
