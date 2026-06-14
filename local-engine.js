@@ -660,6 +660,66 @@ const LocalAgentSimulationEngine = {
     }
   },
 
+  sectorKeywords: {
+    saas: {
+      product: "il software SaaS / piattaforma cloud",
+      client: "abbonati mensili",
+      tech: "hosting Vercel, Supabase database ed automazioni cloud",
+      marketing: "Google Ads, SEO tecnica e content marketing",
+      revenue: "modello di abbonamento ricorrente (MRR)",
+      unit: "utenti attivi paganti"
+    },
+    ecommerce: {
+      product: "l'E-commerce / catalogo prodotti",
+      client: "acquirenti online",
+      tech: "Shopify / WooCommerce e gateway di pagamento Stripe",
+      marketing: "Meta Ads, TikTok Ads e email marketing di fidelizzazione",
+      revenue: "vendita diretta di prodotti fisici con margine",
+      unit: "ordini spediti con successo"
+    },
+    food_beverage: {
+      product: "l'attività di somministrazione Food & Beverage",
+      client: "clienti locali e turisti",
+      tech: "POS elettronico, menu digitale QR e software di cassa",
+      marketing: "social media marketing (Instagram), Local SEO e promozioni fisiche",
+      revenue: "somministrazione diretta e ordini da asporto",
+      unit: "coperti / pasti erogati"
+    },
+    retail: {
+      product: "il punto vendita retail / negozio fisico",
+      client: "visitatori in negozio",
+      tech: "POS integrato, lettori barcode e software di inventario",
+      marketing: "Google Business Profile, insegne ad alta visibilità e marketing locale",
+      revenue: "vendita di prodotti in negozio",
+      unit: "scontrini battuti"
+    },
+    mobile_app: {
+      product: "l'applicazione mobile (iOS/Android)",
+      client: "utenti dell'app",
+      tech: "SDK App Store, Firebase database e notifiche push",
+      marketing: "App Store Optimization (ASO) e campagne di installazione",
+      revenue: "acquisti in-app (IAP) o abbonamento",
+      unit: "download / abbonati in-app"
+    },
+    services: {
+      product: "il servizio professionale / consulenza agenzia",
+      client: "aziende clienti (B2B) o privati",
+      tech: "CRM di vendita (HubSpot), Calendly per appuntamenti e Zoom",
+      marketing: "LinkedIn Outreach, passaparola strutturato e networking di settore",
+      revenue: "tariffe orarie, consulenze o pacchetti mensili flat",
+      unit: "progetti chiusi / ore erogate"
+    },
+    general: {
+      product: "la soluzione di business",
+      client: "clienti target",
+      tech: "landing page web e strumenti di produttività cloud",
+      marketing: "passaparola, canali digitali e attività SEO locali",
+      revenue: "transazioni dirette e vendite commerciali",
+      unit: "clienti paganti acquisiti"
+    }
+  },
+
+
   // Classifica l'idea e i parametri immessi
   classifyProject(idea = "", budget = "", objective = "", previousAnswers = null) {
     const safeIdea = String(idea || "");
@@ -968,6 +1028,31 @@ const LocalAgentSimulationEngine = {
           { item: "Costo Logistica e Spedizione (Fulfillment)", type: "OPEX", cost: `${shippingCost.toFixed(2)} € / ordine`, source: "Tariffa logistica e packaging di spedizione" }
         ];
       }
+    } else if (info.sector === "food_beverage") {
+      // CASO FOOD & BEVERAGE NON-VENDING (Home Restaurant, Catering, ecc.)
+      priceVal = overrides.price !== undefined ? overrides.price : 75.0; // Stima ricavo medio per ospite/evento
+      cogsVal = overrides.cogs !== undefined ? overrides.cogs : 22.0; // Stima costo ingredienti/coperto per ospite
+      
+      const rentOrVenueCost = overrides.rent !== undefined ? overrides.rent : 450.0; // Spese fisse casa/location/mutuo
+      const marketingCost = overrides.electricity !== undefined ? overrides.electricity : 150.0; // Marketing e promo
+      const utilitiesAndAdmin = 100.0; // Utenze addizionali e pratiche igieniche
+      
+      capexVal = 2000; // Setup iniziale
+      opexVal = rentOrVenueCost + marketingCost + utilitiesAndAdmin;
+      bepUnit = "Ospiti / Coperti al Mese";
+      bepVal = Math.round(opexVal / (priceVal - cogsVal));
+      
+      // Personalizzazione etichetta della location se impostato un costo fisso alto o legato a spese mutuo/casa
+      const venueLabel = rentOrVenueCost >= 1000 
+        ? "Spese Fisse Location/Casa (Mutuo, Condominio e Utenze dichiarate)" 
+        : "Spese Fisse di Esercizio Location / Affitto / Spazio eventi";
+      
+      rows = [
+        { item: "Attrezzature cucina, stoviglie e setup HACCP/SCIA", type: "CAPEX", cost: "2,000.00 €", source: "Adeguamento utensili e conformità igienica preliminare" },
+        { item: venueLabel, type: "OPEX", cost: `${rentOrVenueCost.toFixed(2)} € / mese`, source: "Quota di costi fissi della location da coprire mensilmente" },
+        { item: "Lead Generation, Instagram Ads & Promozione Eventi", type: "OPEX", cost: `${marketingCost.toFixed(2)} € / mese`, source: "Campagne geo-localizzate su social per riempire le serate" },
+        { item: "Utenze incrementali, assicurazione RC terzi e software prenotazioni", type: "OPEX", cost: `${utilitiesAndAdmin.toFixed(2)} € / mese`, source: "Consumi stimati e strumenti digitali di segreteria" }
+      ];
     } else {
       // CASO SERVIZI / GENERAL
       priceVal = overrides.price !== undefined ? overrides.price : 100.0;
@@ -1050,65 +1135,7 @@ const LocalAgentSimulationEngine = {
     const hostingCost = overrides.rent !== undefined ? overrides.rent : (info.sector === "food_beverage" ? 450.0 : 45.0);
     const toolsCost = overrides.electricity !== undefined ? overrides.electricity : (info.sector === "food_beverage" ? 300.0 : 35.0);
 
-    const sectorKeywords = {
-      saas: {
-        product: "il software SaaS / piattaforma cloud",
-        client: "abbonati mensili",
-        tech: "hosting Vercel, Supabase database ed automazioni cloud",
-        marketing: "Google Ads, SEO tecnica e content marketing",
-        revenue: "modello di abbonamento ricorrente (MRR)",
-        unit: "utenti attivi paganti"
-      },
-      ecommerce: {
-        product: "l'E-commerce / catalogo prodotti",
-        client: "acquirenti online",
-        tech: "Shopify / WooCommerce e gateway di pagamento Stripe",
-        marketing: "Meta Ads, TikTok Ads e email marketing di fidelizzazione",
-        revenue: "vendita diretta di prodotti fisici con margine",
-        unit: "ordini spediti con successo"
-      },
-      food_beverage: {
-        product: "l'attività di somministrazione Food & Beverage",
-        client: "clienti locali e turisti",
-        tech: "POS elettronico, menu digitale QR e software di cassa",
-        marketing: "social media marketing (Instagram), Local SEO e promozioni fisiche",
-        revenue: "somministrazione diretta e ordini da asporto",
-        unit: "coperti / pasti erogati"
-      },
-      retail: {
-        product: "il punto vendita retail / negozio fisico",
-        client: "visitatori in negozio",
-        tech: "POS integrato, lettori barcode e software di inventario",
-        marketing: "Google Business Profile, insegne ad alta visibilità e marketing locale",
-        revenue: "vendita di prodotti in negozio",
-        unit: "scontrini battuti"
-      },
-      mobile_app: {
-        product: "l'applicazione mobile (iOS/Android)",
-        client: "utenti dell'app",
-        tech: "SDK App Store, Firebase database e notifiche push",
-        marketing: "App Store Optimization (ASO) e campagne di installazione",
-        revenue: "acquisti in-app (IAP) o abbonamento",
-        unit: "download / abbonati in-app"
-      },
-      services: {
-        product: "il servizio professionale / consulenza agenzia",
-        client: "aziende clienti (B2B) o privati",
-        tech: "CRM di vendita (HubSpot), Calendly per appuntamenti e Zoom",
-        marketing: "LinkedIn Outreach, passaparola strutturato e networking di settore",
-        revenue: "tariffe orarie, consulenze o pacchetti mensili flat",
-        unit: "progetti chiusi / ore erogate"
-      },
-      general: {
-        product: "la soluzione di business",
-        client: "clienti target",
-        tech: "landing page web e strumenti di produttività cloud",
-        marketing: "passaparola, canali digitali e attività SEO locali",
-        revenue: "transazioni dirette e vendite commerciali",
-        unit: "clienti paganti acquisiti"
-      }
-    };
-    const sect = sectorKeywords[info.sector] || sectorKeywords.general;
+    const sect = LocalAgentSimulationEngine.sectorKeywords[info.sector] || LocalAgentSimulationEngine.sectorKeywords.general;
 
     // 1. DATABASE DI ANALISI SPECIFICHE PER IL CASO PIZZA VENDING (11 Agenti x 8 Fasi)
     const pizzaVendingAnalyses = {
@@ -1629,6 +1656,7 @@ const LocalAgentSimulationEngine = {
   generateOrchestratorReport(info, phase, agentBriefs, previousAnswers = {}, attachedFile = null, attachedImage = null) {
     const isPizzaVending = info.isVending && info.sector === "food_beverage";
     const targetLoc = info.location ? `a ${info.location}` : "sul mercato target";
+    const sect = LocalAgentSimulationEngine.sectorKeywords[info.sector] || LocalAgentSimulationEngine.sectorKeywords.general;
     
     let text = "";
     if (attachedFile) {

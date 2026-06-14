@@ -2687,8 +2687,9 @@ function extractFinancialParameters(text) {
     if (!isNaN(p)) overrides.price = p;
   }
   
-  const rentMatches = lower.match(/(?:affitto|canone affitto|canone mensile|rent)\s*(?:a|di|da|impostato\s+a|=)?\s*(\d+(?:[\.,]\d+)?)\s*(?:€|euro)/i) ||
-                      lower.match(/(?:affitto|rent)\s*=\s*(\d+(?:[\.,]\d+)?)/i);
+  const rentMatches = lower.match(/(?:affitto|canone affitto|canone mensile|rent|mutuo|spese fisse|spese mensili|spese al mese|spese)\s*(?:a|di|da|impostato\s+a|=)?\s*(\d+(?:[\.,]\d+)?)\s*(?:€|euro)/i) ||
+                      lower.match(/(?:affitto|rent|mutuo|spese)\s*=\s*(\d+(?:[\.,]\d+)?)/i) ||
+                      lower.match(/(\d+(?:[\.,]\d+)?)\s*(?:€|euro)?\s*(?:di|per|a titolo di)?\s*(?:spese al mese|spese mensili|spese|mutuo|affitto|rent)/i);
   if (rentMatches) {
     const r = parseFloat(rentMatches[1].replace(",", "."));
     if (!isNaN(r)) overrides.rent = r;
