@@ -888,12 +888,67 @@ header {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: var(--transition);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
 }
 
 .canvas-box:hover {
-  border-color: var(--glass-border-hover);
-  background: rgba(255, 255, 255, 0.03);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.canvas-problem:hover, .canvas-unfair-advantage:hover, .canvas-customer-segments:hover {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+}
+
+.canvas-solution:hover {
+  border-color: #f43f5e !important;
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.15);
+}
+
+.canvas-key-metrics:hover {
+  border-color: #14b8a6 !important;
+  box-shadow: 0 0 15px rgba(20, 184, 166, 0.15);
+}
+
+.canvas-uvp:hover {
+  border-color: #e11d48 !important;
+  box-shadow: 0 0 15px rgba(225, 29, 72, 0.15);
+}
+
+.canvas-channels:hover {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+}
+
+.canvas-cost-structure:hover {
+  border-color: #84cc16 !important;
+  box-shadow: 0 0 15px rgba(132, 204, 22, 0.15);
+}
+
+.canvas-revenue-streams:hover {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
+}
+
+.canvas-agent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 8px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  align-self: flex-start;
+}
+
+.canvas-box:hover .canvas-agent-badge {
+  transform: scale(1.03);
 }
 
 .canvas-box h4 {

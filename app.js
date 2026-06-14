@@ -66,6 +66,7 @@ let state = {
   financialOption: "acquisto", // opzione finanziaria attiva: acquisto, leasing, jv
   financialOverrides: {}, // overrides di prezzo, affitto, ecc.
   financialsChatHistory: [], // cronologia chat finanziaria
+  globalChatHistory: [], // cronologia chat globale Consiglio di Amministrazione
   isApproved: false, // flag di approvazione finale del progetto
   requestDelay: 4500, // Tempo di attesa tra agenti in ms (default: 4.5s)
   isProcessing: false // Lock per evitare esecuzioni concorrenti
@@ -235,7 +236,14 @@ function loadConfigFromStorage() {
   }
   
   if (savedAgents) {
-    state.enabledAgents = JSON.parse(savedAgents);
+    const loadedAgents = JSON.parse(savedAgents);
+    state.enabledAgents = loadedAgents;
+    // Auto-enable any new agents defined in AGENT_METADATA that might be missing from outdated local storage
+    Object.keys(AGENT_METADATA).forEach(key => {
+      if (!state.enabledAgents.includes(key)) {
+        state.enabledAgents.push(key);
+      }
+    });
     DOM.checkboxAgents.forEach(cb => {
       cb.checked = state.enabledAgents.includes(cb.dataset.agent);
     });
@@ -466,6 +474,20 @@ function setupEventListeners() {
     });
   }
 
+  // Listener per l'invio della chat globale del Consiglio (Report pane)
+  const btnSendGlobalChat = document.getElementById("btn-send-global-chat");
+  const globalChatInput = document.getElementById("global-chat-input");
+  if (btnSendGlobalChat && globalChatInput) {
+    btnSendGlobalChat.addEventListener("click", () => {
+      handleGlobalChatSubmit(globalChatInput.value.trim());
+    });
+    globalChatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        handleGlobalChatSubmit(globalChatInput.value.trim());
+      }
+    });
+  }
+
   // Listener per i bottoni di approvazione finale
   const btnApproveHeader = document.getElementById("btn-final-approval");
   const btnApproveReport = document.getElementById("btn-final-approval-report");
@@ -595,7 +617,13 @@ function createNewProject() {
   state.financialOption = "acquisto";
   state.financialOverrides = {};
   state.financialsChatHistory = [];
+  state.globalChatHistory = [];
   state.isApproved = false;
+
+  const globalChatBox = document.getElementById("global-chat-box");
+  if (globalChatBox) {
+    globalChatBox.innerHTML = "";
+  }
   
   const starterForm = document.getElementById("starter-form");
   if (starterForm) starterForm.reset();
@@ -637,6 +665,7 @@ function saveCurrentProjectToStorage() {
     financialOption: state.financialOption || "acquisto",
     financialOverrides: state.financialOverrides || {},
     financialsChatHistory: state.financialsChatHistory || [],
+    globalChatHistory: state.globalChatHistory || [],
     isApproved: state.isApproved || false,
     lastModified: Date.now()
   };
@@ -665,7 +694,11 @@ function loadProjectFromStorage(id) {
   state.financialOption = projData.financialOption || "acquisto";
   state.financialOverrides = projData.financialOverrides || {};
   state.financialsChatHistory = projData.financialsChatHistory || [];
+  state.globalChatHistory = projData.globalChatHistory || [];
   state.isApproved = projData.isApproved || false;
+  
+  // Renderizza la chat del Consiglio ripristinata
+  renderGlobalChatMessages();
   
   SafeStorage.setItem("antigravity_active_project_id", id);
   
@@ -1489,11 +1522,42 @@ async function handleBrainstormSubmit(agentKey, message) {
       ceoText: ceoResponse
     });
     
-    // Re-renderizza
+    // Re-renderizza la chat
     renderBrainstormMessages(agentKey);
     
-    // Aggiorna il report consolidato in base alla decisione presa nel brainstorming (opzionale/visivo)
-    // Per semplicità visiva, mostriamo la conversazione nel log del brainstorming.
+    // 1. Estrazione ed applicazione degli overrides finanziari
+    const userFinancials = extractFinancialParameters(message);
+    const agentFinancials = extractFinancialParameters(agentResponse);
+    const ceoFinancials = extractFinancialParameters(ceoResponse);
+    const combinedOverrides = { ...userFinancials, ...agentFinancials, ...ceoFinancials };
+    
+    if (Object.keys(combinedOverrides).length > 0) {
+      state.financialOverrides = { ...state.financialOverrides, ...combinedOverrides };
+      appendSystemMessage(`📊 Rilevato aggiornamento finanziario: ${Object.entries(combinedOverrides).map(([k, v]) => `${k} = ${v}€`).join(", ")}`);
+    }
+
+    // 2. Registrazione della decisione concordata direttamente nel report dell'agente attivo
+    if (state.contributions[state.currentPhase] && state.contributions[state.currentPhase][agentKey]) {
+      // Evitiamo duplicati controllando se l'aggiornamento è già presente
+      const marker = "#### 💬 Accordi e Pivot di Consiglio (Brainstorming)";
+      if (!state.contributions[state.currentPhase][agentKey].includes(marker)) {
+        state.contributions[state.currentPhase][agentKey] += `\n\n${marker}\n` +
+          `> [!NOTE]\n` +
+          `> **Aggiornamento concordato in chat**:\n` +
+          `> - *Proposta*: ${message}\n` +
+          `> - *Agente*: ${agentResponse.trim().split("\n").join("\n>   ")}\n` +
+          `> - *CEO (Orchestratore)*: ${ceoResponse.trim().split("\n").join("\n>   ")}`;
+      }
+    }
+
+    // 3. Riallineamento della boardroom
+    if (state.processingEngine === "local" || state.project.type !== "custom") {
+      // In modalità locale rigeneriamo tutti i report per propagare la modifica (es. se cambiano i costi)
+      regenerateAllAgentReports();
+    } else {
+      // In modalità gemini aggiorniamo solo le viste (il report dell'agente è già stato aggiornato qualitativamente sopra)
+      updateWorkspaceViews();
+    }
     
     saveCurrentProjectToStorage();
     
@@ -1545,23 +1609,31 @@ function updateWorkspaceViews() {
 
 // Riempie il tab Lean Canvas con le informazioni dei report degli agenti
 function updateLeanCanvasUI() {
-  const getBoxContent = (phase, agentKey, defaultValue = "In attesa di elaborazione...") => {
-    if (state.contributions[phase] && state.contributions[phase][agentKey]) {
-      return formatMarkdown(state.contributions[phase][agentKey]);
+  const getLatestBoxContent = (agentKey, defaultValue = "In attesa di elaborazione...") => {
+    // Trova la fase più recente (fino a state.currentPhase) che ha un report per questo agente
+    for (let phaseNum = state.currentPhase; phaseNum >= 1; phaseNum--) {
+      if (state.contributions[phaseNum] && state.contributions[phaseNum][agentKey]) {
+        return formatMarkdown(state.contributions[phaseNum][agentKey]);
+      }
     }
     return `<span style="color: var(--text-dark)">${defaultValue}</span>`;
   };
 
-  DOM.leanCanvasGrid.querySelector(".canvas-problem .canvas-box-content").innerHTML = getBoxContent(1, "cmo", "Definisci il problema principale...");
-  DOM.leanCanvasGrid.querySelector(".canvas-solution .canvas-box-content").innerHTML = getBoxContent(1, "cpo", "Descrivi il Minimum Viable Product (CPO)...");
-  DOM.leanCanvasGrid.querySelector(".canvas-key-metrics .canvas-box-content").innerHTML = getBoxContent(2, "cso", "Metriche chiave e retention (CSO)...");
-  DOM.leanCanvasGrid.querySelector(".canvas-uvp .canvas-box-content").innerHTML = getBoxContent(1, "cco", "Definisci la Value Proposition (CCO)...");
-  DOM.leanCanvasGrid.querySelector(".canvas-unfair-advantage .canvas-box-content").innerHTML = getBoxContent(1, "cmo", "Vantaggio competitivo (CMO)...");
-  DOM.leanCanvasGrid.querySelector(".canvas-channels .canvas-box-content").innerHTML = getBoxContent(3, "sales", "Strategia e script di vendita (Sales)...");
-  DOM.leanCanvasGrid.querySelector(".canvas-customer-segments .canvas-box-content").innerHTML = getBoxContent(2, "cmo", "Segmento target e interviste (CMO)...");
+  DOM.leanCanvasGrid.querySelector(".canvas-problem .canvas-box-content").innerHTML = getLatestBoxContent("cmo", "Definisci il problema principale...");
+  DOM.leanCanvasGrid.querySelector(".canvas-solution .canvas-box-content").innerHTML = getLatestBoxContent("cpo", "Descrivi il Minimum Viable Product (CPO)...");
+  DOM.leanCanvasGrid.querySelector(".canvas-key-metrics .canvas-box-content").innerHTML = getLatestBoxContent("cso", "Metriche chiave e retention (CSO)...");
+  DOM.leanCanvasGrid.querySelector(".canvas-uvp .canvas-box-content").innerHTML = getLatestBoxContent("cco", "Definisci la Value Proposition (CCO)...");
+  DOM.leanCanvasGrid.querySelector(".canvas-unfair-advantage .canvas-box-content").innerHTML = getLatestBoxContent("cmo", "Vantaggio competitivo (CMO)...");
+  DOM.leanCanvasGrid.querySelector(".canvas-channels .canvas-box-content").innerHTML = getLatestBoxContent("sales", "Strategia e script di vendita (Sales)...");
+  DOM.leanCanvasGrid.querySelector(".canvas-customer-segments .canvas-box-content").innerHTML = getLatestBoxContent("cmo", "Segmento target e interviste (CMO)...");
   
-  document.getElementById("box-costs").innerHTML = getBoxContent(6, "sourcing", "Struttura costi e forniture (Sourcing)...");
-  document.getElementById("box-revenue").innerHTML = getBoxContent(1, "cfo", "Modello finanziario e tariffe (CFO)...");
+  const boxCosts = document.getElementById("box-costs");
+  const boxRevenue = document.getElementById("box-revenue");
+  if (boxCosts) boxCosts.innerHTML = getLatestBoxContent("sourcing", "Struttura costi e forniture (Sourcing)...");
+  if (boxRevenue) boxRevenue.innerHTML = getLatestBoxContent("cfo", "Modello finanziario e tariffe (CFO)...");
+
+  // Configura l'interattività dei box del canvas
+  setupLeanCanvasInteractivity();
 }
 
 function updateFinancialsUI() {
@@ -1855,6 +1927,12 @@ function formatMarkdown(text) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+
+  // Ripristina tag span sicuri per colorazione scritte e stati
+  html = html.replace(/&lt;span\s+(style=&quot;[^&]*&quot;)&gt;/gi, '<span $1>');
+  html = html.replace(/&lt;span\s+(style=&amp;quot;[^&]*&amp;quot;)&gt;/gi, '<span $1>');
+  html = html.replace(/&lt;span\s+(style="[^"]*")&gt;/gi, '<span $1>');
+  html = html.replace(/&lt;\/span&gt;/gi, '</span>');
     
   // Parsea i blockquotes di allerta in box callout colorati
   const lines = html.split("\n");
@@ -2565,6 +2643,331 @@ function downloadFinancialsCSV() {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+// ============================================================================
+// FUNZIONI AGGIUNTIVE DI ALLINEAMENTO E INTERATTIVITÀ (BOARDROOM SUITE)
+// ============================================================================
+
+// Esegue il parsing di messaggi per estrarre parametri finanziari
+function extractFinancialParameters(text) {
+  const overrides = {};
+  if (!text) return overrides;
+  
+  // 1. Cerca il tag strutturato: [UPDATE_FINANCIAL: price=X, rent=Y, cogs=Z, electricity=W, machineCost=K, leaseFee=L, partnerShare=S]
+  const tagRegex = /\[UPDATE_FINANCIAL:\s*([^\]]+)\]/i;
+  const match = text.match(tagRegex);
+  if (match) {
+    const parts = match[1].split(",");
+    parts.forEach(part => {
+      const kv = part.split("=");
+      if (kv.length === 2) {
+        const key = kv[0].trim().toLowerCase();
+        const val = parseFloat(kv[1].trim());
+        if (!isNaN(val)) {
+          if (key === "price" || key === "prezzo") overrides.price = val;
+          else if (key === "rent" || key === "affitto") overrides.rent = val;
+          else if (key === "cogs" || key === "costo") overrides.cogs = val;
+          else if (key === "electricity" || key === "energia" || key === "elettricità") overrides.electricity = val;
+          else if (key === "machinecost" || key === "macchinario") overrides.machineCost = val;
+          else if (key === "leasefee" || key === "noleggio" || key === "leasing") overrides.leaseFee = val;
+          else if (key === "partnershare" || key === "royalties" || key === "equity") overrides.partnerShare = val;
+        }
+      }
+    });
+  }
+  
+  // 2. Fallback Regex in linguaggio naturale
+  const lower = text.toLowerCase();
+  
+  const priceMatches = lower.match(/(?:prezzo medio|prezzo di vendita|scontrino medio|scontrino|price)\s*(?:a|di|da|impostato\s+a|=)?\s*(\d+(?:[\.,]\d+)?)\s*(?:€|euro)/i) ||
+                       lower.match(/(?:prezzo|price)\s*=\s*(\d+(?:[\.,]\d+)?)/i);
+  if (priceMatches) {
+    const p = parseFloat(priceMatches[1].replace(",", "."));
+    if (!isNaN(p)) overrides.price = p;
+  }
+  
+  const rentMatches = lower.match(/(?:affitto|canone affitto|canone mensile|rent)\s*(?:a|di|da|impostato\s+a|=)?\s*(\d+(?:[\.,]\d+)?)\s*(?:€|euro)/i) ||
+                      lower.match(/(?:affitto|rent)\s*=\s*(\d+(?:[\.,]\d+)?)/i);
+  if (rentMatches) {
+    const r = parseFloat(rentMatches[1].replace(",", "."));
+    if (!isNaN(r)) overrides.rent = r;
+  }
+
+  const cogsMatches = lower.match(/(?:costo materie|costo ingredienti|costo unitario|cogs)\s*(?:a|di|da|impostato\s+a|=)?\s*(\d+(?:[\.,]\d+)?)\s*(?:€|euro)/i) ||
+                      lower.match(/(?:cogs)\s*=\s*(\d+(?:[\.,]\d+)?)/i);
+  if (cogsMatches) {
+    const c = parseFloat(cogsMatches[1].replace(",", "."));
+    if (!isNaN(c)) overrides.cogs = c;
+  }
+  
+  const electricityMatches = lower.match(/(?:elettricità|corrente|energia|electricity)\s*(?:a|di|da|impostato\s+a|=)?\s*(\d+(?:[\.,]\d+)?)\s*(?:€|euro)/i) ||
+                             lower.match(/(?:energia|electricity)\s*=\s*(\d+(?:[\.,]\d+)?)/i);
+  if (electricityMatches) {
+    const el = parseFloat(electricityMatches[1].replace(",", "."));
+    if (!isNaN(el)) overrides.electricity = el;
+  }
+
+  const machineMatches = lower.match(/(?:costo macchinario|acquisto macchinario|prezzo macchinario|machinecost|machine cost)\s*(?:a|di|da|impostato\s+a|=)?\s*(\d+(?:[\.,]\d+)?)\s*(?:€|euro)/i) ||
+                         lower.match(/(?:machinecost)\s*=\s*(\d+(?:[\.,]\d+)?)/i);
+  if (machineMatches) {
+    const m = parseFloat(machineMatches[1].replace(",", "."));
+    if (!isNaN(m)) overrides.machineCost = m;
+  }
+
+  const leaseMatches = lower.match(/(?:noleggio operativo|canone noleggio|rata leasing|quota leasing|leasefee|lease fee)\s*(?:a|di|da|impostato\s+a|=)?\s*(\d+(?:[\.,]\d+)?)\s*(?:€|euro)/i) ||
+                        lower.match(/(?:leasefee|leasing)\s*=\s*(\d+(?:[\.,]\d+)?)/i);
+  if (leaseMatches) {
+    const l = parseFloat(leaseMatches[1].replace(",", "."));
+    if (!isNaN(l)) overrides.leaseFee = l;
+  }
+
+  return overrides;
+}
+
+// Converte un esadecimale in RGB per la gestione delle trasparenze in inline styles
+function hexToRgb(hex) {
+  hex = hex.replace("#", "");
+  if (hex.length === 3) {
+    hex = hex.split("").map(c => c + c).join("");
+  }
+  const num = parseInt(hex, 16);
+  return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+}
+
+// Naviga programmaticamente verso un tab selezionando un agente della boardroom
+function switchTabAndSelectAgent(tabName, agentKey) {
+  DOM.tabs.forEach(t => t.classList.remove("active"));
+  DOM.panes.forEach(p => p.classList.remove("active"));
+  
+  const tabBtn = Array.from(DOM.tabs).find(t => t.dataset.tab === tabName);
+  if (tabBtn) tabBtn.classList.add("active");
+  
+  const targetPane = document.getElementById(tabName);
+  if (targetPane) targetPane.classList.add("active");
+  
+  state.activeTab = tabName;
+  
+  if (tabName === "boardroom" && agentKey) {
+    state.activeAgentDetails = agentKey;
+    renderBoardroomGrid();
+    renderAgentDetails(agentKey);
+  } else {
+    renderTabSpecificViews();
+  }
+}
+
+// Configura i riquadri del Lean Canvas per essere cliccabili
+function setupLeanCanvasInteractivity() {
+  const mappings = {
+    ".canvas-problem": "cmo",
+    ".canvas-solution": "cpo",
+    ".canvas-key-metrics": "cso",
+    ".canvas-uvp": "cco",
+    ".canvas-unfair-advantage": "cmo",
+    ".canvas-channels": "sales",
+    ".canvas-customer-segments": "cmo",
+    ".canvas-cost-structure": "sourcing",
+    ".canvas-revenue-streams": "cfo"
+  };
+
+  Object.entries(mappings).forEach(([selector, agentKey]) => {
+    const box = document.querySelector(selector);
+    if (box) {
+      box.style.cursor = "pointer";
+      
+      const meta = AGENT_METADATA[agentKey];
+      box.title = `Clicca per parlare con l'Agente ${meta.name} (${meta.role})`;
+      
+      // Controlla se c'è già il badge, altrimenti lo aggiunge
+      let badge = box.querySelector(".canvas-agent-badge");
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "canvas-agent-badge";
+        badge.style.background = `rgba(${hexToRgb(meta.color)}, 0.15)`;
+        badge.style.color = meta.color;
+        badge.style.border = `1px solid rgba(${hexToRgb(meta.color)}, 0.3)`;
+        badge.innerHTML = `${meta.icon} Parla con ${agentKey.toUpperCase()}`;
+        box.appendChild(badge);
+      }
+      
+      // Use onclick directly to overwrite any existing listener cleanly without cloning elements
+      box.onclick = () => {
+        switchTabAndSelectAgent("boardroom", agentKey);
+      };
+    }
+  });
+}
+
+// Invia ed elabora il messaggio di discussione globale nella boardroom (Report tab)
+async function handleGlobalChatSubmit(message) {
+  if (!message) return;
+  
+  const chatInput = document.getElementById("global-chat-input");
+  const chatBox = document.getElementById("global-chat-box");
+  if (!chatBox) return;
+  
+  if (!state.globalChatHistory) state.globalChatHistory = [];
+  
+  state.globalChatHistory.push({ role: "user", text: message });
+  renderGlobalChatMessages();
+  if (chatInput) chatInput.value = "";
+  
+  const loader = document.createElement("div");
+  loader.className = "brainstorm-msg agent";
+  loader.innerHTML = `
+    <span class="brainstorm-msg-sender">👤 Consiglio di Amministrazione...</span>
+    <div class="brainstorm-msg-bubble">
+      <div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+    </div>
+  `;
+  chatBox.appendChild(loader);
+  chatBox.scrollTop = chatBox.scrollHeight;
+  
+  try {
+    let responseText = "";
+    
+    if (state.processingEngine === "local" || state.project.type !== "custom") {
+      await delay(1200);
+      
+      const info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+      const overrides = extractFinancialParameters(message);
+      
+      let updatedParamsMsg = "";
+      if (Object.keys(overrides).length > 0) {
+        state.financialOverrides = { ...state.financialOverrides, ...overrides };
+        updatedParamsMsg = `Abbiamo recepito le nuove indicazioni numeriche (${Object.entries(overrides).map(([k, v]) => `${k} = ${v}€`).join(", ")}). I dati del prospetto finanziario e del Break-Even sono stati allineati.\n\n`;
+      }
+      
+      responseText = `### 🤝 Verbale del Consiglio di Amministrazione (Consenso Raggiunto)\n\nL'Orchestratore Master (CEO) ha riunito tutti i dipartimenti per esaminare la tua indicazione: *"${message}"*.\n\n${updatedParamsMsg}`;
+      
+      const q = message.toLowerCase();
+      if (q.includes("noleggi") || q.includes("leasing") || q.includes("finanz") || q.includes("costo") || q.includes("prezzo") || q.includes("affitto")) {
+        responseText += `- **CFO (Finanza)**: "Ho applicato le modifiche alle proiezioni. Le nuove assunzioni finanziarie riducono l'esposizione iniziale e modificano il Break-Even. I dettagli sono visibili nel tab Finanziario."\n`;
+        responseText += `- **Sourcing (Logistica)**: "Sto ricalibrando le nostre forniture e i tempi di consegna con i nuovi budget concordati."\n`;
+      } else if (q.includes("target") || q.includes("competitor") || q.includes("concorren") || q.includes("cliente") || q.includes("marketing") || q.includes("social")) {
+        responseText += `- **CMO (Marketing)**: "Ho ridefinito la segmentazione clienti. Ci focalizzeremo sui canali suggeriti per massimizzare il ritorno sull'investimento pubblicitario (ROAS)."\n`;
+        responseText += `- **Sales (Vendite)**: "Sto aggiornando lo script di cold outreach e la landing page per adattarli al nuovo posizionamento."\n`;
+      } else {
+        responseText += `- **CPO (Prodotto)**: "Prendiamo nota per l'evoluzione dell'MVP. Rimarremo concentrati sulle sole feature indispensabili."\n`;
+        responseText += `- **CLO (Legale)**: "Verifico che queste modifiche rispettino la conformità locale e i permessi del comune."\n`;
+      }
+      
+      responseText += `\n**CEO (Orchestratore)**: "Modifiche strategiche approvate e registrate. Ho ordinato la rigenerazione di tutti i report degli agenti per questa fase per allinearci."`;
+      
+      regenerateAllAgentReports();
+      
+    } else {
+      let currentReportsBrief = "";
+      for (let phaseNum = 1; phaseNum <= state.currentPhase; phaseNum++) {
+        state.enabledAgents.forEach(agentKey => {
+          if (state.contributions[phaseNum]?.[agentKey]) {
+            currentReportsBrief += `[${AGENT_METADATA[agentKey].name} - FASE ${phaseNum}]:\n${state.contributions[phaseNum][agentKey]}\n\n`;
+          }
+        });
+      }
+      
+      const systemInstruction = `Sei il Consiglio di Amministrazione (Boardroom) del progetto "${state.project.name || "Nuovo Progetto"}".
+L'utente ti sta parlando in una chat multilaterale globale per dare un'indicazione strategica trasversale o proporre modifiche prima della convalida finale del report.
+Devi rispondere simulando una breve riunione del Consiglio guidata dal CEO (Orchestratore Master), dove intervengono anche 1 o 2 agenti chiave coinvolti nella richiesta.
+Rispondi con un verbale o un riassunto chiaro ed operativo delle decisioni prese.
+
+PROPRIETÀ FONDAMENTALE (PARAMETRI FINANZIARI):
+Se l'utente propone di variare prezzi, costi, affitti o canoni di leasing, o se il Consiglio concorda di cambiarli, aggiungi alla fine del messaggio del Consiglio la riga:
+\`[UPDATE_FINANCIAL: price=X, rent=Y, cogs=Z, electricity=W, machineCost=K, leaseFee=L, partnerShare=S]\` indicando solo i valori modificati.
+
+Ecco la panoramica dei report generati finora dai vari agenti:
+"""
+${currentReportsBrief}
+"""`;
+
+      const contents = [];
+      if (state.globalChatHistory && state.globalChatHistory.length > 0) {
+        state.globalChatHistory.slice(0, -1).forEach(msg => {
+          contents.push({
+            role: msg.role === "user" ? "user" : "model",
+            parts: [{ text: msg.text }]
+          });
+        });
+      }
+      contents.push({
+        role: "user",
+        parts: [{ text: message }]
+      });
+      
+      const response = await window.callGeminiAPI(
+        state.apiKey,
+        state.model,
+        "orchestrator",
+        message,
+        contents,
+        null,
+        systemInstruction
+      );
+      
+      responseText = response;
+      
+      const overrides = extractFinancialParameters(responseText);
+      if (Object.keys(overrides).length > 0) {
+        state.financialOverrides = { ...state.financialOverrides, ...overrides };
+        updateFinancialsUI();
+      }
+    }
+    
+    loader.remove();
+    state.globalChatHistory.push({ role: "assistant", text: responseText });
+    saveCurrentProjectToStorage();
+    renderGlobalChatMessages();
+    
+    // Aggiorna l'intera interfaccia per riflettere le modifiche
+    updateReportUI();
+    
+  } catch (err) {
+    loader.remove();
+    console.error("Errore nella chat globale della boardroom:", err);
+    const errDiv = document.createElement("div");
+    errDiv.className = "brainstorm-msg agent";
+    errDiv.innerHTML = `
+      <span class="brainstorm-msg-sender">Errore</span>
+      <div class="brainstorm-msg-bubble" style="color:var(--danger); border-color:var(--danger)">Impossibile connettersi: ${err.message}</div>
+    `;
+    chatBox.appendChild(errDiv);
+  }
+}
+
+// Visualizza i messaggi della chat globale del Consiglio
+function renderGlobalChatMessages() {
+  const chatBox = document.getElementById("global-chat-box");
+  if (!chatBox) return;
+  
+  chatBox.innerHTML = `
+    <div class="brainstorm-msg agent">
+      <span class="brainstorm-msg-sender">👤 Consiglio di Amministrazione</span>
+      <div class="brainstorm-msg-bubble" style="border-color: var(--primary)">
+        Siamo tutti riuniti qui nel Consiglio di Amministrazione. Puoi darci indicazioni strategiche globali (es. pivot di target, modifiche al business plan, nuovi competitor o costi) e adegueremo il report complessivo e i parametri finanziari di conseguenza prima della tua convalida finale.
+      </div>
+    </div>
+  `;
+  
+  const history = state.globalChatHistory || [];
+  history.forEach(msg => {
+    const msgDiv = document.createElement("div");
+    if (msg.role === "user") {
+      msgDiv.className = "brainstorm-msg user";
+      msgDiv.innerHTML = `
+        <span class="brainstorm-msg-sender">Tu</span>
+        <div class="brainstorm-msg-bubble">${formatMarkdown(msg.text)}</div>
+      `;
+    } else {
+      msgDiv.className = "brainstorm-msg agent";
+      msgDiv.innerHTML = `
+        <span class="brainstorm-msg-sender">👤 Consiglio di Amministrazione</span>
+        <div class="brainstorm-msg-bubble" style="border-color: var(--primary-glow)">${formatMarkdown(msg.text)}</div>
+      `;
+    }
+    chatBox.appendChild(msgDiv);
+  });
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 // Avvia l'inizializzazione al caricamento del DOM

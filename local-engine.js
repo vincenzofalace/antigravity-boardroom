@@ -1040,6 +1040,16 @@ const LocalAgentSimulationEngine = {
     // Dettaglio settore per testi dinamici
     const isPizzaVending = info.isVending && info.sector === "food_beverage";
 
+    const overrides = (window.state && window.state.financialOverrides) || {};
+    const selectedOption = info.financialOption || (info.hasLeasingOption ? "leasing" : "acquisto");
+    const fin = this.generateFinancials(info, selectedOption, overrides);
+    
+    // Default fallback values for general texts
+    const priceVal = overrides.price !== undefined ? overrides.price : (info.sector === "services" ? 100.0 : 30.0);
+    const cogsVal = overrides.cogs !== undefined ? overrides.cogs : (info.sector === "services" ? 20.0 : 8.0);
+    const hostingCost = overrides.rent !== undefined ? overrides.rent : (info.sector === "food_beverage" ? 450.0 : 45.0);
+    const toolsCost = overrides.electricity !== undefined ? overrides.electricity : (info.sector === "food_beverage" ? 300.0 : 35.0);
+
     const sectorKeywords = {
       saas: {
         product: "il software SaaS / piattaforma cloud",
@@ -1311,14 +1321,18 @@ const LocalAgentSimulationEngine = {
         8: `- **Specifiche MVP**: Requisiti tecnici e funzionali pronti per essere implementati.`
       },
       sourcing: {
-        1: `- **MOQ e Fornitori**: Selezione di fornitori SaaS o terzisti con contratti snelli privi di costi iniziali d'ingresso.`,
-        2: `- **Logistica e Consegne**: Ottimizzazione dei tempi di attivazione dei servizi esterni.`,
-        3: `- **Fornitori di Backup**: Identificazione di partner software alternativi in caso di disservizio del primario.`,
-        4: `- **Negoziazione Tariffe**: Trattativa per sconti volume sui servizi cloud o materiali di consumo.`,
-        5: `- **Approvvigionamento**: Setup degli account di fatturazione e pagamenti per i software terzi.`,
-        6: `- **Ottimizzazione Forniture**: Riduzione dei costi unitari delle licenze software all'aumentare degli utenti.`,
-        7: `- **Logistica Doganale**: Se applicabile, conformità e sdoganamento di campioni o lotti fisici.`,
-        8: `- **Supply Chain Pronto**: Contratti e accordi con tutti i fornitori tecnologici e logistici.`
+        1: `- **MOQ e Fornitori SaaS**: Selezione di fornitori tecnologici e cloud. MOQ (Lotto Minimo) fissato a zero sfruttando abbonamenti SaaS flessibili mensili.
+- **Strumenti e Software**: Canoni mensili di abbonamento per i tool operativi:
+  - Hosting e Database: **${hostingCost.toFixed(2)} € / mese** (Bubble/Supabase).
+  - Automazione e CRM: **${toolsCost.toFixed(2)} € / mese** (Make/HubSpot).
+  - Strumenti di produttività: **15.00 € / mese** (Email professionali, dominio).`,
+        2: `- **Logistica e Consegne**: Ottimizzazione della catena di fornitura. Per prodotti digitali: canali cloud CDN veloci. Per prodotti fisici: contratti B2B flat con spedizionieri nazionali (stima **6.50 € per consegna**).`,
+        3: `- **Fornitori di Backup**: Identificazione di partner cloud alternativi (es. trasloco database da Supabase a PostgreSQL Firebase in caso di disservizio).`,
+        4: `- **Negoziazione Tariffe**: Trattativa per sconti volume sui servizi cloud o sconti del 15% sul costo delle materie prime al superamento di 500 ordini/mese.`,
+        5: `- **Approvvigionamento e Cassa**: Setup degli account di fatturazione e pagamenti per i software terzi per tracciare i consumi al centesimo.`,
+        6: `- **Ottimizzazione delle Forniture**: Riduzione dei costi operativi unitari delle licenze SaaS o dei materiali di consumo all'aumentare dei volumi.`,
+        7: `- **Gestione Scorte e Logistica**: Definizione del magazzino minimo (safety stock) pari a 15 giorni di vendite medie per evitare stock-out (se fisico).`,
+        8: `- **Supply Chain Pronto**: Contratti e accordi con tutti i fornitori tecnologici e logistici, listino prezzi bloccato e canali logistici pronti.`
       },
       sales: {
         1: `- **Funnel di Conversione**: Strutturazione dei passaggi d'acquisto sulla landing page (da visitatore a cliente).`,

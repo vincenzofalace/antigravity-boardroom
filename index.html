@@ -389,6 +389,28 @@
             <div class="report-markdown" id="report-content">
               <!-- Riempito dinamicamente da app.js -->
             </div>
+            
+            <!-- Sezione di Discussione Strategica Globale (Boardroom Chat) -->
+            <div class="brainstorm-section" id="global-chat-section" style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+              <h3>👥 Consiglio di Amministrazione (Chat Multilaterale)</h3>
+              <p class="brainstorm-intro">Fai una richiesta o proponi una modifica globale al progetto. Tutti i sotto-agenti e l'Orchestratore analizzeranno la proposta per allineare l'intero report e i dati finanziari.</p>
+              
+              <div class="brainstorm-chat-box" id="global-chat-box" style="max-height: 300px; min-height: 150px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(255,255,255,0.02);">
+                <!-- I messaggi di discussione globale verranno iniettati qui -->
+                <div class="brainstorm-msg agent">
+                  <span class="brainstorm-msg-sender">👤 Consiglio di Amministrazione</span>
+                  <div class="brainstorm-msg-bubble" style="border-color: var(--primary)">
+                    Siamo tutti riuniti qui nel Consiglio di Amministrazione. Puoi darci indicazioni strategiche globali (es. pivot di target, modifiche al business plan, nuovi competitor o costi) e adegueremo il report complessivo e i parametri finanziari di conseguenza prima della tua convalida finale.
+                  </div>
+                </div>
+              </div>
+              
+              <div class="brainstorm-input-container" style="display: flex; gap: 10px; margin-top: 12px;">
+                <input type="text" id="global-chat-input" placeholder="Dai un'indicazione strategica a tutto il Consiglio..." style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: var(--text-main);">
+                <button id="btn-send-global-chat" class="btn-send-brainstorm" style="padding: 10px 20px; background: var(--primary-grad); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Invia al Consiglio</button>
+              </div>
+            </div>
+
             <div class="report-approval-container" id="report-approval-container" style="display: none; padding: 20px; border-top: 1px solid var(--border-color); text-align: center; background: rgba(16, 185, 129, 0.05); border-radius: 12px; margin-top: 20px;">
               <h4 style="margin: 0 0 8px 0; color: var(--success); font-weight: 600;">Valutazione Strategica Completa</h4>
               <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Se sei soddisfatto del business plan e dei dati finanziari elaborati, procedi con l'approvazione finale del progetto.</p>
