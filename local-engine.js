@@ -1508,6 +1508,37 @@ const LocalAgentSimulationEngine = {
           verdict = "APPROVATO";
           verdictReason = "I margini unitari supportano l'investimento se il volume minimo stimato di break-even viene mantenuto e il capitale iniziale è coperto.";
         }
+      } else if (agentKey === "clo") {
+        const loc = (info.location || "").toLowerCase();
+        if (loc.includes("canari") || loc.includes("gran canaria") || loc.includes("tenerife") || loc.includes("spagna")) {
+          objections = [
+            "**Burocrazia Spagnola (SCIA/Comunicación Previa)**: Presentare la Comunicación Previa de Actividad presso il Municipio (Ayuntamiento) richiede progetti firmati da tecnici abilitati e tempi di elaborazione variabili.",
+            "**Inquadramento Autónomo/Fiscale**: Obbligo di iscrizione al RETA (Régimen Especial de Trabajadores Autónomos) con pagamento mensile fisso e gestione trimestrale dell'IGIC (7% locale) e IRPF.",
+            "**Registro Sanitario (per alimentari)**: Se il progetto tratta alimentari, l'iscrizione al Registro Sanitario canario richiede controlli in loco e autorizzazioni sanitarie preventive."
+          ];
+          verdictReason = "È fondamentale nominare un Asesor fiscale/legale in loco a Gran Canaria/Tenerife e richiedere la licenza d'apertura su locali ad uso commerciale conforme.";
+        } else if (loc.includes("rimini") || loc.includes("milano") || loc.includes("roma") || loc.includes("bologna") || loc.includes("garda") || loc.includes("ital")) {
+          objections = [
+            "**SCIA Comunale ed Edilizia (SUAP)**: Presentazione obbligatoria del modello SCIA commerciale via portale impresainungiorno.it, con allegato il progetto di destinazione d'uso e conformità degli impianti.",
+            "**Inquadramento Previdenziale e Camerale**: Costi fissi elevati fin dal giorno zero: iscrizione alla Camera di Commercio, gestione INPS Commercianti/Artigiani (~4.200€/anno fissi a prescindere dal fatturato).",
+            "**Normative Sanitarie Locali (HACCP/ASL)**: Se c'è manipolazione o somministrazione di cibo, i locali (anche domestici come home restaurant) devono rispettare i requisiti igienici e dotarsi di manuale HACCP."
+          ];
+          verdictReason = "Consigliamo di verificare la destinazione d'uso catastale del locale ed interpellare un commercialista per valutare il regime forfettario o l'avvio come SRL Innovativa.";
+        } else if (loc.includes("usa") || loc.includes("america") || loc.includes("stati uniti")) {
+          objections = [
+            "**Registrazione Statale LLC/C-Corp**: Scelta dello Stato (es. Delaware o Wyoming per tasse, o Stato di residenza) e conformità con il Registered Agent locale.",
+            "**Licenze Commerciali Locali (Business Licenses)**: Molte città e contee richiedono permessi locali d'esercizio e la registrazione per la Sales Tax statale.",
+            "**GDPR / CCPA Compliance**: Le normative sulla privacy dei dati (como la CCPA in California) impongono obblighi rigidi sui dati dei residenti statunitensi."
+          ];
+          verdictReason = "Raccomandiamo la costituzione di una LLC a Wyoming o Delaware tramite servizi online (es. Stripe Atlas) e l'acquisizione di una polizza assicurativa di responsabilità civile (General Liability).";
+        } else {
+          objections = [
+            "**Mancanza di Localizzazione Giuridica**: Senza una zona geografica definita, non è possibile mappare le licenze commerciali, la tassazione locale ed i requisiti amministrativi obbligatori.",
+            "**Rischi di Compliance Normativa**: Qualsiasi attività commerciale richiede adempimenti minimi (dichiarazione dei redditi, registrazione d'impresa, tutele contrattuali).",
+            "**Trattamento Dati e Privacy**: Obbligo di conformarsi alle leggi internazionali sulla protezione dei dati in base alla residenza degli utenti."
+          ];
+          verdictReason = "Devi specificare una località precisa nel form (città, regione o nazione) per consentire al CLO di analizzare le normative locali e la fattibilità burocratica.";
+        }
       } else {
         const spec = (LocalAgentSimulationEngine.sectorSpecifications[info.sector] && LocalAgentSimulationEngine.sectorSpecifications[info.sector][agentKey]) || 
                      (LocalAgentSimulationEngine.sectorSpecifications.general[agentKey]);
