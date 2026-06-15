@@ -41,7 +41,7 @@ const SafeStorage = {
 // Stato globale dell'applicazione
 let state = {
   apiKey: "",
-  model: "gemini-2.5-flash",
+  model: "gemini-3.5-flash",
   demoMode: true,
   processingEngine: "local", // "local" (in-browser) o "gemini" (API Google)
   currentPhase: 0, // 0 = Avvio, 1-8 = Fasi operative
@@ -332,7 +332,7 @@ function setupEventListeners() {
       if (customInput && customInput.value.trim()) {
         model = customInput.value.trim();
       } else {
-        model = "gemini-2.5-flash"; // Fallback
+        model = "gemini-3.5-flash"; // Fallback
       }
     }
     
@@ -1165,7 +1165,6 @@ REGOLE FONDAMENTALI DI CONDUZIONE (BOARDROOM RULES):
 1. SINCERITÀ E OBIEZIONI: Sii critico, onesto e trova tutte le obiezioni pratiche al progetto (se il mercato non è favorevole, se ci sono rischi operativi, ostacoli legali, o se non è fattibile). Inserisci sempre una sezione 'Critiche & Obiezioni' nel tuo report.
 2. ZONA GEOGRAFICA MANCANTE: Se l'utente non ha specificato una località geografica precisa nel progetto, evidenzialo chiaramente come un errore critico e proponi le migliori zone geografiche alternative adatte a questo business (se rilevante, proponi zone chiave di Gran Canaria come Playa del Inglés o Las Palmas, altrimenti zone generiche ideali).
 3. VETO FINANZIARIO / PIVOT BOOTSTRAP: Se il budget indicato è zero/minimo (bootstrap) e l'idea richiede investimenti significativi (es. macchinari vending, hardware, spazi fisici), poni un VETO dicendo chiaramente che il progetto è irrealizzabile con quelle risorse e proponi soluzioni alternative concrete (es. noleggio operativo/leasing, usati rigenerati, joint venture, o pivot verso idee digitali a costo zero).`;
-        
         try {
           const response = await window.callGeminiAPI(state.apiKey, state.model, agentKey, agentPrompt, [], state.project.attachedImage);
           state.contributions[state.currentPhase][agentKey] = response;
@@ -1174,7 +1173,7 @@ REGOLE FONDAMENTALI DI CONDUZIONE (BOARDROOM RULES):
           console.error(`Errore agente ${agentKey}:`, err);
           let extraTip = "";
           if (state.model && state.model.includes("pro")) {
-            extraTip = "\n\n> [!TIP]\n> **Suggerimento di Quota**: Stai utilizzando un modello **Pro** (Gemini 2.5 Pro o 1.5 Pro). Nel piano gratuito di Google, questi modelli hanno una quota molto restrittiva di sole **50 richieste al giorno** (circa 4 analisi della boardroom). Se hai superato il limite, passa a **Gemini 2.5 Flash** nelle Impostazioni per avere una quota giornaliera molto più alta.";
+            extraTip = "\n\n> [!TIP]\n> **Suggerimento di Quota**: Stai utilizzando un modello **Pro** (Gemini 2.5 Pro o 1.5 Pro). Nel piano gratuito di Google, questi modelli hanno una quota molto restrittiva di sole **50 richieste al giorno** (circa 4 analisi della boardroom). Se hai superato il limite, passa a **Gemini 3.5 Flash** nelle Impostazioni per avere una quota giornaliera molto più alta.";
           }
           state.contributions[state.currentPhase][agentKey] = `### Errore di Generazione\nImpossibile ottenere risposta dalle API Gemini: ${err.message}${extraTip}`;
           setAgentStatus(agentKey, "error");

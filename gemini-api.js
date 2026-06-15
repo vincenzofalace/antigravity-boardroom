@@ -149,7 +149,7 @@ async function fetchWithRetry(url, options, maxRetries = 5, initialDelay = 5000)
 /**
  * Esegue una chiamata API di generazione contenuto verso Google Gemini.
  * @param {string} apiKey La chiave API inserita dall'utente.
- * @param {string} model Il modello da utilizzare (default: 'gemini-2.5-flash').
+ * @param {string} model Il modello da utilizzare (default: 'gemini-3.5-flash').
  * @param {string} agentKey Identificativo del ruolo dell'agente (es. 'orchestrator', 'cmo').
  * @param {string} prompt Il messaggio dell'utente o il contesto per l'elaborazione.
  * @param {Array} history Storico della conversazione per mantenere il contesto (opzionale).
@@ -157,7 +157,7 @@ async function fetchWithRetry(url, options, maxRetries = 5, initialDelay = 5000)
  * @param {string} systemInstructionOverride Istruzione di sistema personalizzata (opzionale).
  * @returns {Promise<string>} Il testo generato dal modello.
  */
-async function callGeminiAPI(apiKey, model = "gemini-2.5-flash", agentKey, prompt, history = [], attachedImage = null, systemInstructionOverride = null) {
+async function callGeminiAPI(apiKey, model = "gemini-3.5-flash", agentKey, prompt, history = [], attachedImage = null, systemInstructionOverride = null) {
   if (!apiKey) {
     throw new Error("Chiave API mancante. Configura la chiave API nelle impostazioni.");
   }
@@ -234,7 +234,7 @@ async function callGeminiAPI(apiKey, model = "gemini-2.5-flash", agentKey, promp
  * @param {Object} project Dettagli del progetto (nome, idea, budget)
  * @returns {Promise<Object>} Oggetto con la risposta strutturata { agentText, ceoText }
  */
-async function callGeminiBrainstorm(apiKey, model = "gemini-2.5-flash", agentKey, agentName, currentReport, userQuestion, history = [], project = {}) {
+async function callGeminiBrainstorm(apiKey, model = "gemini-3.5-flash", agentKey, agentName, currentReport, userQuestion, history = [], project = {}) {
   if (!apiKey) {
     throw new Error("Chiave API mancante.");
   }
