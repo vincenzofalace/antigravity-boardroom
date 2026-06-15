@@ -497,6 +497,70 @@ function setupEventListeners() {
   if (btnApproveReport) {
     btnApproveReport.addEventListener("click", approveAndExportProject);
   }
+
+  // Listener per aggiungere soci nel Cap Table
+  const btnAddShareholder = document.getElementById("btn-add-shareholder");
+  if (btnAddShareholder) {
+    btnAddShareholder.addEventListener("click", () => {
+      const nameInput = document.getElementById("cap-name-input");
+      const sharesInput = document.getElementById("cap-shares-input");
+      if (!nameInput || !sharesInput) return;
+      
+      const name = nameInput.value.trim();
+      const shares = parseInt(sharesInput.value, 10);
+      
+      if (!name || isNaN(shares) || shares <= 0) {
+        alert("Inserisci un nome valido e un numero positivo di azioni.");
+        return;
+      }
+      
+      if (!state.shareholders) state.shareholders = [];
+      state.shareholders.push({ name, shares });
+      nameInput.value = "";
+      sharesInput.value = "";
+      
+      saveCurrentProjectToStorage();
+      updateEquityUI();
+    });
+  }
+
+  // Listener per il simulatore SAFE
+  const safeInvestmentInput = document.getElementById("safe-investment");
+  const safeCapInput = document.getElementById("safe-cap");
+  if (safeInvestmentInput && safeCapInput) {
+    safeInvestmentInput.addEventListener("input", () => {
+      updateSafeSimulation();
+      if (state.activeTab === "equity") {
+        updatePitchDeckUI();
+      }
+    });
+    safeCapInput.addEventListener("input", () => {
+      updateSafeSimulation();
+      updateEquityUI(); // ricalcola i valori stimati dei soci
+    });
+  }
+
+  // Listener per la stima TAM-SAM-SOM
+  const inputTam = document.getElementById("input-tam");
+  const inputSam = document.getElementById("input-sam");
+  const inputSom = document.getElementById("input-som");
+  if (inputTam && inputSam && inputSom) {
+    const handleSizingInput = () => {
+      state.tamSamSom = {
+        tam: parseFloat(inputTam.value) || 0,
+        sam: parseFloat(inputSam.value) || 0,
+        som: parseFloat(inputSom.value) || 0
+      };
+      saveCurrentProjectToStorage();
+      updateMarketSizingUI();
+      if (state.activeTab === "equity") {
+        updatePitchDeckUI();
+      }
+    };
+    inputTam.addEventListener("input", handleSizingInput);
+    inputSam.addEventListener("input", handleSizingInput);
+    inputSom.addEventListener("input", handleSizingInput);
+  }
 }
 
 // Configura i listener per la gestione dello storico progetti
@@ -619,6 +683,13 @@ function createNewProject() {
   state.financialsChatHistory = [];
   state.globalChatHistory = [];
   state.isApproved = false;
+  state.shareholders = [
+    { name: "Fondatore", shares: 60000 },
+    { name: "Co-Fondatore", shares: 30000 },
+    { name: "Option Pool", shares: 10000 }
+  ];
+  state.dueDiligence = [];
+  state.tamSamSom = null;
 
   const globalChatBox = document.getElementById("global-chat-box");
   if (globalChatBox) {
@@ -667,6 +738,9 @@ function saveCurrentProjectToStorage() {
     financialsChatHistory: state.financialsChatHistory || [],
     globalChatHistory: state.globalChatHistory || [],
     isApproved: state.isApproved || false,
+    shareholders: state.shareholders || [],
+    dueDiligence: state.dueDiligence || [],
+    tamSamSom: state.tamSamSom || null,
     lastModified: Date.now()
   };
   
@@ -696,6 +770,13 @@ function loadProjectFromStorage(id) {
   state.financialsChatHistory = projData.financialsChatHistory || [];
   state.globalChatHistory = projData.globalChatHistory || [];
   state.isApproved = projData.isApproved || false;
+  state.shareholders = projData.shareholders || [
+    { name: "Fondatore", shares: 60000 },
+    { name: "Co-Fondatore", shares: 30000 },
+    { name: "Option Pool", shares: 10000 }
+  ];
+  state.dueDiligence = projData.dueDiligence || [];
+  state.tamSamSom = projData.tamSamSom || null;
   
   // Renderizza la chat del Consiglio ripristinata
   renderGlobalChatMessages();
@@ -1597,8 +1678,14 @@ function renderTabSpecificViews() {
     updateLeanCanvasUI();
   } else if (state.activeTab === "financials") {
     updateFinancialsUI();
+    updateMarketSizingUI();
+  } else if (state.activeTab === "marketing") {
+    updateMarketingUI();
+  } else if (state.activeTab === "equity") {
+    updateEquityUI();
   } else if (state.activeTab === "report") {
     updateReportUI();
+    updateDueDiligenceUI();
   }
 }
 
@@ -1606,7 +1693,11 @@ function renderTabSpecificViews() {
 function updateWorkspaceViews() {
   updateLeanCanvasUI();
   updateFinancialsUI();
+  updateMarketSizingUI();
+  updateMarketingUI();
+  updateEquityUI();
   updateReportUI();
+  updateDueDiligenceUI();
   renderAgentDetails(state.activeAgentDetails);
 }
 
@@ -1637,6 +1728,471 @@ function updateLeanCanvasUI() {
 
   // Configura l'interattività dei box del canvas
   setupLeanCanvasInteractivity();
+}
+
+// ==========================================
+// NEW MODULES: MARKETING, EQUITY, MARKET SIZING, DUE DILIGENCE
+// ==========================================
+
+function updateMarketingUI() {
+  const personaName = document.getElementById("buyer-persona-name");
+  if (!personaName) return;
+
+  let info = { sector: "general" };
+  if (state.project && state.project.idea) {
+    info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+  }
+  const sect = window.LocalAgentSimulationEngine.sectorKeywords[info.sector] || window.LocalAgentSimulationEngine.sectorKeywords.general;
+
+  // Buyer Persona
+  const persona = sect.buyerPersona;
+  const avatarBox = document.getElementById("buyer-persona-avatar-box");
+  if (avatarBox) avatarBox.textContent = persona.avatar || "👤";
+  personaName.textContent = persona.name || "-";
+  
+  const demographics = document.getElementById("buyer-persona-demographics");
+  if (demographics) demographics.textContent = persona.demographics || "-";
+  
+  const pains = document.getElementById("buyer-persona-pains");
+  if (pains) pains.textContent = persona.pains || "-";
+  
+  const gains = document.getElementById("buyer-persona-gains");
+  if (gains) gains.textContent = persona.gains || "-";
+  
+  const channel = document.getElementById("buyer-persona-channel");
+  if (channel) channel.textContent = persona.channel || "-";
+
+  // Marketing Channels
+  const channelsList = document.getElementById("gtm-channels-list");
+  if (channelsList) {
+    channelsList.innerHTML = (sect.marketingChannels || []).map(c => `
+      <div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+          <span><strong>${c.name}</strong></span>
+          <span class="chip" style="background: rgba(99,102,241,0.08); color: var(--primary); font-weight: bold; font-size: 10px; padding: 2px 6px; border-radius: 4px;">CAC: ${c.cac} €</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; border: 1px solid var(--glass-border);">
+            <div style="width: ${c.share}%; height: 100%; background: var(--primary-grad); border-radius: 4px;"></div>
+          </div>
+          <span style="font-size: 11px; font-family: monospace; width: 30px; text-align: right; color: var(--text-main);">${c.share}%</span>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  // Launch Timeline Checklist
+  const timelineList = document.getElementById("launch-timeline-list");
+  if (timelineList) {
+    if (!state.project.completedWeeks) {
+      state.project.completedWeeks = [];
+    }
+    timelineList.innerHTML = (sect.launchTimeline || []).map((step, idx) => {
+      const isChecked = state.project.completedWeeks.includes(idx);
+      return `
+        <label style="display: flex; align-items: flex-start; gap: 10px; font-size: 12px; line-height: 1.5; cursor: pointer; padding: 8px; border-radius: 6px; background: rgba(255,255,255,0.01); transition: background 0.2s;" class="hover-bg-glass">
+          <input type="checkbox" class="timeline-checkbox" data-index="${idx}" ${isChecked ? "checked" : ""} style="margin-top: 3px; cursor: pointer;">
+          <span style="color: ${isChecked ? "var(--text-muted)" : "var(--text-main)"}; text-decoration: ${isChecked ? "line-through" : "none"};">${step}</span>
+        </label>
+      `;
+    }).join("");
+
+    // Bind change events
+    timelineList.querySelectorAll(".timeline-checkbox").forEach(cb => {
+      cb.addEventListener("change", (e) => {
+        const idx = parseInt(e.target.dataset.index, 10);
+        if (!state.project.completedWeeks) state.project.completedWeeks = [];
+        if (e.target.checked) {
+          if (!state.project.completedWeeks.includes(idx)) {
+            state.project.completedWeeks.push(idx);
+          }
+        } else {
+          state.project.completedWeeks = state.project.completedWeeks.filter(i => i !== idx);
+        }
+        saveCurrentProjectToStorage();
+        updateMarketingUI();
+      });
+    });
+  }
+}
+
+function updateEquityUI() {
+  if (!state.shareholders || state.shareholders.length === 0) {
+    state.shareholders = [
+      { name: "Fondatore", shares: 60000 },
+      { name: "Co-Fondatore", shares: 30000 },
+      { name: "Option Pool", shares: 10000 }
+    ];
+  }
+
+  const capTableBody = document.getElementById("cap-table-body");
+  if (!capTableBody) return;
+
+  const totalShares = state.shareholders.reduce((sum, s) => sum + s.shares, 0);
+  const safeCap = parseFloat(document.getElementById("safe-cap").value) || 1500000;
+
+  capTableBody.innerHTML = "";
+
+  state.shareholders.forEach((s, idx) => {
+    const pct = totalShares > 0 ? ((s.shares / totalShares) * 100).toFixed(2) : "0.00";
+    const estVal = totalShares > 0 ? ((s.shares / totalShares) * safeCap).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }) : "0 €";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>
+        <input type="text" value="${s.name}" class="cap-name-edit" data-index="${idx}" style="width: 100%; border: none; background: transparent; color: var(--text-main); font-size: 12px; outline: none; padding: 2px;">
+      </td>
+      <td>
+        <input type="number" value="${s.shares}" class="cap-shares-edit" data-index="${idx}" style="width: 100%; border: none; background: transparent; color: var(--text-main); font-size: 12px; font-family: monospace; outline: none; padding: 2px;">
+      </td>
+      <td style="font-weight: bold; font-family: monospace; color: var(--text-main);">${pct}%</td>
+      <td style="color: var(--text-muted); font-family: monospace;">${estVal}</td>
+      <td>
+        <button class="btn-delete-shareholder" data-index="${idx}" style="background: transparent; border: none; color: #f87171; cursor: pointer; font-size: 14px; padding: 2px 6px;">🗑️</button>
+      </td>
+    `;
+    capTableBody.appendChild(tr);
+  });
+
+  // Inline edit listeners
+  document.querySelectorAll(".cap-name-edit").forEach(input => {
+    input.addEventListener("change", (e) => {
+      const index = parseInt(e.target.dataset.index, 10);
+      state.shareholders[index].name = e.target.value.trim() || `Socio ${index + 1}`;
+      saveCurrentProjectToStorage();
+      updateEquityUI();
+    });
+  });
+
+  document.querySelectorAll(".cap-shares-edit").forEach(input => {
+    input.addEventListener("change", (e) => {
+      const index = parseInt(e.target.dataset.index, 10);
+      const val = parseInt(e.target.value, 10) || 0;
+      state.shareholders[index].shares = val >= 0 ? val : 0;
+      saveCurrentProjectToStorage();
+      updateEquityUI();
+    });
+  });
+
+  // Delete listener
+  document.querySelectorAll(".btn-delete-shareholder").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const index = parseInt(e.target.dataset.index, 10);
+      state.shareholders.splice(index, 1);
+      saveCurrentProjectToStorage();
+      updateEquityUI();
+    });
+  });
+
+  // Update SAFE and Pitch Deck inside
+  updateSafeSimulation();
+  updatePitchDeckUI();
+}
+
+function updateSafeSimulation() {
+  const safeInvestment = parseFloat(document.getElementById("safe-investment").value) || 100000;
+  const safeCap = parseFloat(document.getElementById("safe-cap").value) || 1500000;
+  
+  const pct = safeCap > 0 ? ((safeInvestment / safeCap) * 100).toFixed(2) : "0.00";
+  const resultOwnershipSpan = document.getElementById("safe-result-ownership");
+  if (resultOwnershipSpan) {
+    resultOwnershipSpan.textContent = pct;
+  }
+}
+
+function updatePitchDeckUI() {
+  const container = document.getElementById("pitch-deck-carousel");
+  if (!container) return;
+
+  let info = { sector: "general" };
+  if (state.project && state.project.idea) {
+    info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+  }
+  const sect = window.LocalAgentSimulationEngine.sectorKeywords[info.sector] || window.LocalAgentSimulationEngine.sectorKeywords.general;
+  
+  let fin = { bep: "-", priceFormatted: "-", priceNum: 0, cogsNum: 0, targetVolumeNum: 0, targetVolumeUnit: "", revenueMonth: "-", profitMonth: "-" };
+  if (state.currentPhase >= 1 || state.project.type !== "custom") {
+    fin = window.LocalAgentSimulationEngine.generateFinancials(info, state.financialOption, state.financialOverrides || {});
+  }
+
+  const safeInvestment = parseFloat(document.getElementById("safe-investment").value) || 100000;
+  const safeCap = parseFloat(document.getElementById("safe-cap").value) || 1500000;
+  const safePct = safeCap > 0 ? ((safeInvestment / safeCap) * 100).toFixed(2) : "0.00";
+
+  const getLatestAgentReport = (agentKey, defaultValue = "") => {
+    for (let phaseNum = state.currentPhase; phaseNum >= 1; phaseNum--) {
+      if (state.contributions[phaseNum] && state.contributions[phaseNum][agentKey]) {
+        return state.contributions[phaseNum][agentKey];
+      }
+    }
+    return defaultValue;
+  };
+
+  const cpoReport = getLatestAgentReport("cpo", `Un MVP focalizzato su: ${sect.product}`);
+  const cmoReport = getLatestAgentReport("cmo", `Target segment: ${sect.buyerPersona.name}`);
+  const cfoReport = getLatestAgentReport("cfo", `Modello ricavi basato su: ${sect.revenue}`);
+
+  const totalShares = (state.shareholders || []).reduce((sum, s) => sum + s.shares, 0);
+  const capTableSummary = (state.shareholders || []).map(s => {
+    const p = totalShares > 0 ? ((s.shares / totalShares) * 100).toFixed(1) : "0.0";
+    return `${s.name} (${p}%)`;
+  }).join(", ");
+
+  const slides = [
+    {
+      num: 1,
+      title: "1. Visione Aziendale (Elevator Pitch)",
+      desc: `Creare la piattaforma leader nel settore per digitalizzare ${sect.product} con efficienza massima.`,
+      source: "Consiglio di Amministrazione"
+    },
+    {
+      num: 2,
+      title: "2. Il Problema",
+      desc: `Il cliente ideale (${sect.buyerPersona.name}) riscontra grosse difficoltà: "${sect.buyerPersona.pains}"`,
+      source: `CMO - Analisi del Target (${sect.buyerPersona.name})`
+    },
+    {
+      num: 3,
+      title: "3. La Soluzione",
+      desc: `Offriamo un servizio impeccabile basato su: ${cpoReport.substring(0, 160)}${cpoReport.length > 160 ? '...' : ''}`,
+      source: "CPO - MVP Specification"
+    },
+    {
+      num: 4,
+      title: "4. Dimensione del Mercato (TAM-SAM-SOM)",
+      desc: `Mercato Globale (TAM): €${(state.tamSamSom?.tam || sect.tam).toLocaleString('it-IT')}. Mercato Raggiungibile (SAM): €${(state.tamSamSom?.sam || sect.sam).toLocaleString('it-IT')}. Nostro Target (SOM): €${(state.tamSamSom?.som || sect.som).toLocaleString('it-IT')}.`,
+      source: "CFO & CMO - Market Sizing"
+    },
+    {
+      num: 5,
+      title: "5. Modello di Business",
+      desc: `${cfoReport.substring(0, 150)}${cfoReport.length > 150 ? '...' : ''} Ricavi unitari di ${fin.priceFormatted} con margini del ${fin.priceNum > 0 ? (((fin.priceNum - fin.cogsNum) / fin.priceNum) * 100).toFixed(0) : "0"}%.`,
+      source: "CFO - Pricing & Margins"
+    },
+    {
+      num: 6,
+      title: "6. Strategia di Acquisizione (GTM)",
+      desc: `I canali principali per acquisire clienti saranno: ${(sect.marketingChannels || []).map(c => `${c.name} (${c.share}%)`).join(", ")}.`,
+      source: "CMO - Piano Canali"
+    },
+    {
+      num: 7,
+      title: "7. Concorrenza & Vantaggio Competitivo",
+      desc: `Ci distinguiamo per l'automazione ed il focus sulla riduzione dei costi operativi tramite ${sect.tech}.`,
+      source: "CSO - Analisi dei Competitor"
+    },
+    {
+      num: 8,
+      title: "8. Il Team & Cap Table",
+      desc: `Boardroom Suite guidato da Orchestratore Master, CMO, CPO, CFO, CSO. Assetto proprietario iniziale: ${capTableSummary || "Non impostato"}.`,
+      source: "Organizzazione Societaria"
+    },
+    {
+      num: 9,
+      title: "9. Financials & Proiezioni",
+      desc: `Soglia break-even fissata a ${fin.bep}. A regime prevediamo un profitto steady-state mensile di ${fin.profitMonth} con fatturato mensile di ${fin.revenueMonth}.`,
+      source: "CFO - Break-Even Analysis"
+    },
+    {
+      num: 10,
+      title: "10. La Richiesta (Ask & Safe)",
+      desc: `Chiediamo €${safeInvestment.toLocaleString('it-IT')} a fronte di un contratto SAFE con Valuation Cap di €${safeCap.toLocaleString('it-IT')}, corrispondente ad una cessione azionaria stimata del ${safePct}% post-money.`,
+      source: "Fundraising Strategy"
+    }
+  ];
+
+  container.innerHTML = slides.map(s => `
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; margin-bottom: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 6px; margin-bottom: 8px;">
+        <span style="font-weight: bold; color: var(--primary); font-size: 13px;">${s.title}</span>
+        <span style="font-size: 10px; color: var(--text-muted); font-style: italic;">Fonte: ${s.source}</span>
+      </div>
+      <p style="margin: 0; font-size: 12px; color: var(--text-main); line-height: 1.5;">${s.desc}</p>
+    </div>
+  `).join("");
+}
+
+function updateMarketSizingUI() {
+  const inputTam = document.getElementById("input-tam");
+  const inputSam = document.getElementById("input-sam");
+  const inputSom = document.getElementById("input-som");
+  
+  if (!inputTam || !inputSam || !inputSom) return;
+
+  let info = { sector: "general" };
+  if (state.project && state.project.idea) {
+    info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+  }
+  const sect = window.LocalAgentSimulationEngine.sectorKeywords[info.sector] || window.LocalAgentSimulationEngine.sectorKeywords.general;
+  
+  if (!state.tamSamSom) {
+    state.tamSamSom = {
+      tam: sect.tam,
+      sam: sect.sam,
+      som: sect.som
+    };
+    inputTam.value = state.tamSamSom.tam;
+    inputSam.value = state.tamSamSom.sam;
+    inputSom.value = state.tamSamSom.som;
+  } else {
+    if (inputTam.value === "100000000" && state.tamSamSom.tam !== 100000000) {
+      inputTam.value = state.tamSamSom.tam;
+    }
+    if (inputSam.value === "15000000" && state.tamSamSom.sam !== 15000000) {
+      inputSam.value = state.tamSamSom.sam;
+    }
+    if (inputSom.value === "1200000" && state.tamSamSom.som !== 1200000) {
+      inputSom.value = state.tamSamSom.som;
+    }
+  }
+
+  const tamVal = parseFloat(inputTam.value) || 0;
+  const samVal = parseFloat(inputSam.value) || 0;
+  const somVal = parseFloat(inputSom.value) || 0;
+
+  const pctSam = tamVal > 0 ? ((samVal / tamVal) * 100).toFixed(1) : "0.0";
+  const pctSom = samVal > 0 ? ((somVal / samVal) * 100).toFixed(1) : "0.0";
+
+  const labelTam = document.getElementById("label-tam");
+  if (labelTam) labelTam.textContent = tamVal.toLocaleString('it-IT') + " €";
+  const labelSam = document.getElementById("label-sam");
+  if (labelSam) labelSam.textContent = samVal.toLocaleString('it-IT') + " €";
+  const labelSom = document.getElementById("label-som");
+  if (labelSom) labelSom.textContent = somVal.toLocaleString('it-IT') + " €";
+
+  const pctSamSpan = document.getElementById("pct-sam");
+  if (pctSamSpan) pctSamSpan.textContent = pctSam;
+  const pctSomSpan = document.getElementById("pct-som");
+  if (pctSomSpan) pctSomSpan.textContent = pctSom;
+
+  const svgWrapper = document.getElementById("tam-sam-som-svg-wrapper");
+  if (svgWrapper) {
+    svgWrapper.innerHTML = `
+      <svg viewBox="0 0 250 120" style="width: 100%; height: 100%;">
+        <!-- TAM Circle -->
+        <circle cx="60" cy="60" r="50" fill="rgba(99, 102, 241, 0.03)" stroke="var(--primary)" stroke-width="1.5" />
+        <text x="60" y="28" font-size="9" fill="var(--primary)" font-weight="bold" text-anchor="middle">TAM</text>
+        
+        <!-- SAM Circle -->
+        <circle cx="60" cy="70" r="35" fill="rgba(139, 92, 246, 0.06)" stroke="var(--accent)" stroke-width="1.5" />
+        <text x="60" y="52" font-size="9" fill="var(--accent)" font-weight="bold" text-anchor="middle">SAM</text>
+        
+        <!-- SOM Circle -->
+        <circle cx="60" cy="80" r="20" fill="rgba(16, 185, 129, 0.1)" stroke="var(--success)" stroke-width="1.5" />
+        <text x="60" y="82" font-size="9" fill="var(--success)" font-weight="bold" text-anchor="middle">SOM</text>
+        
+        <!-- Connector Lines -->
+        <path d="M 110 60 L 140 60" stroke="var(--primary)" stroke-dasharray="2,2" />
+        <path d="M 95 70 L 140 70" stroke="var(--accent)" stroke-dasharray="2,2" />
+        <path d="M 80 80 L 140 80" stroke="var(--success)" stroke-dasharray="2,2" />
+        
+        <!-- Labels inside SVG -->
+        <text x="145" y="63" font-size="8" fill="var(--text-main)" font-weight="500">100.0%</text>
+        <text x="145" y="73" font-size="8" fill="var(--text-main)" font-weight="500">${pctSam}% TAM</text>
+        <text x="145" y="83" font-size="8" fill="var(--text-main)" font-weight="500">${pctSom}% SAM</text>
+      </svg>
+    `;
+  }
+}
+
+function updateDueDiligenceUI() {
+  const container = document.getElementById("due-diligence-container");
+  const tbody = document.getElementById("due-diligence-table-body");
+  if (!container || !tbody) return;
+
+  if (state.currentPhase === 0) {
+    container.style.display = "none";
+    return;
+  }
+
+  container.style.display = "block";
+
+  // Rileva localizzazione
+  let info = { location: "" };
+  if (state.project && state.project.idea) {
+    info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+  }
+  const loc = info.location ? info.location.toLowerCase() : "";
+  const isSpain = loc.includes("canari") || loc.includes("tenerife") || loc.includes("spagna") || loc.includes("gran canaria") || loc.includes("lanzarote");
+
+  // Definizione dei documenti in base all'area geografica
+  let docTemplates = [];
+  if (isSpain) {
+    docTemplates = [
+      { id: "sp_legal", name: "Constitución S.L. / Autónomo", area: "Legale", desc: "Costituzione societaria o registrazione come lavoratore autonomo." },
+      { id: "sp_tax", name: "Alta Modelo 036/037", area: "Fiscale", desc: "Dichiarazione di inizio attività presso l'Agencia Tributaria." },
+      { id: "sp_seg", name: "Seguridad Social (RETA)", area: "Previdenziale", desc: "Iscrizione alla previdenza sociale spagnola." },
+      { id: "sp_license", name: "Licencia de Apertura", area: "Amministrativa", desc: "Licenza d'uso e idoneità dei locali rilasciata dall'Ayuntamiento." },
+      { id: "sp_canary", name: "Registro de Operadores IGIC", area: "Fiscale Canarie", desc: "Esenzione o tariffa agevolata IGIC (Imposta Canarie)." },
+      { id: "sp_gdpr", name: "LOPDGDD & GDPR", area: "Compliance", desc: "Regolamento privacy europeo adattato alla legge spagnola." },
+      { id: "sp_trademark", name: "Registro Marca OEPM", area: "Proprietà Intellettuale", desc: "Protezione del brand presso l'Oficina Española de Patentes y Marcas." }
+    ];
+  } else {
+    docTemplates = [
+      { id: "it_legal", name: "Atto Costitutivo & S.r.l. / P.IVA", area: "Legale", desc: "Costituzione presso notaio e attribuzione codice Partita IVA." },
+      { id: "it_scia", name: "SCIA (SUAP Comunale)", area: "Amministrativa", desc: "Segnalazione Certificata di Inizio Attività al Comune competente." },
+      { id: "it_cciaa", name: "Iscrizione Registro Imprese", area: "Amministrativa", desc: "Iscrizione alla Camera di Commercio (CCIAA) locale." },
+      { id: "it_haccp", name: "HACCP & ASL (se applicabile)", area: "Igiene/Sanità", desc: "Autocontrollo alimentare o requisiti igienici locali per somministrazione/vendita." },
+      { id: "it_dvr", name: "DVR (D.Lgs. 81/08)", area: "Sicurezza", desc: "Documento di Valutazione dei Rischi per la sicurezza sul lavoro." },
+      { id: "it_gdpr", name: "Privacy Policy & GDPR", area: "Compliance", desc: "Adeguamento al regolamento privacy UE per sito web ed app." },
+      { id: "it_trademark", name: "Registrazione Marchio UIBM", area: "Proprietà Intellettuale", desc: "Registrazione del brand e logo presso l'Ufficio Brevetti e Marchi." }
+    ];
+  }
+
+  // Se i documenti correnti non sono inizializzati, o appartengono a un'altra nazionalità, resettiamo
+  if (!state.project.dueDiligence || state.project.dueDiligence.length === 0 || 
+      (state.project.dueDiligence[0].id.startsWith("sp_") !== isSpain)) {
+    state.project.dueDiligence = docTemplates.map(t => ({
+      ...t,
+      status: "Pending"
+    }));
+  }
+
+  tbody.innerHTML = "";
+
+  state.project.dueDiligence.forEach((d, idx) => {
+    let statusLabel = "Pending";
+    let statusColor = "var(--text-muted)";
+    let statusBg = "rgba(255,255,255,0.05)";
+
+    if (d.status === "In Corso") {
+      statusLabel = "In Corso";
+      statusColor = "var(--warning)";
+      statusBg = "rgba(245,158,11,0.1)";
+    } else if (d.status === "Pronto") {
+      statusLabel = "Pronto";
+      statusColor = "var(--success)";
+      statusBg = "rgba(16,185,129,0.1)";
+    }
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>${d.name}</strong></td>
+      <td><span class="chip" style="background: rgba(99,102,241,0.08); color: var(--primary); font-size: 10px; padding: 2px 6px; border-radius: 4px;">${d.area}</span></td>
+      <td style="color: var(--text-muted); font-size: 11px;">${d.desc}</td>
+      <td>
+        <button class="due-diligence-badge" data-index="${idx}" style="background: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusColor}; padding: 4px 8px; border-radius: 12px; cursor: pointer; font-size: 10px; font-weight: bold; width: 85px; text-align: center; transition: all 0.2s; outline: none; border-style: solid;">
+          ${statusLabel}
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Listener cambio stato
+  tbody.querySelectorAll(".due-diligence-badge").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const index = parseInt(e.target.dataset.index, 10);
+      const current = state.project.dueDiligence[index].status;
+      let next = "Pending";
+      if (current === "Pending") next = "In Corso";
+      else if (current === "In Corso") next = "Pronto";
+
+      state.project.dueDiligence[index].status = next;
+      saveCurrentProjectToStorage();
+      updateDueDiligenceUI();
+    });
+  });
 }
 
 function updateFinancialsUI() {

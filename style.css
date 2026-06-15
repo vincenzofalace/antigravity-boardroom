@@ -1580,3 +1580,19 @@ button:disabled, textarea:disabled, select:disabled, input:disabled {
   margin: 0;
 }
 
+/* ==========================================
+   UTILITY HOVER & BADGES FOR NEW MODULES
+   ========================================== */
+.hover-bg-glass:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.due-diligence-badge:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.1);
+}
+
+.timeline-checkbox {
+  accent-color: var(--primary);
+}
+

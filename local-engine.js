@@ -667,7 +667,32 @@ const LocalAgentSimulationEngine = {
       tech: "hosting Vercel, Supabase database ed automazioni cloud",
       marketing: "Google Ads, SEO tecnica e content marketing",
       revenue: "modello di abbonamento ricorrente (MRR)",
-      unit: "utenti attivi paganti"
+      unit: "utenti attivi paganti",
+      tam: 120000000,
+      sam: 15000000,
+      som: 1800000,
+      buyerPersona: {
+        avatar: "💻",
+        name: "Marco Rossi",
+        demographics: "35 anni, CTO / Lead Developer",
+        pains: "Perde ore a sincronizzare i dati dei clienti manuale e teme falle di sicurezza.",
+        gains: "Vuole un'infrastruttura automatizzata a basso costo per scalare senza pensieri.",
+        channel: "LinkedIn e ricerche tecniche su Google"
+      },
+      marketingChannels: [
+        { name: "Google Search Ads (Target B2B)", share: 40, cac: 35 },
+        { name: "LinkedIn Cold Outreach / Social Selling", share: 30, cac: 15 },
+        { name: "Content Marketing & SEO Tecnica", share: 20, cac: 8 },
+        { name: "Referral & Co-Marketing", share: 10, cac: 5 }
+      ],
+      launchTimeline: [
+        "Settimana 1-2: Landing page di pre-iscrizione e sondaggi diretti a 15-20 CTO.",
+        "Settimana 3-4: Rilascio della versione alpha privata agli iscritti qualificati.",
+        "Settimana 5-6: Setup campagne Search Ads e prime automazioni di cold email.",
+        "Settimana 7-8: Lancio pubblico dell'MVP su ProductHunt e canali B2B.",
+        "Settimana 9-10: Ottimizzazione del funnel di checkout e integrazione Stripe.",
+        "Settimana 11-12: Attivazione del programma di affiliazione/referral ricorrente."
+      ]
     },
     ecommerce: {
       product: "l'E-commerce / catalogo prodotti",
@@ -675,7 +700,32 @@ const LocalAgentSimulationEngine = {
       tech: "Shopify / WooCommerce e gateway di pagamento Stripe",
       marketing: "Meta Ads, TikTok Ads e email marketing di fidelizzazione",
       revenue: "vendita diretta di prodotti fisici con margine",
-      unit: "ordini spediti con successo"
+      unit: "ordini spediti con successo",
+      tam: 250000000,
+      sam: 30000000,
+      som: 2500000,
+      buyerPersona: {
+        avatar: "🛍️",
+        name: "Laura Bianchi",
+        demographics: "28 anni, Impiegata appassionata di shopping conscio",
+        pains: "Difficile trovare packaging ecologico e prodotti di qualità certificata.",
+        gains: "Cerca un'esperienza d'acquisto rapida, resi facili e trasparenza ecologica.",
+        channel: "Instagram, TikTok ed email marketing"
+      },
+      marketingChannels: [
+        { name: "Meta Ads (Instagram & Facebook)", share: 50, cac: 18 },
+        { name: "TikTok Ads & Influencer Seeding", share: 25, cac: 12 },
+        { name: "Email Marketing (Klaviyo automation)", share: 15, cac: 2 },
+        { name: "Google Shopping (PMax)", share: 10, cac: 22 }
+      ],
+      launchTimeline: [
+        "Settimana 1-2: Creazione visual asset e setup store Shopify in modalità pre-ordine.",
+        "Settimana 3-4: Campagne teaser social con piccoli omaggi e iscrizione newsletter.",
+        "Settimana 5-6: Invio dei primi prototipi a 10 micro-influencer per recensioni.",
+        "Settimana 7-8: Apertura ufficiale vendite e attivazione delle automazioni carrello abbandonato.",
+        "Settimana 9-10: Lancio di campagne di retargeting e sconti quantità.",
+        "Settimana 11-12: Analisi del tasso di riacquisto e introduzione del referral program."
+      ]
     },
     food_beverage: {
       product: "l'attività di somministrazione Food & Beverage",
@@ -683,7 +733,32 @@ const LocalAgentSimulationEngine = {
       tech: "POS elettronico, menu digitale QR e software di cassa",
       marketing: "social media marketing (Instagram), Local SEO e promozioni fisiche",
       revenue: "somministrazione diretta e ordini da asporto",
-      unit: "coperti / pasti erogati"
+      unit: "coperti / pasti erogati",
+      tam: 45000000,
+      sam: 8000000,
+      som: 600000,
+      buyerPersona: {
+        avatar: "🍕",
+        name: "Giovanni Esposito",
+        demographics: "42 anni, Lavoratore d'ufficio locale e appassionato di buon cibo",
+        pains: "Poco tempo per la pausa pranzo, offerte ripetitive e scarsa igiene.",
+        gains: "Cerca celerità d'erogazione, qualità artigianale e facilità di prenotazione.",
+        channel: "Instagram, Google Maps e passaparola fisico"
+      },
+      marketingChannels: [
+        { name: "Instagram Reels & Local Influencers", share: 40, cac: 6 },
+        { name: "Google Maps & Local SEO (Ricerca Pizzerie/Locali)", share: 30, cac: 3 },
+        { name: "Volantinaggio Mirato & Insegne su Strada", share: 20, cac: 2 },
+        { name: "Partnership con Uffici & Negozi vicini", share: 10, cac: 1 }
+      ],
+      launchTimeline: [
+        "Settimana 1-2: Setup di Google Business Profile e registrazione permessi ASL/SUAP.",
+        "Settimana 3-4: Ristrutturazione grafica del menu e wrapping del punto vendita/macchina.",
+        "Settimana 5-6: Pre-lancio ad inviti per uffici locali e recensori enogastronomici.",
+        "Settimana 7-8: Inaugurazione ufficiale con offerta speciale di prova gratuita o sconto 50%.",
+        "Settimana 9-10: Campagna di raccolta recensioni su Google Maps con QR code sconto.",
+        "Settimana 11-12: Lancio del servizio asporto/consegna locale convenzionato."
+      ]
     },
     retail: {
       product: "il punto vendita retail / negozio fisico",
@@ -691,7 +766,32 @@ const LocalAgentSimulationEngine = {
       tech: "POS integrato, lettori barcode e software di inventario",
       marketing: "Google Business Profile, insegne ad alta visibilità e marketing locale",
       revenue: "vendita di prodotti in negozio",
-      unit: "scontrini battuti"
+      unit: "scontrini battuti",
+      tam: 60000000,
+      sam: 10000000,
+      som: 800000,
+      buyerPersona: {
+        avatar: "🏬",
+        name: "Elena Neri",
+        demographics: "50 anni, Casalinga e residente locale",
+        pains: "Negozi di catena senz'anima, mancanza di assistenza all'acquisto personalizzata.",
+        gains: "Apprezza il contatto umano, la qualità del servizio e i prodotti unici selezionati.",
+        channel: "Passaparola di quartiere e promozioni in vetrina"
+      },
+      marketingChannels: [
+        { name: "Vetrina e Insegne Luminose ad Alto Impatto", share: 45, cac: 4 },
+        { name: "Google Business Profile & Maps (SEO locale)", share: 25, cac: 5 },
+        { name: "Volantini di quartiere a buchetta", share: 20, cac: 3 },
+        { name: "Convenzioni con Associazioni Locali", share: 10, cac: 2 }
+      ],
+      launchTimeline: [
+        "Settimana 1-2: Scelta allestimento vetrine, permessi comunali e setup registratore di cassa.",
+        "Settimana 3-4: Allestimento degli scaffali e accordi di fornitura in conto vendita.",
+        "Settimana 5-6: Apertura di prova (soft launch) per parenti e residenti vicini.",
+        "Settimana 7-8: Grand Opening con palloncini, rinfresco e sconti esclusivi sui primi 100 scontrini.",
+        "Settimana 9-10: Inserimento su volantini di quartiere e gruppi Facebook locali.",
+        "Settimana 11-12: Implementazione della tessera fedeltà cartacea e digitale."
+      ]
     },
     mobile_app: {
       product: "l'applicazione mobile (iOS/Android)",
@@ -699,7 +799,32 @@ const LocalAgentSimulationEngine = {
       tech: "SDK App Store, Firebase database e notifiche push",
       marketing: "App Store Optimization (ASO) e campagne di installazione",
       revenue: "acquisti in-app (IAP) o abbonamento",
-      unit: "download / abbonati in-app"
+      unit: "download / abbonati in-app",
+      tam: 500000000,
+      sam: 40000000,
+      som: 3000000,
+      buyerPersona: {
+        avatar: "📱",
+        name: "Filippo Verdi",
+        demographics: "22 anni, Studente universitario tech-savvy",
+        pains: "App lente, piene di pubblicità invasiva, o con abbonamenti troppo costosi.",
+        gains: "Cerca un'interfaccia fluida, utility reale e gamification gratificante.",
+        channel: "App Store, TikTok, Reddit e consigli di amici"
+      },
+      marketingChannels: [
+        { name: "App Store Optimization (ASO) organica", share: 40, cac: 0.8 },
+        { name: "Apple Search Ads & Google UAC", share: 30, cac: 2.2 },
+        { name: "Tiktok & Instagram Reels (Creator marketing)", share: 20, cac: 1.5 },
+        { name: "Reddit & Community Online Outreach", share: 10, cac: 0.5 }
+      ],
+      launchTimeline: [
+        "Settimana 1-2: Preparazione grafiche e asset store (App Store & Google Play).",
+        "Settimana 3-4: Campagna di pre-registrazione sugli store con incentivo in-game/in-app.",
+        "Settimana 5-6: Rilascio in beta test ristretto tramite TestFlight ed Android Beta.",
+        "Settimana 7-8: Lancio globale ufficiale e attivazione delle campagne ASA.",
+        "Settimana 9-10: Monitoraggio crash rate e invio di notifiche push di onboarding personalizzate.",
+        "Settimana 11-12: Attivazione del referral 'invita un amico' per sbloccare funzioni premium."
+      ]
     },
     services: {
       product: "il servizio professionale / consulenza agenzia",
@@ -707,7 +832,32 @@ const LocalAgentSimulationEngine = {
       tech: "CRM di vendita (HubSpot), Calendly per appuntamenti e Zoom",
       marketing: "LinkedIn Outreach, passaparola strutturato e networking di settore",
       revenue: "tariffe orarie, consulenze o pacchetti mensili flat",
-      unit: "progetti chiusi / ore erogate"
+      unit: "progetti chiusi / ore erogate",
+      tam: 80000000,
+      sam: 12000000,
+      som: 1500000,
+      buyerPersona: {
+        avatar: "👔",
+        name: "Andrea Viola",
+        demographics: "45 anni, Direttore Marketing o Proprietario di PMI",
+        pains: "Troppi consulenti teorici senza visione pratica, spreco di tempo e budget.",
+        gains: "Cerca un partner affidabile orientato ai risultati concreti (ROI) e report trasparenti.",
+        channel: "LinkedIn, eventi di networking ed inviti B2B"
+      },
+      marketingChannels: [
+        { name: "LinkedIn Cold Outreach (Messaggistica diretta)", share: 40, cac: 20 },
+        { name: "Passaparola strutturato (BNI / Associazioni)", share: 30, cac: 5 },
+        { name: "Content Marketing (Case Studies su LinkedIn)", share: 20, cac: 12 },
+        { name: "Partecipazione come Speaker a Fiere/Webinar", share: 10, cac: 25 }
+      ],
+      launchTimeline: [
+        "Settimana 1-2: Profilazione di 200 aziende target ideali e ottimizzazione del profilo LinkedIn.",
+        "Settimana 3-4: Creazione di una presentazione in PDF (Case Study o Lead Magnet) di valore.",
+        "Settimana 5-6: Lancio delle prime 50 connessioni settimanali con follow-up a valore su LinkedIn.",
+        "Settimana 7-8: Setup di Calendly integrato al CRM per la prenotazione delle prime chiamate.",
+        "Settimana 9-10: Invio delle prime proposte formali personalizzate h24.",
+        "Settimana 11-12: Strutturazione di un accordo provvigionale per segnalatori esterni di lead."
+      ]
     },
     general: {
       product: "la soluzione di business",
@@ -715,7 +865,32 @@ const LocalAgentSimulationEngine = {
       tech: "landing page web e strumenti di produttività cloud",
       marketing: "passaparola, canali digitali e attività SEO locali",
       revenue: "transazioni dirette e vendite commerciali",
-      unit: "clienti paganti acquisiti"
+      unit: "clienti paganti acquisiti",
+      tam: 100000000,
+      sam: 15000000,
+      som: 1200000,
+      buyerPersona: {
+        avatar: "👥",
+        name: "Cliente Target Ideale",
+        demographics: "30-50 anni, Residente locale o Utente web",
+        pains: "Servizi complessi, mancanza di supporto immediato o prezzi opachi.",
+        gains: "Desidera chiarezza d'uso, risparmio di tempo e una transazione sicura.",
+        channel: "Ricerche su motori di ricerca, social media e passaparola"
+      },
+      marketingChannels: [
+        { name: "Social Media Organic & Ads", share: 40, cac: 15 },
+        { name: "SEO & Content Marketing", share: 30, cac: 10 },
+        { name: "Referral & Passaparola", share: 20, cac: 2 },
+        { name: "Outreach Diretto", share: 10, cac: 18 }
+      ],
+      launchTimeline: [
+        "Settimana 1-2: Lancio del sito web pilota e raccolta contatti iniziale.",
+        "Settimana 3-4: Test di usabilità con 5 utenti target e correzione dei flussi.",
+        "Settimana 5-6: Funnel di acquisizione attivo e prime campagne pubblicitarie.",
+        "Settimana 7-8: Lancio commerciale ufficiale e invio offerta di benvenuto.",
+        "Settimana 9-10: Ottimizzazione del tasso di conversione delle pagine di checkout.",
+        "Settimana 11-12: Raccolta delle prime video-testimonianze di clienti soddisfatti."
+      ]
     }
   },
 

@@ -218,7 +218,9 @@
       <div class="tabs">
         <button class="tab-btn active" data-tab="boardroom">👥 Boardroom</button>
         <button class="tab-btn" data-tab="canvas">📋 Lean Canvas</button>
+        <button class="tab-btn" data-tab="marketing">📢 Marketing & GTM</button>
         <button class="tab-btn" data-tab="financials">📊 Finanziario</button>
+        <button class="tab-btn" data-tab="equity">🤝 Fundraising & Equity</button>
         <button class="tab-btn" data-tab="report">📄 Report Completo</button>
       </div>
       
@@ -327,6 +329,46 @@
               <div class="fin-card">
                 <h4>Soglia Break-Even</h4>
                 <div class="value" id="fin-break-even">-</div>
+              </div>
+            </div>
+
+            <!-- Calcolatore TAM-SAM-SOM -->
+            <div id="market-sizing-container" class="glass-panel" style="margin-bottom: 24px; padding: 20px;">
+              <h4 style="margin: 0 0 16px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                🎯 Calcolo della Dimensione del Mercato (TAM-SAM-SOM)
+              </h4>
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                Stima il potenziale del tuo mercato per presentarlo agli investitori. Inserisci i valori per ricalcolare le incidenze percentuali.
+              </div>
+              
+              <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
+                <div style="flex: 1; min-width: 150px;">
+                  <label for="input-tam" style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 6px;">TAM (Mercato Totale)</label>
+                  <input type="number" id="input-tam" value="100000000" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03); color: var(--text-main); font-family: monospace;">
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                  <label for="input-sam" style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 6px;">SAM (Mercato Raggiungibile)</label>
+                  <input type="number" id="input-sam" value="15000000" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03); color: var(--text-main); font-family: monospace;">
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                  <label for="input-som" style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 6px;">SOM (Mercato Ottenibile)</label>
+                  <input type="number" id="input-som" value="1200000" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03); color: var(--text-main); font-family: monospace;">
+                </div>
+              </div>
+              
+              <!-- Diagramma SVG TAM-SAM-SOM -->
+              <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                <div id="tam-sam-som-svg-wrapper" style="flex: 1; max-width: 250px; height: 120px;">
+                  <!-- Disegnato via JS -->
+                </div>
+                <div style="flex: 2; min-width: 200px; font-size: 12px; line-height: 1.6;">
+                  • 🌍 <strong>TAM</strong>: <span id="label-tam">-</span> (100.0% del mercato totale)<br>
+                  • 🎯 <strong>SAM</strong>: <span id="label-sam">-</span> (<span id="pct-sam">-</span>% del TAM)<br>
+                  • 💰 <strong>SOM</strong>: <span id="label-som">-</span> (<span id="pct-som">-</span>% del SAM)<br>
+                  <div style="margin-top: 10px; padding: 10px; background: rgba(16,185,129,0.03); border: 1px dashed rgba(16,185,129,0.15); border-radius: 6px; color: var(--success); font-weight: 500;">
+                    💡 Il target SOM equivale ad un fatturato annuo potenziale a regime.
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -449,7 +491,153 @@
 
           </div>
         </div>
-        
+
+        <!-- Tab: Marketing & GTM -->
+        <div class="tab-pane" id="marketing">
+          <div class="marketing-view" style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+              <!-- Buyer Persona Card -->
+              <div class="glass-panel" style="flex: 1; min-width: 300px; padding: 20px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);">
+                <h4 style="margin: 0 0 16px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                  👤 Buyer Persona (Cliente Ideale)
+                </h4>
+                <div id="buyer-persona-avatar-box" style="width: 60px; height: 60px; border-radius: 50%; background: rgba(99,102,241,0.1); display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 12px;">👤</div>
+                <h3 id="buyer-persona-name" style="margin: 0 0 4px 0; font-size: 16px; color: var(--text-main); font-weight: bold;">-</h3>
+                <p id="buyer-persona-demographics" style="font-size: 12px; color: var(--text-muted); margin: 0 0 16px 0;">-</p>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px; line-height: 1.5;">
+                  <div>
+                    <strong style="color: #f87171; display: block; margin-bottom: 2px;">🔴 Dolore Principale (Pain Point):</strong>
+                    <span id="buyer-persona-pains" style="color: var(--text-main);">-</span>
+                  </div>
+                  <div>
+                    <strong style="color: var(--success); display: block; margin-bottom: 2px;">🟢 Desiderio Core (Gain Point):</strong>
+                    <span id="buyer-persona-gains" style="color: var(--text-main);">-</span>
+                  </div>
+                  <div>
+                    <strong style="color: var(--primary); display: block; margin-bottom: 2px;">📢 Canale Preferito:</strong>
+                    <span id="buyer-persona-channel" style="color: var(--text-main);">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- GTM Marketing Channels -->
+              <div class="glass-panel" style="flex: 1.2; min-width: 300px; padding: 20px;">
+                <h4 style="margin: 0 0 16px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                  📢 Mix Canali di Acquisizione (GTM)
+                </h4>
+                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">
+                  I canali raccomandati dal CMO per distribuire il budget e acquisire lead a target.
+                </p>
+                <div id="gtm-channels-list" style="display: flex; flex-direction: column; gap: 12px;">
+                  <!-- Iniettato da JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Launch Timeline checklist -->
+            <div class="glass-panel" style="padding: 20px;">
+              <h4 style="margin: 0 0 16px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                🚀 Rampa di Lancio in 12 Settimane (Timeline Operativa)
+              </h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+                Fasi sequenziali pianificate dall'Orchestratore e dal CMO per validare, lanciare e scalare l'attività a costo minimo.
+              </p>
+              <div id="launch-timeline-list" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Iniettato da JS -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab: Fundraising & Equity -->
+        <div class="tab-pane" id="equity">
+          <div class="equity-view" style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+              <!-- Cap Table Calculator -->
+              <div class="glass-panel" style="flex: 1.5; min-width: 300px; padding: 20px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                  📊 Tabella dell'Equity (Cap Table)
+                </h4>
+                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">
+                  Suddividi le quote societarie iniziali tra i fondatori, advisor ed option pool.
+                </p>
+                <div class="table-wrapper" style="margin-bottom: 12px;">
+                  <table class="financial-table" style="width: 100%; font-size: 12px;">
+                    <thead>
+                      <tr>
+                        <th>Socio / Ruolo</th>
+                        <th>Azioni</th>
+                        <th>Quota %</th>
+                        <th>Valore Stimato</th>
+                        <th>Azione</th>
+                      </tr>
+                    </thead>
+                    <tbody id="cap-table-body">
+                      <!-- Iniettato da JS -->
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <input type="text" id="cap-name-input" placeholder="Nome socio (es. Mario)" style="flex: 2; padding: 6px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03); color: var(--text-main); font-size: 12px;">
+                  <input type="number" id="cap-shares-input" placeholder="Azioni (es. 50000)" style="flex: 1.5; padding: 6px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03); color: var(--text-main); font-size: 12px; font-family: monospace;">
+                  <button id="btn-add-shareholder" class="btn" style="padding: 6px 12px; background: var(--primary-grad); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;">Aggiungi</button>
+                </div>
+              </div>
+
+              <!-- SAFE Calculator -->
+              <div class="glass-panel" style="flex: 1; min-width: 300px; padding: 20px; border-left: 3px solid var(--accent);">
+                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: var(--accent); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                  🤝 Simulatore di Investimento (SAFE)
+                </h4>
+                <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">
+                  Simula la quota azionaria da cedere a fronte di un investimento esterno tramite accordo SAFE.
+                </p>
+                
+                <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px;">
+                  <div>
+                    <label for="safe-investment" style="display: block; margin-bottom: 4px; color: var(--text-muted);">Capitale Investito (€)</label>
+                    <input type="number" id="safe-investment" value="100000" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03); color: var(--text-main); font-family: monospace;">
+                  </div>
+                  <div>
+                    <label for="safe-cap" style="display: block; margin-bottom: 4px; color: var(--text-muted);">Valuation Cap (€)</label>
+                    <input type="number" id="safe-cap" value="1500000" style="width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03); color: var(--text-main); font-family: monospace;">
+                  </div>
+                  
+                  <div style="padding: 12px; background: rgba(139,92,246,0.05); border: 1px dashed rgba(139,92,246,0.2); border-radius: 8px; margin-top: 10px;">
+                    <strong>Risultato della simulazione:</strong>
+                    <div style="font-size: 14px; margin-top: 6px; font-weight: bold; color: var(--accent);">
+                      • Quota Cassa / Diluizione: <span id="safe-result-ownership">-</span>%
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+                      Ipotizzando una valutazione post-money basata sul Cap impostato.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- YC Pitch Deck Outliner -->
+            <div class="glass-panel" style="padding: 20px;">
+              <h4 style="margin: 0 0 16px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                🎯 Outliner Pitch Deck (Standard Y Combinator)
+              </h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+                Usa questa struttura a 10 slide per presentare il tuo progetto ai fondi di investimento. I testi sono generati dinamicamente.
+              </p>
+              
+              <div id="pitch-deck-carousel" style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- Popolato via JS con accordion/slides -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+
         <!-- Tab 4: Compiled Complete Report View -->
         <div class="tab-pane" id="report">
           <div class="report-view" style="display: flex; flex-direction: column; gap: 20px;">
@@ -467,6 +655,31 @@
               </p>
               <div id="refinement-questions-list" style="display: flex; flex-direction: column; gap: 12px;">
                 <!-- Popolato via JS -->
+              </div>
+            </div>
+
+            <!-- Due Diligence Checklist -->
+            <div id="due-diligence-container" class="glass-panel" style="display: none; margin-bottom: 24px; padding: 20px;">
+              <h4 style="margin: 0 0 12px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                🗂️ Due Diligence Checklist (Stato Documenti)
+              </h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                Monitora lo stato di conformità legale, amministrativa e burocratica del progetto per preparare la Data Room. Clicca sui badge per cambiare lo stato.
+              </p>
+              <div class="table-wrapper">
+                <table class="financial-table" style="width: 100%; font-size: 12px;">
+                  <thead>
+                    <tr>
+                      <th>Documento / Conformità</th>
+                      <th>Area</th>
+                      <th>Descrizione Burocratica</th>
+                      <th>Stato Data Room</th>
+                    </tr>
+                  </thead>
+                  <tbody id="due-diligence-table-body">
+                    <!-- Popolato via JS -->
+                  </tbody>
+                </table>
               </div>
             </div>
             
