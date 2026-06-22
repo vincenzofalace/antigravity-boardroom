@@ -549,6 +549,61 @@
               </div>
             </div>
 
+            <!-- Psicologia della Vendita & Funnel Decisionale -->
+            <div class="glass-panel" id="gtm-sales-psychology" style="padding: 20px;">
+              <h4 style="margin: 0 0 16px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                🧠 Psicologia della Vendita & Funnel Decisionale
+              </h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+                Analisi del processo decisionale d'acquisto del cliente e strategie narrative (Storytelling Hook) suggerite dal CMO.
+              </p>
+              
+              <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <!-- Funnel decisionale -->
+                <div style="flex: 1.5; min-width: 300px; display: flex; flex-direction: column; gap: 12px;">
+                  <div style="padding: 12px; background: rgba(99,102,241,0.03); border: 1px solid var(--glass-border); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                      <span style="font-weight: bold; color: var(--primary); font-size: 12px;">🎣 1. Gancio Narrativo (Storytelling Hook)</span>
+                    </div>
+                    <p id="funnel-hook-text" style="margin: 0; font-size: 11.5px; color: var(--text-main); line-height: 1.4;">-</p>
+                  </div>
+                  
+                  <div style="padding: 12px; background: rgba(245,158,11,0.03); border: 1px solid var(--glass-border); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                      <span style="font-weight: bold; color: var(--warning); font-size: 12px;">⚖️ 2. Obiezioni nel Processo Decisionale</span>
+                    </div>
+                    <p id="funnel-objections-text" style="margin: 0; font-size: 11.5px; color: var(--text-main); line-height: 1.4;">-</p>
+                  </div>
+
+                  <div style="padding: 12px; background: rgba(16,185,129,0.03); border: 1px solid var(--glass-border); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                      <span style="font-weight: bold; color: var(--success); font-size: 12px;">💰 3. Trigger di Conversione (Chiusura)</span>
+                    </div>
+                    <p id="funnel-conversion-text" style="margin: 0; font-size: 11.5px; color: var(--text-main); line-height: 1.4;">-</p>
+                  </div>
+                </div>
+
+                <!-- Posizionamento & Psicologia d'Acquisto -->
+                <div class="glass-panel" style="flex: 1; min-width: 250px; padding: 15px; background: rgba(255,255,255,0.01);">
+                  <h5 style="margin: 0 0 10px 0; font-size: 12px; color: var(--text-main); font-weight: 600;">🎯 Posizionamento & Psicologia d'Acquisto</h5>
+                  <div style="font-size: 11.5px; line-height: 1.5; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px;">
+                    <div>
+                      <strong style="color: var(--text-main);">Angolo di Vendita:</strong>
+                      <span id="sales-psych-angle">-</span>
+                    </div>
+                    <div>
+                      <strong style="color: var(--text-main);">Incentivo Urgenza:</strong>
+                      <span id="sales-psych-urgency">-</span>
+                    </div>
+                    <div>
+                      <strong style="color: var(--text-main);">Ostacolo Principale:</strong>
+                      <span id="sales-psych-friction">-</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -621,6 +676,46 @@
               </div>
             </div>
 
+            <!-- Hiring & Team Roadmap -->
+            <div class="glass-panel" id="hiring-roadmap-container" style="padding: 20px;">
+              <h4 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                👥 Assunzioni Chiave & Team Roadmap (Hiring)
+              </h4>
+              <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">
+                Pianifica i primi ruoli critici da assumere. L'equity (%) allocata ai dipendenti riduce automaticamente l'Option Pool nella Cap Table sovrastante.
+              </p>
+              
+              <div class="table-wrapper" style="margin-bottom: 12px;">
+                <table class="financial-table" style="width: 100%; font-size: 12px;">
+                  <thead>
+                    <tr>
+                      <th>Ruolo / Posizione</th>
+                      <th>RAL Consigliata (€)</th>
+                      <th>Equity Pool (%)</th>
+                      <th>Tempistica Assunzione</th>
+                      <th>Azione</th>
+                    </tr>
+                  </thead>
+                  <tbody id="hiring-table-body">
+                    <!-- Iniettato da JS -->
+                  </tbody>
+                </table>
+              </div>
+              
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="hire-role-input" placeholder="es. Senior Developer" style="flex: 2; padding: 6px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03); color: var(--text-main); font-size: 12px;">
+                <input type="number" id="hire-salary-input" placeholder="RAL (es. 45000)" style="flex: 1.2; padding: 6px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03); color: var(--text-main); font-size: 12px; font-family: monospace;">
+                <input type="number" id="hire-equity-input" placeholder="Equity % (es. 1.5)" step="0.1" style="flex: 1; padding: 6px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.03); color: var(--text-main); font-size: 12px; font-family: monospace;">
+                <select id="hire-timeline-select" style="flex: 1.5; padding: 6px; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--bg-secondary); color: var(--text-main); font-size: 12px;">
+                  <option value="Mese 1-2">Mese 1-2</option>
+                  <option value="Mese 3-4">Mese 3-4</option>
+                  <option value="Mese 5-6">Mese 5-6</option>
+                  <option value="Post Break-Even">Post Break-Even</option>
+                </select>
+                <button id="btn-add-hire" class="btn" style="padding: 6px 12px; background: var(--primary-grad); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;">Aggiungi</button>
+              </div>
+            </div>
+
             <!-- YC Pitch Deck Outliner -->
             <div class="glass-panel" style="padding: 20px;">
               <h4 style="margin: 0 0 16px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
@@ -680,6 +775,19 @@
                     <!-- Popolato via JS -->
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            <!-- Startup Readiness Checklist -->
+            <div id="startup-readiness-container" class="glass-panel" style="display: none; margin-bottom: 24px; padding: 20px;">
+              <h4 style="margin: 0 0 12px 0; font-size: 14px; color: var(--primary); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                📈 Startup Readiness & Strategy Assessment (Mindset & Validazione)
+              </h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+                Valuta il livello di preparazione e pianificazione strategica per la tua startup. Clicca sui badge per aggiornare lo stato d'apprendimento e validazione. Clicca su ciascun punto per leggere la pillola di consiglio strategico del CMO/CFO.
+              </p>
+              <div id="readiness-checklist-list" style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- Iniettato da JS -->
               </div>
             </div>
             

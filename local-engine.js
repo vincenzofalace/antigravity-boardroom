@@ -2382,6 +2382,152 @@ const LocalAgentSimulationEngine = {
     }
     
     return { agentText: agentResponse, ceoText: ceoResponse };
+  },
+
+  startupReadinessData: {
+    saas: {
+      scelta_problema: "Verifica che il problema esista per almeno 15-20 aziende target. Non costruire nulla finché non hai confermato che il processo manuale costa loro tempo o denaro reale.",
+      pain_cliente: "Il pain del cliente SaaS è la perdita di tempo in compiti ripetitivi o la perdita di dati. Assicurati che la tua proposta di valore parli direttamente alla riduzione di questo stress.",
+      psicologia_vendita: "Nel B2B SaaS si vende per accrescere i ricavi o tagliare i costi. Posiziona il tuo software come un dipendente virtuale infaticabile e calcolane il ROI.",
+      posizionamento: "Evita di posizionarti come 'un software per tutto'. Scegli una nicchia stretta (es. CRM per agenzie immobiliari locali) per battere i giganti generalisti.",
+      distribuzione: "Sfrutta la SEO tecnica su ricerche di nicchia ed outreach mirato su LinkedIn. Nel SaaS la distribuzione organica è il motore di crescita a lungo termine.",
+      hiring: "La tua prima assunzione dovrebbe essere un technical co-founder o un senior engineer per garantire l'indipendenza di sviluppo, seguita da un growth marketer.",
+      processo_decisionale: "Il processo d'acquisto B2B ha più stakeholder (CTO, CFO, User). Crea materiali ad hoc (es. foglio di sicurezza dati per il CTO e ROI per il CFO).",
+      cash_flow: "Traccia minuziosamente il Churn Rate (abbandono) ed il LTV (Lifetime Value). Il cash flow del SaaS dipende dalla ricorrenza: ottimizza la retention dei clienti.",
+      storytelling: "Racconta come il fondatore ha vissuto in prima persona il problema che il SaaS risolve. La storia di 'frustrazione e soluzione' crea immediata empatia B2B.",
+      mindset: "Accetta che l'MVP sarà imperfetto. Rilascia presto, raccogli feedback ed itera ogni settimana. La resilienza sta nel non innamorarsi del codice, ma del problema."
+    },
+    ecommerce: {
+      scelta_problema: "Verifica la reperibilità e l'unicità del prodotto. Risolvi problemi di accessibilità di prodotti di nicchia o convenienza di acquisto ricorrente.",
+      pain_cliente: "La frustrazione per tempi di spedizione lunghi, resi complessi o packaging inquinante. Ottimizza la logistica fin dal giorno zero.",
+      psicologia_vendita: "Usa la leva della riprova sociale (social proof) e del passaparola visuale. Le recensioni fotografiche e i video UGC convertono più delle descrizioni scritte.",
+      posizionamento: "Non competere sul prezzo con Amazon. Posizionati come brand di nicchia con valori chiari (es. ecologico, artigianale, Made in Italy).",
+      distribuzione: "Le campagne Meta/TikTok Ads sono il motore iniziale, abbinate ad un'ottima strategia di email marketing automatizzata per fidelizzare i clienti ed evitare il costo dei click ripetuti.",
+      hiring: "Assumi un esperto di logistica/operations part-time ed un copywriter/social media manager creativo per dare una voce unica e professionale al brand.",
+      processo_decisionale: "Acquisto impulsivo ed emozionale. Riduci i passaggi al checkout, accetta pagamenti rapidi (ApplePay, PayPal) e offri una garanzia di reso chiara.",
+      cash_flow: "L'e-commerce divora cassa per l'inventario. Ottimizza il lead time dei fornitori e mantieni basso il magazzino iniziale per evitare di bloccare la cassa in prodotti invenduti.",
+      storytelling: "Mostra il dietro le cuinte: la nascita del brand, la scelta etica dei fornitori o il confezionamento dei pacchi. Vendi l'esperienza dietro l'oggetto fisico.",
+      mindset: "Sii pronto a testare decine di inserzioni pubblicitarie (ad creatives) diverse prima di trovarne una redditizia. Analizza i dati con freddezza scientifica."
+    },
+    food_beverage: {
+      scelta_problema: "Analizza la concorrenza locale nel raggio di 2 km. Trova un buco nell'offerta culinaria locale o un formato d'acquisto innovativo (es. asporto rapido intelligente).",
+      pain_cliente: "I dolori principali sono l'attesa eccessiva per il tavolo, le materie prime scarse o menu poco trasparenti. Risolvili offrendo menu QR chiari e asporto coordinato.",
+      psicologia_vendita: "Il cibo è emozione e convivialità. Vendi l'esperienza del locale e l'autenticità dei sapori. Regala esperienze gustative fin dal primo istante.",
+      posizionamento: "Crea un piatto firma (signature dish) unico e memorabile che i clienti possano ordinare solo da te e che funga da calamita per il passaparola.",
+      distribuzione: "La Local SEO (Google Maps) ed Instagram Reels geolocalizzati sono i canali di distribuzione più potenti ed economici per attirare clienti fisici locali.",
+      hiring: "La priorità assoluta è uno chef o responsabile di cucina affidabile ed un caposala orientato all'ospitalità che fidelizzi i clienti abituali.",
+      processo_decisionale: "Decisione rapida, guidata dall'appetito o dalla ricerca locale dell'ultimo minuto. Sii visibile su Maps e rispondi rapidamente alle prenotazioni.",
+      cash_flow: "Gestisci gli sprechi alimentari (food waste) al grammo. Il cash flow della ristorazione si salva ottimizzando l'acquisto quotidiano delle materie prime fresche.",
+      storytelling: "Narra la tradizione delle ricette, la ricerca degli ingredienti biologici dal produttore locale. La provenienza del cibo affascina il consumatore moderno.",
+      mindset: "La ristorazione è operativa e faticosa. Mantieni alto il morale dello staff e accetta che il servizio perfetto si costruisce rodando il team nei primi mesi."
+    },
+    retail: {
+      scelta_problema: "Il commercio locale soffre la concorrenza online. Scegli un problema locale: es. la mancanza di un negozio di abbigliamento bimbi di qualità nel quartiere.",
+      pain_cliente: "La noia dell'acquisto standardizzato nei grandi magazzini. I clienti cercano calore umano, consigli di stile su misura e la prova immediata del prodotto.",
+      psicologia_vendita: "Psicologia del tatto e dell'accoglienza. Un ambiente profumato, musica adatta ed un sorriso aumentano il tempo di permanenza e il valore dello scontrino.",
+      posizionamento: "Posizionati come curatore di prodotti unici (concept store) piuttosto che come negozio generico. Cura la vetrina come un'opera d'arte dinamica.",
+      distribuzione: "Eventi in-store per i residenti del quartiere, collaborazioni con altre botteghe locali, e promozioni mirate sui gruppi social del quartiere.",
+      hiring: "Assumi assistenti alla vendita con eccellenti doti comunicative e capacità di fare visual merchandising per mantenere il negozio sempre attraente.",
+      processo_decisionale: "Il cliente valuta la comodità del negozio e l'esperienza fisica. Rendi l'acquisto immediato, offri confezioni regalo eccellenti e pagamenti digitali rapidi.",
+      cash_flow: "Rotazione delle scorte (inventory turnover) è la parola chiave. Non accumulare stock invenduto: usa i saldi in modo strategico per liberare cassa per le nuove collezioni.",
+      storytelling: "Racconta perché hai aperto in quel quartiere specifico e la passione per la selezione artigianale dei prodotti. Fai sentire i clienti parte di una comunità.",
+      mindset: "Vivi il negozio come un punto d'incontro sociale. Devi amare il contatto quotidiano con le persone e saper ascoltare i feedback dei passanti."
+    },
+    mobile_app: {
+      scelta_problema: "Verifica se l'app risolve una necessità quotidiana o offre intrattenimento reale. Un'app che non viene aperta almeno 3 volte a settimana rischia la cancellazione.",
+      pain_cliente: "Frizione d'uso, lentezza e consumi di batteria elevati. Risolvi fornendo un'interfaccia fluida e un onboarding senza registrazione obbligatoria immediata.",
+      psicologia_vendita: "Fai leva sulla gamification (badge, strisce di utilizzo quotidiano) per creare abitudini positive e incentivare l'acquisto di funzioni premium.",
+      posizionamento: "Concentrati su un'unica funzionalità core eccezionale (es. 'il timer per la produttività più pulito') anziché riempire l'app di funzioni inutili.",
+      distribuzione: "Ottimizza l'ASO (App Store Optimization) per comparire nelle ricerche organiche dello store. Usa campagne di micro-influencer per dimostrare l'uso pratico.",
+      hiring: "La priorità è un mobile developer (iOS/Android) esperto di UI/UX, o un designer che sappia progettare interazioni fluide ed onboardings intuitivi.",
+      processo_decisionale: "Il download è gratuito ma la conversione in-app richiede fiducia. Mostra il valore dell'abbonamento solo dopo che l'utente ha provato i benefici reali.",
+      cash_flow: "Tieni conto delle commissioni degli store (15-30% a Apple/Google). Calcola il costo di acquisizione (CPI) ed assicurati che il canone in-app copra il marketing ads.",
+      storytelling: "Mostra lo sviluppo del codice, le sfide di design e come l'app ha semplificato la vita dei beta tester. Coinvolgi la community nella roadmap delle funzioni.",
+      mindset: "Sii pronto a rilasciare aggiornamenti continui basati sulle recensioni degli store. Rispondi a ogni singola recensione negativa con empatia e soluzioni rapide."
+    },
+    services: {
+      scelta_problema: "Identifica le inefficienze operative delle PMI locali. Se offri consulenza, assicurati di risolvere un problema fiscale, di vendite, o di marketing misurabile.",
+      pain_cliente: "La frustrazione per l'assenza di risultati promessi da agenzie teoriche. I clienti cercano trasparenza, reportistica chiara e un unico referente affidabile.",
+      psicologia_vendita: "Costruisci autorità e fiducia. Scrivi post a valore su LinkedIn, organizza webinar formativi e posizionati come esperto indiscusso del settore.",
+      posizionamento: "Specializzati su un target preciso (es. 'Marketing per studi dentistici') piuttosto che presentarti come un'agenzia di comunicazione generalista.",
+      distribuzione: "LinkedIn outreach strategico (non spam), partecipazione attiva a fiere di settore e referenze incentivate da clienti attuali soddisfatti.",
+      hiring: "Assumi professionisti junior da formare per l'operatività ordinaria, mantenendo la direzione strategica in capo a te nei primi tempi di crescita.",
+      processo_decisionale: "Il B2B richiede tempo (2-6 settimane). Rassicura il cliente con un audit iniziale gratuito e una proposta commerciale a milestone chiare.",
+      cash_flow: "Evita la trappola dei pagamenti posticipati a 90 giorni. Imponi un acconto del 30-50% all'inizio del progetto o un canone mensile flat ricorrente anticipato.",
+      storytelling: "Condividi i casi studio di successo dei tuoi clienti: mostra il 'prima' e il 'dopo' dell'intervento. La storia del successo altrui è il tuo miglior marketing.",
+      mindset: "Il tuo servizio dipende dalla reputazione. Mantieni promesse e scadenze anche a costo di lavorare ore extra all'inizio. La qualità delle relazioni è tutto."
+    },
+    general: {
+      scelta_problema: "Assicurati di identificare un problema reale e doloroso per il mercato. Un business solido si basa su bisogni esistenti, non su desideri teorici.",
+      pain_cliente: "Traccia cosa fa perdere tempo, soldi o sonno al tuo target. Se la tua soluzione non riduce uno di questi elementi, non c'è mercato sufficiente.",
+      psicologia_vendita: "Riduci l'ostacolo mentale all'acquisto offrendo garanzie solide, demo o prove senza rischi. Fai sentire il cliente al sicuro e coccolato.",
+      posizionamento: "Definisci in cosa sei radicalmente differente dai competitor. Se non sei differente, sarai costretto a competere esclusivamente sul prezzo.",
+      distribuzione: "Trova il canale in cui si concentra il tuo pubblico target (social, fisici, motori di ricerca) ed impara a dominarlo prima di differenziare.",
+      hiring: "Definisci i ruoli chiave partendo dai tuoi punti di debolezza. Assumi persone migliori di te nei compiti in cui non eccelli.",
+      processo_decisionale: "Comprendi ogni passaggio che fa il cliente dall'incontrare il tuo brand all'acquistare. Rendi il cammino privo di ostacoli tecnici.",
+      cash_flow: "La cassa è il sangue del business. Mantieni i costi fissi al minimo, incassa velocemente e non fare affidamento su proiezioni ottimistiche.",
+      storytelling: "Comunica il perché del tuo business prima di spiegare il cosa fa. Le persone comprano il motivo per cui fai le cose, la tua missione.",
+      mindset: "Accetta il fallimento come feedback costruttivo. L'imprenditoria è una maratona di adattamenti continui, non uno sprint di fortuna."
+    }
+  },
+
+  salesPsychologyData: {
+    saas: {
+      hook: "Invece di vendere funzionalità, mostra come risparmiare il 70% del tempo perso in processi manuali ripetitivi. Vendi il 'tempo libero' e l'assenza di errori, non il codice.",
+      objections: "Il software costa troppo / Possiamo farlo in-house / Sarà sicuro per i nostri dati? Rispondi offrendo un ROI calculator chiaro, un trial guidato di 14 giorni e certificazioni di conformità hosting.",
+      conversion: "Offri uno sconto del 20% sul piano annuale o sessioni di setup/onboarding gratuito 1-to-1 se firmano entro la settimana. La chiave è azzerare la frizione tecnica iniziale.",
+      angle: "B2B Efficiency & Automation Focus",
+      urgency: "Setup Gratuito & Assistenza Dedicata per i primi 10 clienti",
+      friction: "Sforzo di migrazione dati e adozione del team"
+    },
+    ecommerce: {
+      hook: "Vendi un'identità o una soluzione di comodità/ecosostenibilità. Mostra il prodotto in azione (unboxing, benefici visivi rapidi) focalizzandoti sulle emozioni dell'acquirente.",
+      objections: "Il prezzo di spedizione è alto / E se non mi va bene? Rispondi con politiche di reso gratuito entro 30 giorni e spedizione inclusa sopra una certa soglia ben visibile.",
+      conversion: "Usa countdown di urgenza (es. spedizione in giornata se acquisti entro 2 ore) ed Email automatiche di abbandono carrello con codice sconto 10% ad attivazione rapida.",
+      angle: "Emotional Styling & Risk-Free Shopping",
+      urgency: "Spedizione gratuita e sconto benvenuto per le prossime 24 ore",
+      friction: "Fiducia nel brand sconosciuto e tempi di spedizione"
+    },
+    food_beverage: {
+      hook: "L'occhio vuole la sua parte: valorizza la qualità degli ingredienti locali e l'artigianalità attraverso video Reels ravvicinati che stimolano l'appetito e la voglia di socialità.",
+      objections: "C'è fila / Sarà pulito? / La qualità giustifica il prezzo? Rispondi mostrando il menu digitale trasparente, le recensioni a 5 stelle dei clienti e il servizio asporto rapido.",
+      conversion: "Fornisci un drink di benvenuto gratuito, un dessert in omaggio per chi prenota via web, o un loyalty program (tessera 10+1) per aumentare la frequenza di riacquisto locale.",
+      angle: "Local Experience & Food Quality Passion",
+      urgency: "Offerta di lancio limitata sui coperti della settimana",
+      friction: "Tempi d'attesa e difficoltà di parcheggio/prenotazione"
+    },
+    retail: {
+      hook: "Rivaluta il commercio di quartiere puntando sull'esperienza fisica, il tocco dei materiali e il consiglio personalizzato di un esperto che le grandi catene online non possono offrire.",
+      objections: "Su Amazon costa meno / C'è poca scelta. Rispondi garantendo la qualità esclusiva dei brand selezionati, l'assistenza post-vendita e la possibilità di provare il prodotto subito.",
+      conversion: "Regala un buono sconto cartaceo sul secondo acquisto ed implementa eventi in-store esclusivi per i residenti del quartiere, incentivando il passaparola locale.",
+      angle: "Human Interaction & Instant Ownership",
+      urgency: "Sconto in-store valido solo per questo weekend di lancio",
+      friction: "Mancanza di parcheggio e assortimento limitato rispetto al web"
+    },
+    mobile_app: {
+      hook: "Crea curiosità sul beneficio immediato (es. 'Impara X in 5 minuti' o 'Traccia Y senza sforzo'). Usa micro-interazioni grafiche e gamification per renderla memorabile all'istante.",
+      objections: "È l'ennesima app che non userò / Sarà piena di pubblicità? Rispondi offrendo un modello freemium pulito, con 7 giorni di prova gratuita di tutte le funzioni pro senza vincoli.",
+      conversion: "Notifiche push intelligenti di congratulazioni e promozioni flash (es. 50% di sconto a tempo limitato) basate sul comportamento di utilizzo effettivo dell'utente nell'app.",
+      angle: "Daily Habit & Seamless Mobile Utility",
+      urgency: "Prezzo di lancio annuale scontato del 50%",
+      friction: "Apatia dell'utente (scarica e dimentica) e setup iniziale"
+    },
+    services: {
+      hook: "Smetti di vendere ore di lavoro. Vendi pacchetti a risultato chiaro (es. 'Posizioniamo il tuo sito in prima pagina' o 'Riduciamo il carico fiscale'). Diventa un partner di fiducia.",
+      objections: "Ho già avuto brutte esperienze / Come misuro i risultati? Rispondi mostrando Case Studies reali, testimonianze video e impostando contratti con reportistica mensile chiara.",
+      conversion: "Offri una prima consulenza strategica (audit) gratuita del valore di 250€ per individuare le falle attuali e dimostrare la tua competenza prima di chiedere vendite.",
+      angle: "ROI-Driven Partnership & Authority Positioning",
+      urgency: "Capacità limitata (accettiamo solo 2 nuovi clienti questo mese)",
+      friction: "Scetticismo sui risultati promessi e timore di contratti a lungo termine"
+    },
+    general: {
+      hook: "Focalizzati sulla semplicità ed efficienza della soluzione. Spiega il tuo valore aggiunto in meno di 10 secondi e posizionati come l'alternativa più affidabile e vicina.",
+      objections: "Posso farne a meno / Non conosco il brand. Rispondi con recensioni certificate, una garanzia 'soddisfatti o rimborsati' e trasparenza totale su prezzi e condizioni.",
+      conversion: "Incentivi di benvenuto e canali di assistenza immediati (WhatsApp Business o chat diretta) per risolvere i dubbi dell'utente in tempo reale durante l'acquisto.",
+      angle: "Convenience & High Trust Alternative",
+      urgency: "Prezzo promozionale di lancio per i primi 50 clienti",
+      friction: "Inerzia all'acquisto e mancanza di fiducia iniziale"
+    }
   }
 };
 

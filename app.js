@@ -561,6 +561,38 @@ function setupEventListeners() {
     inputSam.addEventListener("input", handleSizingInput);
     inputSom.addEventListener("input", handleSizingInput);
   }
+
+  // Listener per aggiungere ruoli di assunzione
+  const btnAddHire = document.getElementById("btn-add-hire");
+  if (btnAddHire) {
+    btnAddHire.addEventListener("click", () => {
+      const roleInput = document.getElementById("hire-role-input");
+      const salaryInput = document.getElementById("hire-salary-input");
+      const equityInput = document.getElementById("hire-equity-input");
+      const timelineSelect = document.getElementById("hire-timeline-select");
+      if (!roleInput || !salaryInput || !equityInput || !timelineSelect) return;
+      
+      const role = roleInput.value.trim();
+      const salary = parseFloat(salaryInput.value) || 0;
+      const equity = parseFloat(equityInput.value) || 0;
+      const timeline = timelineSelect.value;
+      
+      if (!role || salary <= 0 || equity < 0) {
+        alert("Inserisci un ruolo valido, una RAL positiva e una quota % valida.");
+        return;
+      }
+      
+      if (!state.project.hires) state.project.hires = [];
+      state.project.hires.push({ role, salary, equity, timeline });
+      
+      roleInput.value = "";
+      salaryInput.value = "";
+      equityInput.value = "";
+      
+      saveCurrentProjectToStorage();
+      updateEquityUI();
+    });
+  }
 }
 
 // Configura i listener per la gestione dello storico progetti
@@ -669,7 +701,9 @@ function createNewProject() {
     objective: "",
     type: "custom",
     attachedFile: null,
-    attachedImage: null
+    attachedImage: null,
+    hires: [],
+    readiness: {}
   };
   
   state.currentPhase = 0;
@@ -754,9 +788,11 @@ function loadProjectFromStorage(id) {
   if (!projData) return;
   
   state.project = projData.project;
-  // Assicura che i campi degli allegati esistano nello stato caricato
+  // Assicura che i campi degli allegati e delle nuove funzionalità esistano nello stato caricato
   if (!state.project.attachedFile) state.project.attachedFile = null;
   if (!state.project.attachedImage) state.project.attachedImage = null;
+  if (!state.project.hires) state.project.hires = [];
+  if (!state.project.readiness) state.project.readiness = {};
   
   state.currentPhase = projData.currentPhase;
   state.chatHistory = projData.chatHistory || [];
@@ -1814,6 +1850,7 @@ function updateMarketingUI() {
       });
     });
   }
+  updateSalesPsychologyUI();
 }
 
 function updateEquityUI() {
@@ -1828,14 +1865,26 @@ function updateEquityUI() {
   const capTableBody = document.getElementById("cap-table-body");
   if (!capTableBody) return;
 
-  const totalShares = state.shareholders.reduce((sum, s) => sum + s.shares, 0);
+  const baseTotalShares = state.shareholders.reduce((sum, s) => sum + s.shares, 0);
   const safeCap = parseFloat(document.getElementById("safe-cap").value) || 1500000;
+
+  // Trova l'Option Pool
+  const poolIdx = state.shareholders.findIndex(s => s.name.toLowerCase().includes("option") || s.name.toLowerCase().includes("pool"));
+  
+  // Calcola quote assunzioni
+  const hiresList = state.project.hires || [];
+  const totalHireShares = hiresList.reduce((sum, h) => sum + Math.round((h.equity / 100) * baseTotalShares), 0);
 
   capTableBody.innerHTML = "";
 
   state.shareholders.forEach((s, idx) => {
-    const pct = totalShares > 0 ? ((s.shares / totalShares) * 100).toFixed(2) : "0.00";
-    const estVal = totalShares > 0 ? ((s.shares / totalShares) * safeCap).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }) : "0 €";
+    let shares = s.shares;
+    if (idx === poolIdx) {
+      shares = Math.max(0, s.shares - totalHireShares);
+    }
+    
+    const pct = baseTotalShares > 0 ? ((shares / baseTotalShares) * 100).toFixed(2) : "0.00";
+    const estVal = baseTotalShares > 0 ? ((shares / baseTotalShares) * safeCap).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }) : "0 €";
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -1844,11 +1893,35 @@ function updateEquityUI() {
       </td>
       <td>
         <input type="number" value="${s.shares}" class="cap-shares-edit" data-index="${idx}" style="width: 100%; border: none; background: transparent; color: var(--text-main); font-size: 12px; font-family: monospace; outline: none; padding: 2px;">
+        ${idx === poolIdx && totalHireShares > 0 ? `<br><small style="color: var(--text-muted)">Rimanente di ${s.shares.toLocaleString()}</small>` : ""}
       </td>
       <td style="font-weight: bold; font-family: monospace; color: var(--text-main);">${pct}%</td>
       <td style="color: var(--text-muted); font-family: monospace;">${estVal}</td>
       <td>
         <button class="btn-delete-shareholder" data-index="${idx}" style="background: transparent; border: none; color: #f87171; cursor: pointer; font-size: 14px; padding: 2px 6px;">🗑️</button>
+      </td>
+    `;
+    capTableBody.appendChild(tr);
+  });
+
+  // Aggiungi le righe dei dipendenti assunti
+  hiresList.forEach((h, idx) => {
+    const shares = Math.round((h.equity / 100) * baseTotalShares);
+    const pct = h.equity.toFixed(2);
+    const estVal = baseTotalShares > 0 ? ((shares / baseTotalShares) * safeCap).toLocaleString('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }) : "0 €";
+
+    const tr = document.createElement("tr");
+    tr.style.background = "rgba(139,92,246,0.02)";
+    tr.style.borderLeft = "2px solid var(--primary)";
+    tr.innerHTML = `
+      <td>
+        <span style="color: var(--primary); font-weight: bold;">👤 Assunzione:</span> ${h.role}
+      </td>
+      <td style="font-family: monospace; color: var(--text-muted);">${shares.toLocaleString()}</td>
+      <td style="font-weight: bold; font-family: monospace; color: var(--primary);">${pct}%</td>
+      <td style="color: var(--text-muted); font-family: monospace;">${estVal}</td>
+      <td>
+        <span class="chip" style="background: rgba(139,92,246,0.08); color: var(--primary); font-size: 9px; padding: 2px 6px;">Hired</span>
       </td>
     `;
     capTableBody.appendChild(tr);
@@ -1887,6 +1960,164 @@ function updateEquityUI() {
   // Update SAFE and Pitch Deck inside
   updateSafeSimulation();
   updatePitchDeckUI();
+  updateHiringUI();
+}
+
+function updateHiringUI() {
+  const tbody = document.getElementById("hiring-table-body");
+  if (!tbody) return;
+
+  const hires = state.project.hires || [];
+  if (hires.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted)">Nessun dipendente o collaboratore chiave pianificato. Aggiungine uno sotto.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = "";
+  hires.forEach((h, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>${h.role}</strong></td>
+      <td style="font-family: monospace; font-weight: bold;">${h.salary.toLocaleString('it-IT')} €</td>
+      <td style="font-family: monospace; color: var(--primary); font-weight: bold;">${h.equity}%</td>
+      <td><span class="chip" style="background: rgba(99,102,241,0.08); color: var(--primary); font-size: 10px; padding: 2px 6px; border-radius: 4px;">${h.timeline}</span></td>
+      <td>
+        <button class="btn-delete-hire" data-index="${idx}" style="background: transparent; border: none; color: #f87171; cursor: pointer; font-size: 14px; padding: 2px 6px;">🗑️</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Bind delete listener for hires
+  tbody.querySelectorAll(".btn-delete-hire").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const index = parseInt(e.target.dataset.index, 10);
+      state.project.hires.splice(index, 1);
+      saveCurrentProjectToStorage();
+      updateEquityUI();
+    });
+  });
+}
+
+function updateSalesPsychologyUI() {
+  let info = { sector: "general" };
+  if (state.project && state.project.idea) {
+    info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+  }
+  
+  const psych = window.LocalAgentSimulationEngine.salesPsychologyData[info.sector] || window.LocalAgentSimulationEngine.salesPsychologyData.general;
+
+  const hookText = document.getElementById("funnel-hook-text");
+  const objectionsText = document.getElementById("funnel-objections-text");
+  const conversionText = document.getElementById("funnel-conversion-text");
+
+  const psychAngle = document.getElementById("sales-psych-angle");
+  const psychUrgency = document.getElementById("sales-psych-urgency");
+  const psychFriction = document.getElementById("sales-psych-friction");
+
+  if (hookText) hookText.textContent = psych.hook;
+  if (objectionsText) objectionsText.textContent = psych.objections;
+  if (conversionText) conversionText.textContent = psych.conversion;
+
+  if (psychAngle) psychAngle.textContent = psych.angle;
+  if (psychUrgency) psychUrgency.textContent = psych.urgency;
+  if (psychFriction) psychFriction.textContent = psych.friction;
+}
+
+function updateReadinessUI() {
+  const container = document.getElementById("startup-readiness-container");
+  const listContainer = document.getElementById("readiness-checklist-list");
+  if (!container || !listContainer) return;
+
+  if (state.currentPhase === 0) {
+    container.style.display = "none";
+    return;
+  }
+
+  container.style.display = "block";
+
+  let info = { sector: "general" };
+  if (state.project && state.project.idea) {
+    info = window.LocalAgentSimulationEngine.classifyProject(state.project.idea, state.project.budget, state.project.objective);
+  }
+  const tips = window.LocalAgentSimulationEngine.startupReadinessData[info.sector] || window.LocalAgentSimulationEngine.startupReadinessData.general;
+
+  const topics = [
+    { key: "scelta_problema", label: "🎯 Scelta del problema" },
+    { key: "pain_cliente", label: "🔴 Pain del cliente" },
+    { key: "psicologia_vendita", label: "🧠 Psicologia della vendita" },
+    { key: "posizionamento", label: "⚡ Posizionamento di mercato" },
+    { key: "distribuzione", label: "📢 Canali di Distribuzione" },
+    { key: "hiring", label: "👥 Strategia di Hiring (Team)" },
+    { key: "processo_decisionale", label: "⚖️ Processo decisionale d'acquisto" },
+    { key: "cash_flow", label: "💰 Gestione del Cash flow" },
+    { key: "storytelling", label: "📖 Storytelling & Elevator Pitch" },
+    { key: "mindset", label: "👑 Mindset imprenditoriale" }
+  ];
+
+  if (!state.project.readiness) {
+    state.project.readiness = {};
+  }
+
+  listContainer.innerHTML = topics.map((t, idx) => {
+    const currentStatus = state.project.readiness[t.key] || "Da Studiare";
+    let badgeColor = "var(--text-muted)";
+    let badgeBg = "rgba(255,255,255,0.05)";
+
+    if (currentStatus === "In Corso") {
+      badgeColor = "var(--warning)";
+      badgeBg = "rgba(245,158,11,0.1)";
+    } else if (currentStatus === "Validato") {
+      badgeColor = "var(--success)";
+      badgeBg = "rgba(16,185,129,0.1)";
+    }
+
+    const tipText = tips[t.key] || "Analizza le metriche e definisci la strategia.";
+
+    return `
+      <div style="background: rgba(255,255,255,0.01); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; transition: all 0.2s;">
+        <div class="readiness-topic-header" data-key="${t.key}" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+          <span style="font-weight: 600; font-size: 12.5px; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+            ${t.label} <span style="font-size: 9px; color: var(--text-muted);">(Clicca per info)</span>
+          </span>
+          <button class="readiness-status-badge" data-key="${t.key}" style="background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeColor}; padding: 3px 6px; border-radius: 10px; cursor: pointer; font-size: 9.5px; font-weight: bold; width: 90px; text-align: center; outline: none; border-style: solid;">
+            ${currentStatus}
+          </button>
+        </div>
+        <div id="readiness-tip-${t.key}" style="display: none; margin-top: 10px; padding: 10px; background: rgba(99,102,241,0.02); border-left: 2px solid var(--primary); font-size: 11.5px; line-height: 1.45; color: var(--text-muted);">
+          <strong>Pillola Strategica (${info.sector.toUpperCase()}):</strong> ${tipText}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // Bind click on topic headers
+  listContainer.querySelectorAll(".readiness-topic-header").forEach(header => {
+    header.addEventListener("click", (e) => {
+      if (e.target.classList.contains("readiness-status-badge")) return;
+      const key = header.dataset.key;
+      const tipBox = document.getElementById(`readiness-tip-${key}`);
+      if (tipBox) {
+        tipBox.style.display = tipBox.style.display === "none" ? "block" : "none";
+      }
+    });
+  });
+
+  // Bind badge click listener to cycle state
+  listContainer.querySelectorAll(".readiness-status-badge").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const key = e.target.dataset.key;
+      const current = state.project.readiness[key] || "Da Studiare";
+      let next = "Da Studiare";
+      if (current === "Da Studiare") next = "In Corso";
+      else if (current === "In Corso") next = "Validato";
+
+      state.project.readiness[key] = next;
+      saveCurrentProjectToStorage();
+      updateReadinessUI();
+    });
+  });
 }
 
 function updateSafeSimulation() {
@@ -2193,6 +2424,7 @@ function updateDueDiligenceUI() {
       updateDueDiligenceUI();
     });
   });
+  updateReadinessUI();
 }
 
 function updateFinancialsUI() {
