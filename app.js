@@ -2453,6 +2453,14 @@ function updateFinancialsUI() {
           btn1Text = "📦 Magazzino Proprio";
           btn2Text = "🚚 Dropshipping / Fulfillment";
           btn3Text = "🤝 Conto Vendita / Partner";
+        } else if (info.sector === "non_profit") {
+          btn1Text = "🌱 Fondi Propri / Donazioni";
+          btn2Text = "🏛️ Bandi Pubblici / ETS";
+          btn3Text = "🤝 Sponsor CSR / Aziende";
+        } else if (info.sector === "media_content") {
+          btn1Text = "🎥 Produzione Interna";
+          btn2Text = "☁️ Outsourcing / Editor";
+          btn3Text = "🤝 Co-Produzione / Sponsor";
         } else if (!info.isVending) {
           btn1Text = "🏢 Agenzia Proprietaria";
           btn2Text = "☁️ Sub-appalto / Outsourcing";
@@ -3438,6 +3446,14 @@ function addFinancialsSystemMessage(option) {
     if (option === "acquisto") optionName = "Magazzino Proprio";
     if (option === "leasing") optionName = "Dropshipping / Fulfillment";
     if (option === "jv") optionName = "Conto Vendita / Partner";
+  } else if (info.sector === "non_profit") {
+    if (option === "acquisto") optionName = "Fondi Propri / Donazioni";
+    if (option === "leasing") optionName = "Bandi Pubblici / ETS";
+    if (option === "jv") optionName = "Sponsor CSR / Aziende";
+  } else if (info.sector === "media_content") {
+    if (option === "acquisto") optionName = "Produzione Interna";
+    if (option === "leasing") optionName = "Outsourcing / Editor";
+    if (option === "jv") optionName = "Co-Produzione / Sponsor";
   } else if (info.isVending) {
     if (option === "acquisto") optionName = "Acquisto Diretto";
     if (option === "leasing") optionName = "Leasing / Noleggio";

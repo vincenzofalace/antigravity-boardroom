@@ -586,6 +586,126 @@ const LocalAgentSimulationEngine = {
         verdictReason: "Avviare campagne di crowdfunding (Kickstarter) o pre-ordini per finanziare il primo lotto di produzione con i soldi dei clienti."
       }
     },
+    non_profit: {
+      cmo: {
+        objections: [
+          "**Storytelling Emozionale vs Efficacia**: Rischio di focalizzarsi troppo sul senso di colpa anziché sull'impatto positivo reale.",
+          "**Acquisizione Donatori Costosa**: I canali tradizionali (eventi, ads) possono divorare gran parte delle donazioni raccolte."
+        ],
+        verdictReason: "Puntare su campagne di impact storytelling trasparenti e newsletter periodiche per mostrare i risultati tangibili."
+      },
+      coo: {
+        objections: [
+          "**Gestione e Retention dei Volontari**: Alta volatilità dello staff non retribuito e difficoltà a coordinare i turni.",
+          "**Tracciamento dell'Impatto**: Mancanza di KPI chiari per misurare e dimostrare l'efficacia sociale del progetto."
+        ],
+        verdictReason: "Implementare un portale volontari semplificato e definire metriche di impatto chiare (es. pasti erogati, ore di assistenza)."
+      },
+      clo: {
+        objections: [
+          "**Inquadramento Fiscale No-Profit**: Complessità burocratica nell'iscrizione al RUNTS (Registro Terzo Settore) e conformità fiscale.",
+          "**Responsabilità sulle Donazioni**: Rischio di sanzioni in caso di tracciamento non trasparente dei fondi e delle detrazioni."
+        ],
+        verdictReason: "Farsi assistere da un consulente esperto di Terzo Settore per la stesura dello statuto e la conformità ONLUS/ETS."
+      },
+      capital: {
+        objections: [
+          "**Dipendenza da Singole Fonti**: Rischio di crisi finanziaria se l'associazione si basa solo su un bando o su un grande donatore.",
+          "**Burocrazia dei Bandi Pubblici**: Tempi di erogazione dei fondi pubblici lunghissimi, che creano tensioni di cassa nel breve termine."
+        ],
+        verdictReason: "Diversificare le entrate raccogliendo quote associative, donazioni ricorrenti da privati e sponsorizzazioni da aziende locali (CSR)."
+      }
+    },
+    industrial_agri: {
+      cmo: {
+        objections: [
+          "**Commodity Trap (Prezzo Basso)**: Rischio di vendere prodotti industriali o agricoli generici, dovendo competere solo sul prezzo all'ingrosso.",
+          "**Canali di Vendita Intermediati**: Forte dipendenza da distributori e GDO che riducono i margini del produttore."
+        ],
+        verdictReason: "Creare un brand forte incentrato sull'artigianalità, la sostenibilità (es. biologico, filiera corta) ed avviare canali di vendita diretta."
+      },
+      coo: {
+        objections: [
+          "**Efficienza della Catena di Produzione**: Rischio di colli di bottiglia o scarti elevati nella lavorazione delle materie prime.",
+          "**Manutenzione dei Macchinari**: Un guasto agli impianti di produzione o alle serre idroponiche può bloccare l'intera attività."
+        ],
+        verdictReason: "Standardizzare i processi operativi (SOP), pianificare la manutenzione preventiva e ottimizzare il layout degli spazi di lavoro."
+      },
+      sourcing: {
+        objections: [
+          "**Volatilità del Costo delle Materie Prime**: Fluttuazioni di prezzo di sementi, metalli o energia che erodono i margini stimati.",
+          "**Dipendenza da Fornitori di Macchinari**: Tempi di consegna lunghi per pezzi di ricambio o impianti critici."
+        ],
+        verdictReason: "Negoziare contratti di fornitura a lungo termine a prezzo bloccato e diversificare i partner di approvvigionamento."
+      },
+      capital: {
+        objections: [
+          "**CAPEX Iniziale Altissimo**: L'acquisto di macchinari industriali, trattori o impianti idroponici richiede ingenti capitali iniziali.",
+          "**Ritorno sull'Investimento Lento**: I tempi di ammortamento degli impianti industriali o di crescita dei raccolti sono molto lunghi."
+        ],
+        verdictReason: "Sfruttare il noleggio operativo o leasing per i macchinari e accedere a bandi di finanziamento agricoli (PSR) o industriali (Transizione 5.0)."
+      }
+    },
+    real_estate: {
+      cmo: {
+        objections: [
+          "**Acquisizione Immobili Competitiva**: Difficoltà a reperire appartamenti o spazi a buon prezzo in mercati saturi.",
+          "**Ciclo di Vendita Lungo**: Trovare acquirenti o conduttori qualificati richiede mesi, durante i quali l'immobile genera costi."
+        ],
+        verdictReason: "Implementare campagne di lead generation mirate per proprietari e valorizzare gli immobili con servizi di Home Staging professionale."
+      },
+      coo: {
+        objections: [
+          "**Gestione delle Ristrutturazioni**: Rischio di ritardi dei lavori ed aumento imprevisto dei costi delle imprese edili.",
+          "**Burocrazia e Permessi Comunali**: Tempi lunghi per ottenere autorizzazioni edilizie (CILA, SCIA) o cambi di destinazione d'uso."
+        ],
+        verdictReason: "Definire contratti d'appalto a prezzo chiuso con penali sui ritardi e affidarsi a tecnici locali qualificati per le pratiche."
+      },
+      clo: {
+        objections: [
+          "**Conformità Urbanistica e Catastale**: Rischio di abusi edilizi non sanati che bloccano la compravendita o il noleggio.",
+          "**Contratti di Locazione Rigidi**: Rischi legati a inquilini morosi e tempi lunghi di sfratto secondo la normativa locale."
+        ],
+        verdictReason: "Effettuare una due diligence catastale approfondita prima dell'acquisto e redigere contratti con garanzie fideiussorie solide."
+      },
+      capital: {
+        objections: [
+          "**Esposizione Finanziaria Elevata**: L'acquisto di immobili o le ristrutturazioni richiedono capitali enormi e forte leva finanziaria (mutui).",
+          "**Sensibilità ai Tassi d'Interesse**: Un aumento dei tassi dei mutui può ridurre drasticamente la redditività dell'operazione."
+        ],
+        verdictReason: "Utilizzare accordi di opzione d'acquisto, subaffitto (Rent-to-Rent) o joint venture con investitori per ridurre la cassa iniziale."
+      }
+    },
+    media_content: {
+      cmo: {
+        objections: [
+          "**Saturazione dell'Attenzione**: Competere per il tempo degli utenti su piattaforme come YouTube, Spotify o social è estremamente difficile.",
+          "**Algoritmo Volatile**: Forte dipendenza dalle variazioni improvvise degli algoritmi di raccomandazione delle piattaforme esterne."
+        ],
+        verdictReason: "Costruire una community proprietaria (es. newsletter, canale Discord) per non dipendere esclusivamente dagli algoritmi social."
+      },
+      cto: {
+        objections: [
+          "**Infrastruttura di Produzione Dispersa**: Mancanza di standard tecnici e backup fisici per file video/audio pesanti.",
+          "**Piattaforme di Distribuzione**: Gestione complessa di feed RSS, hosting video o piattaforme di gaming proprietarie."
+        ],
+        verdictReason: "Adottare soluzioni cloud centralizzate per l'editing collaborativo e sfruttare CDN affidabili per la distribuzione dei contenuti."
+      },
+      cco: {
+        objections: [
+          "**Identità di Canale Confusa**: Trattare troppi argomenti diversi allontana gli iscritti e confonde gli sponsor.",
+          "**Qualità Visiva/Audio Bassa**: Contenuti poco curati riducono drasticamente la retention dell'utente nei primi 10 secondi."
+        ],
+        verdictReason: "Focalizzarsi su una nicchia tematica chiara e investire nell'acustica e nella qualità dell'immagine per un look premium."
+      },
+      sales: {
+        objections: [
+          "**Dipendenza da AdSense (Bassi Margini)**: Guadagni instabili basati esclusivamente sulle visualizzazioni pubblicitarie delle piattaforme.",
+          "**Trattative con Sponsor Complesse**: Difficoltà a proporre pacchetti di sponsorizzazione a brand aziendali senza un media kit professionale."
+        ],
+        verdictReason: "Strutturare un media kit con dati demografici del pubblico e vendere pacchetti di sponsorizzazione diretta o modelli di abbonamento (Patreon/Substack)."
+      }
+    },
     general: {
       cmo: {
         objections: [
@@ -859,6 +979,138 @@ const LocalAgentSimulationEngine = {
         "Settimana 11-12: Strutturazione di un accordo provvigionale per segnalatori esterni di lead."
       ]
     },
+    non_profit: {
+      product: "l'Associazione No-Profit / progetto ad impatto sociale",
+      client: "sostenitori, donatori e beneficiari",
+      tech: "piattaforma di crowdfunding, CRM donatori (es. Keela) ed email marketing",
+      marketing: "storytelling emozionale, newsletter di impatto, eventi locali e social organici",
+      revenue: "donazioni, quote associative, bandi pubblici e sponsorizzazioni etiche (CSR)",
+      unit: "donatori attivi / fondi raccolti",
+      tam: 15000000,
+      sam: 3000000,
+      som: 250000,
+      buyerPersona: {
+        avatar: "🤝",
+        name: "Chiara Giovannini",
+        demographics: "45 anni, Filantropa locale e attivista nel tempo libero",
+        pains: "Teme la mancanza di trasparenza sull'uso reale delle donazioni ed è stanca di spam promozionale.",
+        gains: "Cerca impatto sociale concreto tracciabile, storie umane autentiche e riconoscimento etico.",
+        channel: "Newsletter dedicate, Facebook ed eventi fisici di beneficenza"
+      },
+      marketingChannels: [
+        { name: "Direct Email & Impact Reports", share: 40, cac: 3 },
+        { name: "Eventi e Raccolte Fondi Locali", share: 30, cac: 8 },
+        { name: "Social Media & Storytelling Organico", share: 20, cac: 4 },
+        { name: "Partnership CSR con Aziende", share: 10, cac: 15 }
+      ],
+      launchTimeline: [
+        "Settimana 1-2: Redazione statuto dell'associazione, definizione dello scopo sociale e registrazione.",
+        "Settimana 3-4: Landing page pilota con modulo iscrizione newsletter e manifestazioni di interesse.",
+        "Settimana 5-6: Lancio di un evento locale di presentazione ad inviti con piccolo rinfresco.",
+        "Settimana 7-8: Apertura ufficiale tesseramento ed attivazione portale donazioni online (Stripe/PayPal).",
+        "Settimana 9-10: Prima campagna di crowdfunding per un micro-progetto specifico e tangibile.",
+        "Settimana 11-12: Invio del primo report d'impatto cartaceo ed email a tutti i sostenitori iscritti."
+      ]
+    },
+    industrial_agri: {
+      product: "l'impianto produttivo / azienda agricola innovativa",
+      client: "distributori, grossisti e partner commerciali",
+      tech: "macchinari di precisione, automazione di processo e sensori IoT di monitoraggio",
+      marketing: "fiere di settore, networking commerciale B2B e cataloghi tecnici digitali",
+      revenue: "vendita all'ingrosso di lotti fisici o contratti di fornitura annuali",
+      unit: "tonnellate / lotti / pezzi spediti",
+      tam: 500000000,
+      sam: 60000000,
+      som: 4500000,
+      buyerPersona: {
+        avatar: "🚜",
+        name: "Giuseppe Neri",
+        demographics: "55 anni, Responsabile Acquisti GDO o Grande Distributore",
+        pains: "Soffre per l'incoerenza della qualità della materia prima e i ritardi logistici stagionali.",
+        gains: "Vuole contratti stabili a prezzo bloccato, forniture puntuali garantite e certificazioni di qualità.",
+        channel: "Fiere agricole/industriali nazionali e portali B2B di settore"
+      },
+      marketingChannels: [
+        { name: "Fiere di Settore & Networking B2B", share: 50, cac: 120 },
+        { name: "Agenti di Commercio / Reti di Vendita", share: 25, cac: 80 },
+        { name: "Direct Outreach Commerciale (Email & Telefono)", share: 15, cac: 30 },
+        { name: "SEO & Presenza Web Industriale B2B", share: 10, cac: 15 }
+      ],
+      launchTimeline: [
+        "Settimana 1-2: Redazione del piano di coltivazione/produzione e richiesta autorizzazioni sanitarie/ASL.",
+        "Settimana 3-4: Setup del sito produttivo, acquisto o leasing dei macchinari e allacciamenti.",
+        "Settimana 5-6: Test di produzione pilota (lotti campione) e analisi chimico-qualitative di laboratorio.",
+        "Settimana 7-8: Invio di campioni gratuiti a 15-20 distributori o acquirenti target selezionati.",
+        "Settimana 9-10: Firma dei primi contratti quadro di fornitura annuali a prezzo concordato.",
+        "Settimana 11-12: Avvio della produzione a pieno regime e spedizione del primo lotto commerciale."
+      ]
+    },
+    real_estate: {
+      product: "il progetto immobiliare / valorizzazione residenziale",
+      client: "acquirenti di case, conduttori o investitori di capitali",
+      tech: "portali immobiliari (Idealista/Immobiliare), render 3D fotorealistici e software CRM",
+      marketing: "annunci premium geolocalizzati, open house fisici e lead generation locale",
+      revenue: "compravendita (capital gain), canone di locazione o subaffitto",
+      unit: "immobili venduti / contratti di affitto firmati",
+      tam: 800000000,
+      sam: 120000000,
+      som: 8000000,
+      buyerPersona: {
+        avatar: "🏠",
+        name: "Filippo Rossi",
+        demographics: "38 anni, Professionista sposato in cerca della prima casa stabile",
+        pains: "Teme truffe, vizi occulti nell'immobile, ritardi infiniti nelle ristrutturazioni e costi occulti.",
+        gains: "Cerca una casa pronta da vivere, efficiente dal punto di vista energetico e con pratiche edilizie in regola.",
+        channel: "Portali immobiliari leader, cartelli in strada ed agenzie locali"
+      },
+      marketingChannels: [
+        { name: "Portali Immobiliari Leader (Idealista/Immobiliare)", share: 50, cac: 150 },
+        { name: "Social Ads Geolocalizzati & Video Tour", share: 20, cac: 60 },
+        { name: "Insegne, Cartelli & Volantinaggio locale", share: 20, cac: 10 },
+        { name: "Networking con Agenti Immobiliari Locali", share: 10, cac: 100 }
+      ],
+      launchTimeline: [
+        "Settimana 1-2: Analisi di mercato locale, due diligence urbanistica e catastale sull'immobile target.",
+        "Settimana 3-4: Acquisizione dell'immobile (proposta/compromesso) o firma dell'accordo di subaffitto.",
+        "Settimana 5-6: Setup del progetto architettonico, computo metrico e avvio dei lavori di ristrutturazione/home staging.",
+        "Settimana 7-8: Realizzazione di render 3D fotorealistici e pubblicazione degli annunci in anteprima.",
+        "Settimana 9-10: Organizzazione del primo 'Open House' fisico per raccogliere proposte d'acquisto o affitto.",
+        "Settimana 11-12: Selezione del conduttore referenziato o rogito notarile di vendita con incasso della plusvalenza."
+      ]
+    },
+    media_content: {
+      product: "il canale media / brand editoriale / podcast di settore",
+      client: "ascoltatori, lettori, sponsor aziendali e abbonati",
+      tech: "software di montaggio (Premiere/DaVinci), hosting podcast (Spotify) e newsletter proprietaria",
+      marketing: "TikTok/YouTube Shorts organici, cross-promotion con altri creator e SEO editoriale",
+      revenue: "sponsorizzazioni dirette, sponsorizzazione di newsletter, abbonamenti premium e AdSense",
+      unit: "visualizzazioni / ascolti / iscritti",
+      tam: 1000000000,
+      sam: 100000000,
+      som: 5000000,
+      buyerPersona: {
+        avatar: "🎙️",
+        name: "Giulia Verdi",
+        demographics: "25 anni, Professionista o Studente in cerca di intrattenimento/formazione rapida",
+        pains: "Contenuti noiosi, ripetitivi, clickbait e realizzati con bassa qualità audio o video.",
+        gains: "Cerca approfondimenti stimolanti, spiegazioni chiare di concetti complessi ed intrattenimento di qualità.",
+        channel: "YouTube, Spotify, TikTok e consigli in community social"
+      },
+      marketingChannels: [
+        { name: "YouTube Shorts / TikTok / Instagram Reels (Organico)", share: 50, cac: 0.5 },
+        { name: "SEO di nicchia & Newsletter Outreach", share: 20, cac: 2 },
+        { name: "Cross-Promotion & Ospitate in altri Show", share: 20, cac: 0 },
+        { name: "Paid Ads di acquisizione iscritti (Lead magnet)", share: 10, cac: 5 }
+      ],
+      launchTimeline: [
+        "Settimana 1-2: Definizione del posizionamento editoriale, tone of voice ed identità grafica del canale.",
+        "Settimana 3-4: Scrittura, registrazione e montaggio dei primi 3 episodi pilota (video o audio).",
+        "Settimana 5-6: Creazione del canale YouTube, pagina Spotify ed account social dedicati.",
+        "Settimana 7-8: Pubblicazione simultanea dei primi 3 episodi e setup della newsletter proprietaria.",
+        "Settimana 9-10: Lancio di una serie quotidiana di 15-20 clip brevi (Shorts/Reels) per attirare traffico organico.",
+        "Settimana 11-12: Analisi delle metriche di retention e invio delle prime proposte di sponsorizzazione a brand partner."
+      ]
+    },
     general: {
       product: "la soluzione di business",
       client: "clienti target",
@@ -928,6 +1180,14 @@ const LocalAgentSimulationEngine = {
       sector = "retail";
     } else if (text.includes("app ") || text.includes("applicazione mobile") || text.includes("ios") || text.includes("android")) {
       sector = "mobile_app";
+    } else if (text.includes("no-profit") || text.includes("no profit") || text.includes("noprofit") || text.includes("associazione") || text.includes("associazioni") || text.includes("odv") || text.includes("aps") || text.includes("onlus") || text.includes("terzo settore") || text.includes("beneficenza") || text.includes("volontariato") || text.includes("donazione") || text.includes("donazioni") || text.includes("sociale")) {
+      sector = "non_profit";
+    } else if (text.includes("industria") || text.includes("industriale") || text.includes("fabbrica") || text.includes("agricolo") || text.includes("agricoltura") || text.includes("serra") || text.includes("idroponica") || text.includes("coltivazione") || text.includes("allevamento") || text.includes("trattore") || text.includes("trattori")) {
+      sector = "industrial_agri";
+    } else if (text.includes("immobiliare") || text.includes("immobili") || text.includes("casa") || text.includes("case") || text.includes("appartamento") || text.includes("appartamenti") || text.includes("ristrutturazione") || text.includes("ristrutturazioni") || text.includes("edilizia") || text.includes("edile") || text.includes("costruzione") || text.includes("subaffitto") || text.includes("rent-to-rent") || text.includes("compravendita")) {
+      sector = "real_estate";
+    } else if (text.includes("media") || text.includes("entertainment") || text.includes("contenuti") || text.includes("creatore") || text.includes("creator") || text.includes("youtube") || text.includes("podcast") || text.includes("spotify") || text.includes("video") || text.includes("audio") || text.includes("streaming") || text.includes("gaming") || text.includes("influencer") || text.includes("blog") || text.includes("newsletter")) {
+      sector = "media_content";
     } else if (
       text.includes("consulenza") || text.includes("agenzia") || text.includes("servizi") || text.includes("freelance") || 
       text.includes("corso") || text.includes("corsi") || text.includes("formazione") ||
@@ -2470,6 +2730,54 @@ const LocalAgentSimulationEngine = {
       storytelling: "Condividi i casi studio di successo dei tuoi clienti: mostra il 'prima' e il 'dopo' dell'intervento. La storia del successo altrui è il tuo miglior marketing.",
       mindset: "Il tuo servizio dipende dalla reputazione. Mantieni promesse e scadenze anche a costo di lavorare ore extra all'inizio. La qualità delle relazioni è tutto."
     },
+    non_profit: {
+      scelta_problema: "Definisci con precisione l'impatto sociale o la causa che l'associazione vuole risolvere. Un obiettivo fumoso rende impossibile attirare sostenitori caldi.",
+      pain_cliente: "Il dolore dei donatori è l'impotenza di fronte a un problema sociale e la paura che le donazioni vengano sprecate. La tua trasparenza deve essere la cura di questa frustrazione.",
+      psicologia_vendita: "Nel no-profit non vendi prodotti, ma sentimenti di utilità sociale, appartenenza e pace interiore. Connetti emotivamente il donatore alla causa specifica.",
+      posizionamento: "Evita di posizionarti come 'un'associazione che aiuta tutti'. Focalizzati su un singolo problema locale o di nicchia (es. assistenza animali anziani a Rimini) per massimizzare l'empatia.",
+      distribuzione: "Lo storytelling d'impatto basato su casi reali e volti specifici è la tua miglior distribuzione. Usa le newsletter come un diario di bordo trasparente dei successi.",
+      hiring: "La priorità è reclutare un nucleo di 3-5 volontari chiave dedicati ed entusiasti, coordinati da un responsabile delle relazioni e della comunicazione sociale.",
+      processo_decisionale: "L'atto di donare è guidato da impulso ed empatia, ma bloccato dal sospetto. Riduci i passaggi tecnici di donazione ed esibisci subito statuto e bilanci trasparenti.",
+      cash_flow: "Diversifica le fonti: non dipendere solo da un bando pubblico tardivo. Crea quote associative ricorrenti (donazioni mensili stabili) per coprire i costi vivi.",
+      storytelling: "Mostra i volti di chi riceve l'aiuto o del volontario sul campo. Il racconto sincero e documentato del cambiamento reale commuove e fidelizza i donatori.",
+      mindset: "Focalizzati sull'etica e sulla costanza operativa. Gestire un'associazione no-profit richiede abnegazione, intelligenza emotiva e profondo rispetto per la fiducia altrui."
+    },
+    industrial_agri: {
+      scelta_problema: "Valuta attentamente la fattibilità agronomica o industriale prima dello start. Assicurati che esista una reale richiesta per la varietà coltivata o il pezzo prodotto.",
+      pain_cliente: "I clienti B2B temono le rotture di stock e le variazioni qualitative. Il tuo impianto deve garantire costanza e affidabilità di fornitura per essere attrattivo.",
+      psicologia_vendita: "Nel settore primario e secondario si vende basandosi su certificazioni di qualità, volumi garantiti e precisione millimetrica delle consegne logistiche.",
+      posizionamento: "Cerca di non vendere una commodity anonima. Posizionati con certificazioni biologiche, filiera cortissima tracciata in blockchain o lavorazioni esclusive.",
+      distribuzione: "Crea una rete di contatti diretti con grossisti e distributori. Affidati ad agenti plurimandatari qualificati che hanno già le porte aperte nei mercati target.",
+      hiring: "La figura chiave iniziale è un agronomo esperto o un capotecnico di produzione che conosca perfettamente i cicli produttivi e prevenga i guasti alle serre/macchine.",
+      processo_decisionale: "Processo formale e lento. Coinvolge responsabili qualità e uffici acquisti. Fornisci schede tecniche complete e campioni fisici eccellenti per superare i test.",
+      cash_flow: "Il ciclo monetario è lungo. Investi molto per avviare il raccolto o la produzione e incassi dopo mesi. Fondamentale avere riserve di cassa e linee di credito bancarie.",
+      storytelling: "Valorizza la storia della terra, il rispetto dei cicli naturali o l'avanguardia tecnologica dell'impianto. Anche il B2B ama l'autenticità del produttore.",
+      mindset: "Armati di pazienza e resilienza climatica/operativa. I fattori esterni (meteo, parassiti, guasti meccanici) sono costanti: la pianificazione del rischio è vitale."
+    },
+    real_estate: {
+      scelta_problema: "Verifica la liquidità della zona. Non acquistare o affittare immobili in aree dove il tempo medio di vendita supera i 6 mesi. La cassa morirebbe nel tempo.",
+      pain_cliente: "Il dolore degli acquirenti è la paura di brutte sorprese strutturali o burocratiche. Offrire immobili con due diligence tecnica pre-compilata azzera questa paura.",
+      psicologia_vendita: "La casa è il bene più prezioso per una famiglia o un investitore. Vendi sicurezza, status, comfort moderno e risparmio energetico (classi alte).",
+      posizionamento: "Focalizzati su una nicchia specifica (es. monolocali ristrutturati per studenti a Bologna o ville di lusso con piscina sul Garda) per dominare le ricerche.",
+      distribuzione: "Presidia in modo ossessivo i portali immobiliari con annunci a pagamento posizionati al top, e coltiva relazioni personali con agenti locali chiave.",
+      hiring: "La priorità è avere un geometra/architetto di fiducia per i controlli urbanistici e un'impresa edile partner affidabile per tempi e costi di cantiere.",
+      processo_decisionale: "Processo lungo e complesso, spesso legato all'ottenimento di un mutuo bancario. Supporta il cliente offrendo consulenza di mediatori creditizi.",
+      cash_flow: "Usa la leva finanziaria in modo intelligente ma prudente. Proteggi il cash flow calcolando con margine i costi delle ristrutturazioni (+15% imprevisti).",
+      storytelling: "Mostra il prima e il dopo della ristrutturazione. Racconta come hai trasformato un immobile decadente in un gioiello accogliente pronto da vivere.",
+      mindset: "Mantieni nervi saldi e rigore burocratico. Nel settore immobiliare i dettagli legali ed edilizi fanno la differenza tra un grande affare e una perdita."
+    },
+    media_content: {
+      scelta_problema: "Verifica la domanda di attenzione su quel tema specifico. Trova un angolo non coperto: non fare l'ennesimo podcast di interviste generico.",
+      pain_cliente: "Il pubblico odia perdere tempo con contenuti superficiali e lenti. Ottimizza la scrittura dei primi 30 secondi (hook) per trattenere l'attenzione.",
+      psicologia_vendita: "Nel media vendi fiducia, vicinanza e appartenenza. Il pubblico si deve immedesimare nel creator o nel brand editoriale prima di seguirlo.",
+      posizionamento: "Focalizzati su una super-nicchia tematica molto specifica (es. intelligenza artificiale per commercialisti) prima di allargarti ad argomenti generalisti.",
+      distribuzione: "Usa i contenuti verticali brevi (Tiktok, Reels, Shorts) esclusivamente come imbuto (funnel) per convogliare traffico sul tuo show principale o sulla newsletter.",
+      hiring: "La priorità iniziale è un video-editor / montatore professionista freelance che ti consenta di concentrarti solo sulla scrittura e sulla registrazione dei contenuti.",
+      processo_decisionale: "L'iscrizione è un click gratuito ma l'attenzione è preziosa. Rendi facilissimo l'onboarding e stimola l'interazione per fidelizzare l'utente.",
+      cash_flow: "Non basarti solo su AdSense, che paga centesimi. Struttura fin dal primo giorno una newsletter sponsorizzabile o un canale di abbonamento premium per finanziare la produzione.",
+      storytelling: "Sii vulnerabile e sincero. Racconta i tuoi fallimenti e le tue scoperte reali. Il pubblico segue le persone reali, non le macchine da contenuti perfetti.",
+      mindset: "Il successo nei media è un gioco di costanza geometrica a lungo termine. Non guardare le visualizzazioni dei primi 3 mesi: focalizzati sul migliorare dell'1% ogni episodio."
+    },
     general: {
       scelta_problema: "Assicurati di identificare un problema reale e doloroso per il mercato. Un business solido si basa su bisogni esistenti, non su desideri teorici.",
       pain_cliente: "Traccia cosa fa perdere tempo, soldi o sonno al tuo target. Se la tua soluzione non riduce uno di questi elementi, non c'è mercato sufficiente.",
@@ -2532,6 +2840,38 @@ const LocalAgentSimulationEngine = {
       angle: "ROI-Driven Partnership & Authority Positioning",
       urgency: "Capacità limitata (accettiamo solo 2 nuovi clienti questo mese)",
       friction: "Scetticismo sui risultati promessi e timore di contratti a lungo termine"
+    },
+    non_profit: {
+      hook: "Invece di chiedere elemosina, invita il donatore a far parte di un cambiamento tangibile. Mostra come anche una piccola quota mensile si traduce in pasti erogati o cure concrete.",
+      objections: "Le donazioni vengono sprecate / C'è mancanza di trasparenza / Non posso permettermelo. Rispondi fornendo un report d'impatto periodico trasparente al centesimo e offrendo micro-donazioni ricorrenti flessibili.",
+      conversion: "Offri la detrazione fiscale certificata immediata, un badge digitale di sostenitore o una spilla fisica dell'associazione da indossare. La riprova sociale consolida la donazione.",
+      angle: "Social Impact & Radical Transparency",
+      urgency: "Raccolta fondi con scadenza fissa per un obiettivo umanitario specifico del mese",
+      friction: "Diffidenza sull'effettivo utilizzo dei fondi e burocrazia della donazione"
+    },
+    industrial_agri: {
+      hook: "Garantiamo qualità costante, volumi stabili certificati e consegne rapide grazie al nostro impianto automatizzato a filiera tracciata.",
+      objections: "Il prezzo all'ingrosso è alto / Siete capaci di garantire i volumi stagionali? / Qualità instabile. Rispondi fornendo certificazioni ISO/Bio, campionatura gratuita immediata e penali contrattuali a favore del cliente sui ritardi.",
+      conversion: "Sconto sul primo lotto di prova del 15% o spedizione inclusa se si sottoscrive un contratto di fornitura annuale per un volume minimo garantito.",
+      angle: "Reliable Supply Chain & Quality Certification Focus",
+      urgency: "Capacità produttiva residua limitata per il prossimo trimestre di raccolto/lavorazione",
+      friction: "Tempi lunghi di validazione aziendale e rigidità dei contratti di fornitura esistenti"
+    },
+    real_estate: {
+      hook: "Splendido appartamento completamente ristrutturato a nuovo, in classe energetica elevata, pronto da vivere e privo di qualsiasi vizio catastale.",
+      objections: "Il prezzo è alto / Ci saranno vizi occulti? / Tempi lunghi per il mutuo. Rispondi mostrando la due diligence firmata da un geometra, offrendo rendering interattivi 3D e assistenza pre-delibera mutuo.",
+      conversion: "Prenota una visita esclusiva durante l'Open House di questo sabato. Le visite individuali sono limitate a sole 10 famiglie selezionate.",
+      angle: "Modern Premium Comfort & Certified Property",
+      urgency: "Prezzo di lancio valido solo per proposte d'acquisto ricevute entro 15 giorni",
+      friction: "Richiesta del mutuo bancario e timore di truffe immobiliari"
+    },
+    media_content: {
+      hook: "Il primo show di approfondimento che spiega in modo chiaro e pratico le dinamiche di X, con dati reali e senza fuffa clickbait.",
+      objections: "È noioso / È il solito contenuto copia-incolla / Ho poco tempo. Rispondi producendo episodi brevi montati a ritmo serrato, mostrando grafiche chiare e offrendo una versione scritta riassunta via email.",
+      conversion: "Iscriviti subito alla newsletter settimanale per ricevere in regalo la guida PDF esclusiva compilata con le nostre ricerche riservate.",
+      angle: "Engaging Depth & High Production Quality",
+      urgency: "Accesso gratuito alla community privata riservato solo ai primi 500 iscritti al canale",
+      friction: "Saturazione del tempo libero dell'utente e pigrizia all'iscrizione"
     },
     general: {
       hook: "Focalizzati sulla semplicità ed efficienza della soluzione. Spiega il tuo valore aggiunto in meno di 10 secondi e posizionati come l'alternativa più affidabile e vicina.",
