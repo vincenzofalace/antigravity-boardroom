@@ -149,7 +149,8 @@ const AGENT_SUBTEAMS = {
     members: [
       { name: "Sofia Gallo", role: "Lead Market Researcher", avatar: "👩‍💻" },
       { name: "Marco Ferro", role: "SEO & Traffic Strategist", avatar: "👨‍💻" },
-      { name: "Elisa Dini", role: "Competitor Intelligence Specialist", avatar: "📊" }
+      { name: "Elisa Dini", role: "Competitor Intelligence Specialist", avatar: "📊" },
+      { name: "Elena Scuri", role: "Trend Forecaster & CRO Analyst", avatar: "📈" }
     ]
   },
   cfo: {
@@ -157,7 +158,8 @@ const AGENT_SUBTEAMS = {
     members: [
       { name: "Dott. Giovanni Basso", role: "Commercialista Societario", avatar: "👨‍💼" },
       { name: "Dott.ssa Laura Rinaldi", role: "Fiscalista Internazionale", avatar: "👩‍💼" },
-      { name: "Dott. Pietro Neri", role: "Consulente del Lavoro & Contratti", avatar: "👨‍💻" }
+      { name: "Dott. Pietro Neri", role: "Consulente del Lavoro & Contratti", avatar: "👨‍💻" },
+      { name: "Dott. Marco Sanna", role: "Revisore Legale & Pianificazione Fiscale", avatar: "💼" }
     ]
   },
   cto: {
@@ -165,7 +167,8 @@ const AGENT_SUBTEAMS = {
     members: [
       { name: "Alessandro Riva", role: "Senior Cloud Architect", avatar: "👨‍💻" },
       { name: "Martina Valli", role: "Lead Frontend Engineer", avatar: "👩‍💻" },
-      { name: "Stefano Mori", role: "Cybersecurity & DevOps Specialist", avatar: "🛡️" }
+      { name: "Stefano Mori", role: "Cybersecurity & DevOps Specialist", avatar: "🛡️" },
+      { name: "Giulia Bernardi", role: "Database & Data Engineer", avatar: "🗄️" }
     ]
   },
   coo: {
@@ -173,7 +176,8 @@ const AGENT_SUBTEAMS = {
     members: [
       { name: "Elena Bianchi", role: "Operations & SOP Manager", avatar: "👩‍💼" },
       { name: "Roberto Pazzi", role: "HR Recruiter & Talent Scout", avatar: "👨‍💼" },
-      { name: "Luca Santini", role: "Project Manager & Agile Coach", avatar: "⏱️" }
+      { name: "Luca Santini", role: "Project Manager & Agile Coach", avatar: "⏱️" },
+      { name: "Valerio Conti", role: "Quality Process Auditor & SOP Specialist", avatar: "📋" }
     ]
   },
   capital: {
@@ -181,7 +185,8 @@ const AGENT_SUBTEAMS = {
     members: [
       { name: "Giulia Sanna", role: "Venture Capital Scout", avatar: "👩‍📈" },
       { name: "Davide Bruno", role: "Specialist Bandi Pubblici & Finanza Agevolata", avatar: "👨‍💼" },
-      { name: "Matteo Gatti", role: "Pitch Deck & Financial Modeler", avatar: "📊" }
+      { name: "Matteo Gatti", role: "Pitch Deck & Financial Modeler", avatar: "📊" },
+      { name: "Chiara Ferri", role: "Crowdfunding & Angel Relations Coordinator", avatar: "🤝" }
     ]
   },
   clo: {
@@ -189,7 +194,8 @@ const AGENT_SUBTEAMS = {
     members: [
       { name: "Avv. Francesco Serra", role: "Esperto Diritto Societario & IP", avatar: "👨‍⚖️" },
       { name: "Avv.ssa Chiara Piras", role: "Legal Counsel Privacy & GDPR Compliance", avatar: "👩‍⚖️" },
-      { name: "Avv. Andrea Conti", role: "Contrattualistica B2B & Negoziazione", avatar: "💼" }
+      { name: "Avv. Andrea Conti", role: "Contrattualistica B2B & Negoziazione", avatar: "💼" },
+      { name: "Avv. Massimo Greco", role: "Consulente Diritto dei Consumatori & E-commerce", avatar: "⚖️" }
     ]
   },
   cco: {
@@ -197,7 +203,8 @@ const AGENT_SUBTEAMS = {
     members: [
       { name: "Francesca Leone", role: "Senior Art Director", avatar: "👩‍🎨" },
       { name: "Lorenzo Gigli", role: "Brand Copywriter & Storyteller", avatar: "✍️" },
-      { name: "Serena Mastri", role: "UI/UX & Interaction Designer", avatar: "🎨" }
+      { name: "Serena Mastri", role: "UI/UX & Interaction Designer", avatar: "🎨" },
+      { name: "Sofia Neri", role: "Content & Visual Designer", avatar: "📐" }
     ]
   },
   cso: {
@@ -205,7 +212,8 @@ const AGENT_SUBTEAMS = {
     members: [
       { name: "Marta Valenti", role: "Customer Retention Specialist", avatar: "👩‍🤝‍👩" },
       { name: "Federico Tosi", role: "User Experience Researcher", avatar: "👨‍💻" },
-      { name: "Simona Ricci", role: "Support & Help Desk Coordinator", avatar: "📞" }
+      { name: "Simona Ricci", role: "Support & Help Desk Coordinator", avatar: "📞" },
+      { name: "Emanuele Piras", role: "Community Manager & Brand Advocate", avatar: "💬" }
     ]
   },
   cpo: {
@@ -213,7 +221,8 @@ const AGENT_SUBTEAMS = {
     members: [
       { name: "Claudio Fabbri", role: "Lead Product Owner", avatar: "📦" },
       { name: "Giorgia Melis", role: "MVP Agile Coordinator", avatar: "👩‍🔧" },
-      { name: "Alberto Vitali", role: "Quality Assurance (QA) Tester", avatar: "🔬" }
+      { name: "Alberto Vitali", role: "Quality Assurance (QA) Tester", avatar: "🔬" },
+      { name: "Valeria Bini", role: "User Researcher & UX Specialist", avatar: "👥" }
     ]
   },
   sourcing: {
@@ -221,7 +230,8 @@ const AGENT_SUBTEAMS = {
     members: [
       { name: "Simone Bini", role: "Supply Chain Director", avatar: "🚛" },
       { name: "Chiara Vanni", role: "Global Procurement Specialist", avatar: "🌐" },
-      { name: "Filippo Landi", role: "Quality Controller & Logistics Coordinator", avatar: "📦" }
+      { name: "Filippo Landi", role: "Quality Controller & Logistics Coordinator", avatar: "📦" },
+      { name: "Dott. Roberto Ferretti", role: "Consulente Doganale & Import/Export", avatar: "🛃" }
     ]
   },
   sales: {
@@ -229,7 +239,8 @@ const AGENT_SUBTEAMS = {
     members: [
       { name: "Fabio Greco", role: "Sales Funnel Copywriter", avatar: "🗣️" },
       { name: "Raffaella Marini", role: "Lead Generation Specialist", avatar: "👩‍💻" },
-      { name: "Tommaso D'Amico", role: "B2B Sales Representative", avatar: "🤝" }
+      { name: "Tommaso D'Amico", role: "B2B Sales Representative", avatar: "🤝" },
+      { name: "Andrea Galli", role: "Sales Operations & CRM Automation Specialist", avatar: "⚙️" }
     ]
   }
 };
