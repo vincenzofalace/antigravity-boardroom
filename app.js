@@ -129,17 +129,109 @@ const DOM = {
 
 // Definizioni dei meta-dati degli agenti
 const AGENT_METADATA = {
-  cmo: { name: "CMO / Problem Evaluator", role: "Market Intelligence & Validation", color: "#6366f1", icon: "📊" },
-  cfo: { name: "CFO / Finance Advisor", role: "Corporate Finance & Projections", color: "#10b981", icon: "💵" },
-  cto: { name: "CTO / Technical Architect", role: "Tech, Infrastructure & Hosting", color: "#06b6d4", icon: "💻" },
-  coo: { name: "COO / Operations & Quality", role: "Operations & HR Structure", color: "#f59e0b", icon: "⚙️" },
-  capital: { name: "Head of Capital", role: "Fundraising & Investor Scouting", color: "#8b5cf6", icon: "📈" },
-  clo: { name: "CLO / General Counsel", role: "Legal, IP & GDPR Compliance", color: "#ef4444", icon: "⚖️" },
-  cco: { name: "CCO / Creative Director", role: "Branding, Storytelling & Payoff", color: "#e11d48", icon: "🎨" },
+  cmo: { name: "CMO / Market Intelligence", role: "Analisi Target & Competitor", color: "#6366f1", icon: "📊" },
+  cfo: { name: "CFO / Studio Commercialista", role: "Pianificazione Fiscale, Bilanci & Contabilità", color: "#10b981", icon: "💼" },
+  cto: { name: "CTO / Tech & Development", role: "Infrastruttura, Cloud & Sicurezza", color: "#06b6d4", icon: "💻" },
+  coo: { name: "COO / Operations & HR", role: "Processi Operativi, SOP & Risorse Umane", color: "#f59e0b", icon: "⚙️" },
+  capital: { name: "Head of Capital / Funding", role: "Fundraising, Bandi & Investor Scouting", color: "#8b5cf6", icon: "📈" },
+  clo: { name: "CLO / Studio Legale Associato", role: "Societario, Contrattualistica & GDPR", color: "#ef4444", icon: "⚖️" },
+  cco: { name: "CCO / Brand Strategy", role: "Branding, Design Visivo & Storytelling", color: "#e11d48", icon: "🎨" },
   cso: { name: "CSO / Customer Success", role: "Product-Market Fit & Retention", color: "#14b8a6", icon: "🤝" },
-  cpo: { name: "CPO / Product Manager", role: "Product Specifications & MVP", color: "#f43f5e", icon: "📦" },
-  sourcing: { name: "Sourcing & Procurement", role: "Suppliers, Logistics & MOQs", color: "#84cc16", icon: "🚛" },
-  sales: { name: "Head of Sales & Copy", role: "Copywriting & Sales Conversion", color: "#3b82f6", icon: "🗣️" }
+  cpo: { name: "CPO / Product Management", role: "Roadmap Prodotto & Specifiche MVP", color: "#f43f5e", icon: "📦" },
+  sourcing: { name: "Sourcing & Logistics", role: "Fornitori, Catena di Approvvigionamento & MOQ", color: "#84cc16", icon: "🚛" },
+  sales: { name: "Head of Sales & Copy", role: "Funnel di Vendita & Copywriting Persuasivo", color: "#3b82f6", icon: "🗣️" }
+};
+
+// Definizioni dei sotto-team collaborativi dipartimentali per ciascun agente
+const AGENT_SUBTEAMS = {
+  cmo: {
+    teamName: "Team di Market Intelligence & Validation",
+    members: [
+      { name: "Sofia Gallo", role: "Lead Market Researcher", avatar: "👩‍💻" },
+      { name: "Marco Ferro", role: "SEO & Traffic Strategist", avatar: "👨‍💻" },
+      { name: "Elisa Dini", role: "Competitor Intelligence Specialist", avatar: "📊" }
+    ]
+  },
+  cfo: {
+    teamName: "Studio Commercialista & Consulenti Fiscali",
+    members: [
+      { name: "Dott. Giovanni Basso", role: "Commercialista Societario", avatar: "👨‍💼" },
+      { name: "Dott.ssa Laura Rinaldi", role: "Fiscalista Internazionale", avatar: "👩‍💼" },
+      { name: "Dott. Pietro Neri", role: "Consulente del Lavoro & Contratti", avatar: "👨‍💻" }
+    ]
+  },
+  cto: {
+    teamName: "Tech Architecture & Development Team",
+    members: [
+      { name: "Alessandro Riva", role: "Senior Cloud Architect", avatar: "👨‍💻" },
+      { name: "Martina Valli", role: "Lead Frontend Engineer", avatar: "👩‍💻" },
+      { name: "Stefano Mori", role: "Cybersecurity & DevOps Specialist", avatar: "🛡️" }
+    ]
+  },
+  coo: {
+    teamName: "Operations & HR Management Team",
+    members: [
+      { name: "Elena Bianchi", role: "Operations & SOP Manager", avatar: "👩‍💼" },
+      { name: "Roberto Pazzi", role: "HR Recruiter & Talent Scout", avatar: "👨‍💼" },
+      { name: "Luca Santini", role: "Project Manager & Agile Coach", avatar: "⏱️" }
+    ]
+  },
+  capital: {
+    teamName: "Fundraising & Investor Relations Team",
+    members: [
+      { name: "Giulia Sanna", role: "Venture Capital Scout", avatar: "👩‍📈" },
+      { name: "Davide Bruno", role: "Specialist Bandi Pubblici & Finanza Agevolata", avatar: "👨‍💼" },
+      { name: "Matteo Gatti", role: "Pitch Deck & Financial Modeler", avatar: "📊" }
+    ]
+  },
+  clo: {
+    teamName: "Studio Legale Associato / Legal Counsel",
+    members: [
+      { name: "Avv. Francesco Serra", role: "Esperto Diritto Societario & IP", avatar: "👨‍⚖️" },
+      { name: "Avv.ssa Chiara Piras", role: "Legal Counsel Privacy & GDPR Compliance", avatar: "👩‍⚖️" },
+      { name: "Avv. Andrea Conti", role: "Contrattualistica B2B & Negoziazione", avatar: "💼" }
+    ]
+  },
+  cco: {
+    teamName: "Brand Design & Storytelling Team",
+    members: [
+      { name: "Francesca Leone", role: "Senior Art Director", avatar: "👩‍🎨" },
+      { name: "Lorenzo Gigli", role: "Brand Copywriter & Storyteller", avatar: "✍️" },
+      { name: "Serena Mastri", role: "UI/UX & Interaction Designer", avatar: "🎨" }
+    ]
+  },
+  cso: {
+    teamName: "Customer Success & Retention Team",
+    members: [
+      { name: "Marta Valenti", role: "Customer Retention Specialist", avatar: "👩‍🤝‍👩" },
+      { name: "Federico Tosi", role: "User Experience Researcher", avatar: "👨‍💻" },
+      { name: "Simona Ricci", role: "Support & Help Desk Coordinator", avatar: "📞" }
+    ]
+  },
+  cpo: {
+    teamName: "Product Management & MVP Team",
+    members: [
+      { name: "Claudio Fabbri", role: "Lead Product Owner", avatar: "📦" },
+      { name: "Giorgia Melis", role: "MVP Agile Coordinator", avatar: "👩‍🔧" },
+      { name: "Alberto Vitali", role: "Quality Assurance (QA) Tester", avatar: "🔬" }
+    ]
+  },
+  sourcing: {
+    teamName: "Sourcing, Supply Chain & Logistics Team",
+    members: [
+      { name: "Simone Bini", role: "Supply Chain Director", avatar: "🚛" },
+      { name: "Chiara Vanni", role: "Global Procurement Specialist", avatar: "🌐" },
+      { name: "Filippo Landi", role: "Quality Controller & Logistics Coordinator", avatar: "📦" }
+    ]
+  },
+  sales: {
+    teamName: "Sales Strategy & Copywriting Team",
+    members: [
+      { name: "Fabio Greco", role: "Sales Funnel Copywriter", avatar: "🗣️" },
+      { name: "Raffaella Marini", role: "Lead Generation Specialist", avatar: "👩‍💻" },
+      { name: "Tommaso D'Amico", role: "B2B Sales Representative", avatar: "🤝" }
+    ]
+  }
 };
 
 // Titoli delle 8 fasi
@@ -1459,6 +1551,33 @@ function renderAgentDetails(agentKey) {
     reportContent = `*L'agente non ha ancora elaborato un report per la Fase corrente. Avanza nel Guided Interview per attivare l'analisi.*`;
   }
   
+  // Costruiamo l'HTML del sotto-team
+  const subteam = AGENT_SUBTEAMS[agentKey];
+  let subteamHtml = "";
+  if (subteam) {
+    subteamHtml = `
+      <div class="agent-subteam-card" style="margin-top: 18px; margin-bottom: 18px; padding: 14px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px);">
+        <h4 style="margin: 0 0 8px 0; font-size: 13px; color: ${meta.color}; display: flex; align-items: center; gap: 8px;">
+          <span>👥</span> ${subteam.teamName}
+        </h4>
+        <p style="font-size: 11px; margin: 0 0 12px 0; color: var(--text-muted); font-style: italic;">
+          Questo report è il risultato del lavoro collaborativo e della sinergia tra gli specialisti del dipartimento:
+        </p>
+        <div class="subteam-members-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
+          ${subteam.members.map(m => `
+            <div class="subteam-member" style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.04);">
+              <span style="font-size: 22px;">${m.avatar}</span>
+              <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                <span style="font-size: 11px; font-weight: bold; color: var(--text-main);">${m.name}</span>
+                <span style="font-size: 9px; color: var(--text-muted); margin-top: 2px;">${m.role}</span>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }
+  
   // Costruiamo l'HTML con il report dell'agente E il box della chat di brainstorming
   DOM.agentDetailsModal.innerHTML = `
     <div class="agent-details-header">
@@ -1471,6 +1590,8 @@ function renderAgentDetails(agentKey) {
     <div class="agent-details-content">
       ${formatMarkdown(reportContent)}
     </div>
+    
+    ${subteamHtml}
     
     <!-- Sezione di Brainstorming per Agente -->
     <div class="brainstorm-section">

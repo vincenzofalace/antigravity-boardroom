@@ -2128,6 +2128,12 @@ const LocalAgentSimulationEngine = {
     });
     reportText += `\n`;
 
+    // Mostriamo la strada migliore / alternativa
+    reportText += `#### 🧭 Alternativa Strategica & Strada Migliore (Pivot)\n`;
+    reportText += `> [!TIP]\n`;
+    reportText += `> **Consiglio del Team**: Per superare le obiezioni sollevate, la strada migliore da percorrere è:\n`;
+    reportText += `> ${verdictReason}\n\n`;
+
     // Se la località è mancante, mostriamo le raccomandazioni
     if (info.locationMissing) {
       reportText += `#### 📍 Analisi Geografica & Raccomandazione Zone\n`;
