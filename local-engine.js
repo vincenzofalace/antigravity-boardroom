@@ -915,7 +915,7 @@ const LocalAgentSimulationEngine = {
       text.includes("chef") || 
       text.includes("cucina") || 
       text.includes("pizz") || 
-      text.includes("bar") || 
+      (/\bbar\b/i.test(text) || text.includes("barista") || text.includes("baristi") || text.includes("bevande")) || 
       text.includes("cibo") || 
       text.includes("food") || 
       text.includes("gastronom") || 

@@ -1596,3 +1596,166 @@ button:disabled, textarea:disabled, select:disabled, input:disabled {
   accent-color: var(--primary);
 }
 
+/* ==========================================
+   RESPONSIVITÀ SMARTPHONE E MOBILE (OVERRIDE)
+   ========================================== */
+@media (max-width: 768px) {
+  body {
+    height: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
+  header {
+    height: auto;
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+    border-bottom: 1px solid var(--glass-border);
+    background: rgba(10, 10, 15, 0.95);
+  }
+  
+  .brand {
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .brand h1 {
+    font-size: 18px;
+  }
+  
+  .header-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+  }
+  
+  .btn {
+    padding: 6px 12px;
+    font-size: 11.5px;
+    border-radius: 8px;
+    flex: 1 1 calc(50% - 6px);
+    min-width: 110px;
+  }
+  
+  .project-selector-container {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 110px;
+  }
+  
+  .project-selector-container button {
+    width: 100%;
+  }
+  
+  .projects-dropdown-menu {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 290px;
+  }
+  
+  .status-badge {
+    flex: 1 1 100%;
+    justify-content: center;
+    font-size: 11px;
+    padding: 4px 10px;
+    order: -1; /* Posiziona lo status badge sempre in cima alla griglia dei controlli */
+  }
+  
+  .main-container {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+    padding: 12px;
+    gap: 16px;
+  }
+  
+  .chat-panel {
+    flex: none;
+    height: 480px; /* Altezza fissa per far scorrere la chat internamente */
+  }
+  
+  .workspace-panel {
+    flex: none;
+    height: auto;
+    overflow: visible;
+  }
+  
+  .tab-content {
+    padding: 16px 8px;
+    height: auto;
+    overflow: visible;
+  }
+  
+  .tab-pane {
+    display: none;
+    height: auto;
+    overflow: visible;
+  }
+  
+  .tab-pane.active {
+    display: block;
+  }
+  
+  .tabs {
+    padding: 8px 8px 0;
+    gap: 2px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .tab-btn {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  
+  .agents-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .agent-details-modal {
+    padding: 16px;
+    margin-top: 16px;
+  }
+  
+  .brainstorm-chat-box {
+    height: 200px;
+  }
+}
+
+@media (max-width: 576px) {
+  /* Stack verticale degli input del team roadmap */
+  #hiring-roadmap-container div[style*="display: flex"] {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  #hiring-roadmap-container input, 
+  #hiring-roadmap-container select, 
+  #hiring-roadmap-container button {
+    width: 100% !important;
+    flex: none !important;
+  }
+  
+  /* Stile compatto ed adattivo per la checklist di autovalutazione (Readiness) */
+  .readiness-topic-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+  
+  .readiness-status-badge {
+    width: 100% !important;
+    text-align: center;
+  }
+}
+
+
