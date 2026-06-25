@@ -928,7 +928,20 @@ const LocalAgentSimulationEngine = {
       sector = "retail";
     } else if (text.includes("app ") || text.includes("applicazione mobile") || text.includes("ios") || text.includes("android")) {
       sector = "mobile_app";
-    } else if (text.includes("consulenza") || text.includes("agenzia") || text.includes("servizi") || text.includes("freelance") || text.includes("corso") || text.includes("corsi") || text.includes("formazione")) {
+    } else if (
+      text.includes("consulenza") || text.includes("agenzia") || text.includes("servizi") || text.includes("freelance") || 
+      text.includes("corso") || text.includes("corsi") || text.includes("formazione") ||
+      // Noleggio, affitto, sharing (Rentals)
+      text.includes("noleggio") || text.includes("noleggiare") || text.includes("nolo") || text.includes("affitto") || text.includes("affittare") || text.includes("sharing") ||
+      // Logistica, trasporti e spedizioni (Logistics/Transport)
+      text.includes("trasporto") || text.includes("trasporti") || text.includes("trasloco") || text.includes("traslochi") || text.includes("logistica") || text.includes("spedizion") ||
+      // Manutenzione, riparazioni e servizi domestici (Maintenance/Support)
+      text.includes("manutenzione") || text.includes("riparazione") || text.includes("riparare") || text.includes("pulizia") || text.includes("pulizie") || text.includes("assistenza") || text.includes("installazione") ||
+      // Turismo, viaggi e ospitalità (Tourism/Hospitality)
+      text.includes("turismo") || text.includes("turistico") || text.includes("guida") || text.includes("viaggio") || text.includes("viaggi") || text.includes("escursione") || text.includes("escursioni") || text.includes("hotel") || text.includes("b&b") ||
+      // Eventi, intrattenimento e benessere (Events/Wellness)
+      text.includes("evento") || text.includes("eventi") || text.includes("matrimonio") || text.includes("festa") || text.includes("feste") || text.includes("benessere") || text.includes("massaggio") || text.includes("massaggi") || text.includes("trattamento") || text.includes("trattamenti")
+    ) {
       sector = "services";
     } else if (text.includes("marketplace") || text.includes("portale") || text.includes("annunci") || text.includes("matching")) {
       sector = "marketplace";
