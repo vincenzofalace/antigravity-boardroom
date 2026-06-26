@@ -2212,6 +2212,13 @@ const LocalAgentSimulationEngine = {
     // Costruiamo la sintesi dell'Orchestratore Master
     text += `### 👑 Orchestratore Master - Sintesi Strategica della Fase ${phase}\n\n`;
     
+    // Rilevamento vaghezza in locale
+    const isVagueLocal = info.idea.length < 35 || info.idea.split(" ").length < 6;
+    if (isVagueLocal) {
+      text += `> [!CAUTION]\n`;
+      text += `> **BLOCCO STRATEGICO - IDEA VAGA**: L'idea iniziale descritta ("${info.idea.replace(/\n/g, ' ').substring(0, 60)}") è estremamente sintetica. Per fornirti un piano operativo reale "chiavi in mano", la Boardroom ha ipotizzato uno scenario di mercato concreto di riferimento. Ti raccomandiamo caldamente di utilizzare la chat o il pannello sottostante per rispondere alle domande di chiarimento e personalizzare il progetto.\n\n`;
+    }
+
     if (isPizzaVending) {
       text += `Il progetto **${info.name || "Senza Nome"}** si concentra sulla somministrazione di pizza calda H24 tramite distributore automatico. `;
     } else {

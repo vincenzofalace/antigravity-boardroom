@@ -534,6 +534,14 @@ function setupEventListeners() {
       
       appendUserMessage(`🚀 Progetto avviato tramite form: **${projName}**\n- **Idea**: ${projIdea}\n- **Budget**: ${projBudget}\n- **Località**: ${projLocation || "Non specificata (consigliata Gran Canaria)"}\n- **Obiettivo**: ${projObjective}\n${projNotes ? `- **Note aggiuntive**: ${projNotes}` : ""}`);
       
+      // Rilevamento della vaghezza dell'idea per avvisare l'utente
+      const isVague = projIdea.length < 35 || projIdea.split(" ").length < 6;
+      if (isVague) {
+        setTimeout(() => {
+          appendSystemMessage(`⚠️ **Nota dell'Orchestratore Master**: L'idea inserita è molto sintetica. Nella **Fase 1**, il team rileverà la vaghezza come un "BLOCCO STRATEGICO" e formulerà una raccolta di domande specifiche ed affilate per aiutarti a definire il progetto nei dettagli. Preparati a rispondere!`);
+        }, 1000);
+      }
+      
       state.currentPhase = 1;
       togglePhase0View();
       updatePhaseIndicator();
@@ -1380,11 +1388,12 @@ L'utente ha fornito questo feedback nell'ultimo step: "${userFeedback}"`;
         }
 
         agentPrompt += `\n\nFornisci il tuo report specifico di competenza per questa fase. Scrivi in modo estremamente schematico, professionale ed investor-ready. Usa titoli e bullet-point. Massimizza l'efficacia pragmatica ed evidenzia i costi.
-
+ 
 REGOLE FONDAMENTALI DI CONDUZIONE (BOARDROOM RULES):
-1. SINCERITÀ E OBIEZIONI: Sii critico, onesto e trova tutte le obiezioni pratiche al progetto (se il mercato non è favorevole, se ci sono rischi operativi, ostacoli legali, o se non è fattibile). Inserisci sempre una sezione 'Critiche & Obiezioni' nel tuo report.
-2. ZONA GEOGRAFICA MANCANTE: Se l'utente non ha specificato una località geografica precisa nel progetto, evidenzialo chiaramente come un errore critico e proponi le migliori zone geografiche alternative adatte a questo business (se rilevante, proponi zone chiave di Gran Canaria come Playa del Inglés o Las Palmas, altrimenti zone generiche ideali).
-3. VETO FINANZIARIO / PIVOT BOOTSTRAP: Se il budget indicato è zero/minimo (bootstrap) e l'idea richiede investimenti significativi (es. macchinari vending, hardware, spazi fisici), poni un VETO dicendo chiaramente che il progetto è irrealizzabile con quelle risorse e proponi soluzioni alternative concrete (es. noleggio operativo/leasing, usati rigenerati, joint venture, o pivot verso idee digitali a costo zero).`;
+1. NO-VAGHEZZA E DETTAGLIO CHIAVI IN MANO (CRITICAL): Se l'idea o i dati forniti dall'utente sono vaghi o generici, non scrivere mai un report vago o teorico. Evidenzia subito la vaghezza come un "BLOCCO STRATEGICO", formula 2-3 domande di chiarimento precise e mirate per questa fase, e ipotizza uno scenario reale di mercato alternativo ed estremamente specifico per non fermare il lavoro. Il tuo report deve essere specifico al millimetro e indicare azioni precise, strumenti reali con costi esatti, e passaggi operativi precisi. Evita qualsiasi forma di "fuffa" o consigli generici.
+2. SINCERITÀ E OBIEZIONI: Sii critico, onesto e trova tutte le obiezioni pratiche al progetto (se le condizioni di mercato non sono favorevoli, se ci sono rischi operativi, ostacoli legali, o se non è fattibile). Inserisci sempre una sezione 'Critiche & Obiezioni' nel tuo report.
+3. ZONA GEOGRAFICA MANCANTE: Se l'utente non ha specificato una località geografica precisa nel progetto, evidenzialo chiaramente come un errore critico e proponi le migliori zone geografiche alternative adatte a questo business (se rilevante, proponi zone chiave di Gran Canaria come Playa del Inglés o Las Palmas, altrimenti zone generiche ideali).
+4. VETO FINANZIARIO / PIVOT BOOTSTRAP: Se il budget indicato è zero/minimo (bootstrap) e l'idea richiede investimenti significativi (es. macchinari vending, hardware, spazi fisici), poni un VETO dicendo chiaramente che il progetto è irrealizzabile con quelle risorse e proponi soluzioni alternative concrete (es. noleggio operativo/leasing, usati rigenerati, joint venture, o pivot verso idee digitali a costo zero).`;
         try {
           const response = await window.callGeminiAPI(state.apiKey, state.model, agentKey, agentPrompt, [], state.project.attachedImage);
           state.contributions[state.currentPhase][agentKey] = response;
@@ -1431,8 +1440,9 @@ Informazioni generali:
       }
 
       orchestratorPrompt += `\n\nEcco i report appena generati dai tuoi sotto-agenti nella Boardroom:\n${boardroomBrief}\n\nSulla base di questi report, scrivi il paragrafo del Business Plan/Piano Operativo per questa FASE. Sii estremamente sincero, critico ed iper-realista (evidenzia tutte le obiezioni dei sotto-agenti, segnala RED FLAGS, colli di bottiglia o l'eventuale VETO di fattibilità finanziaria se il budget è nullo per attività ad alto CAPEX).
+Se l'idea o i parametri di partenza dell'utente sono vaghi o sintetici (es. "voglio aprire un bar"), evidenzia immediatamente la vaghezza come un "BLOCCO STRATEGICO", fornisci una critica spietata e chiedi chiarimenti stringenti.
 Se l'utente non ha indicato la zona geografica e gli agenti hanno evidenziato la mancanza, riassumi le opzioni delle zone geografiche consigliate e sollecita l'utente a sceglierne una.
-Concludi ponendo un massimo di 1-2 domande specifiche e focalizzate (es. per scegliere tra i pivot proposti o le zone consigliate) per consentire all'utente di definire i dettagli per la successiva FASE ${state.currentPhase + 1}.`;
+Concludi ponendo una raccolta di domande di chiarimento ed affinamento estremamente precise e mirate (da 2 a 4 domande specifiche, numerate e chiare) per consentire all'utente di definire i dettagli operativi per completare questa fase o la successiva FASE ${state.currentPhase + 1}. Assicurati che le domande costringano l'utente a uscire dalla vaghezza.`;
 
       try {
         const orchestratorResponse = await window.callGeminiAPI(state.apiKey, state.model, "orchestrator", orchestratorPrompt, [], state.project.attachedImage);
